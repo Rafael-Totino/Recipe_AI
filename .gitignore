@@ -1,0 +1,19 @@
+# venv / cache
+.venv/
+__pycache__/
+*.pyc
+
+# env e segredos
+.env
+*.env
+
+# dados temporários
+data/
+tmp/
+*.m4a
+*.mp3
+*.wav
+
+# IDE
+.vscode/
+.idea/
