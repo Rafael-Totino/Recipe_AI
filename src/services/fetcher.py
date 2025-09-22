@@ -32,15 +32,10 @@ def fetch_youtube(url: str) -> RawContent:
             title=info.get("title", "Sem título"),
             caption=info.get("description"),
             transcript=_get_yt_transcript(url),   # depois tentamos legendas
-            audio_path=None,     # depois tentamos baixar áudio
+            audio_path=dowload_audio(url),     # depois tentamos baixar áudio
             thumbnail_url=info.get("thumbnail"),
             author=info.get("uploader"),
         )
-
-        # 4. Se não houver texto suficiente → precisamos de áudio
-        if not content.caption and not content.transcript:
-            # (depois implementamos o download do áudio)
-            raise AudioUnavailableError("Não foi possível obter áudio para transcrição.")
 
         return content
 
@@ -188,26 +183,6 @@ def fetch_instagram(url: str) -> RawContent:
             raise PrivateOrUnavailableError("Post privado ou não disponível")
 
         audio_path: Optional[str] = None
-        if info.get("vcodec") or info.get("ext") in {"mp4", "mov", "mkv"}:
-            # nome base (ID do post)
-            outtmpl = str(Path("data") / "%(id)s.%(ext)s")
-            ydl_opts_audio = {
-                "quiet": True,
-                "noprogress": True,
-                "format": "bestaudio/best",
-                "outtmpl": outtmpl,
-                "postprocessors": [
-                    {
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": "m4a",
-                        "preferredquality": "192",
-                    }
-                ],
-            }
-            with yt_dlp.YoutubeDL(ydl_opts_audio) as ydl:
-                info_audio = ydl.extract_info(url, download=True)
-                if "requested_downloads" in info_audio:
-                    audio_path = info_audio["requested_downloads"][0]["filepath"]
 
         return RawContent(
             platform = "instagram",
@@ -215,7 +190,7 @@ def fetch_instagram(url: str) -> RawContent:
             title = info.get("title") or "Sem título",
             caption = info.get("description"),
             transcript = None,  # não existe track externo no IG
-            audio_path = audio_path,
+            audio_path = dowload_audio(url),
             thumbnail_url = info.get("thumbnail"),
             author = info.get("uploader") or info.get("channel") or "Desconhecido",
         )
@@ -225,3 +200,31 @@ def fetch_instagram(url: str) -> RawContent:
     except Exception as e:
         # genérico — se não for uma das exceções tratadas, mapeamos como falha de fetch
         raise FetchFailedError(f"Erro inesperado ao coletar vídeo: {e}")
+
+
+def dowload_audio(url: str):
+    AUDIO_DIR = Path("data/audio")
+    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    outtmpl = str(AUDIO_DIR / "%(id)s.%(ext)s")
+
+    ydl_opts_audio = {
+        "quiet": True,
+        "noprogress": True,
+        "format": "bestaudio/best",
+        "outtmpl": outtmpl,
+        "postprocessors": [
+            {"key": "FFmpegExtractAudio", "preferredcodec": "m4a", "preferredquality": "192"}
+        ],
+        # "ffmpeg_location": r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin",  # se quiser forçar
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts_audio) as ydl:
+            info_audio = ydl.extract_info(url, download=True)
+            if "requested_downloads" in info_audio:
+                audio_path = info_audio["requested_downloads"][0]["filepath"]
+                
+        return audio_path
+    
+    except Exception as e:
+        raise AudioUnavailableError(f"Erro ao baixar áudio: {e}")

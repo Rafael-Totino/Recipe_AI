@@ -13,7 +13,7 @@ def ingest(url: str) -> RawContent:
         raise UnsupportedPlatformError("Plataforma não suportada")
 
     # 2) se faltar transcript e houver áudio → transcreve
-    if not content.transcript and content.audio_path:
+    if content.audio_path:
         try:
             content.transcript = transcribe_audio(content.audio_path, language="pt")
         except Exception as e:
