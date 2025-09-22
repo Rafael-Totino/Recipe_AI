@@ -30,15 +30,15 @@ def fetch_youtube(url: str) -> RawContent:
             platform="youtube",
             url=url,
             title=info.get("title", "Sem título"),
-            description=info.get("description"),
-            caption_text=_get_yt_transcript(url),   # depois tentamos legendas
+            caption=info.get("description"),
+            transcript=_get_yt_transcript(url),   # depois tentamos legendas
             audio_path=None,     # depois tentamos baixar áudio
             thumbnail_url=info.get("thumbnail"),
             author=info.get("uploader"),
         )
 
         # 4. Se não houver texto suficiente → precisamos de áudio
-        if not content.description and not content.caption_text:
+        if not content.caption and not content.transcript:
             # (depois implementamos o download do áudio)
             raise AudioUnavailableError("Não foi possível obter áudio para transcrição.")
 
@@ -213,8 +213,8 @@ def fetch_instagram(url: str) -> RawContent:
             platform = "instagram",
             url = url,
             title = info.get("title") or "Sem título",
-            description = info.get("description"),
-            caption_text = None,  # não existe track externo no IG
+            caption = info.get("description"),
+            transcript = None,  # não existe track externo no IG
             audio_path = audio_path,
             thumbnail_url = info.get("thumbnail"),
             author = info.get("uploader") or info.get("channel") or "Desconhecido",
