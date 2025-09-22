@@ -1,6 +1,7 @@
 import yt_dlp, re
-from src.services.types import *
-from src.services.errors import *
+from pathlib import Path
+from .types import *
+from .errors import *
 from typing import Optional, Tuple
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 
@@ -167,3 +168,60 @@ def _get_yt_transcript(url: str) -> Optional[str]:
     
     full_text = " ".join(ch["text"] for ch in data if ch["text"].strip())
     return full_text.strip() or None
+
+def fetch_instagram(url: str) -> RawContent:
+    # 1. Validar URL (se não for do insta, erro)
+    if "instagram.com" not in url:
+        raise InvalidURLError(f"URL não é do Instagram: {url}")
+
+    try:
+        ydl_opts = {
+            "quiet": True,         # sem logs barulhentos
+            "noprogress": True,
+            "skip_download": True, # só metadados
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            
+        if not info:
+            raise PrivateOrUnavailableError("Post privado ou não disponível")
+
+        audio_path: Optional[str] = None
+        if info.get("vcodec") or info.get("ext") in {"mp4", "mov", "mkv"}:
+            # nome base (ID do post)
+            outtmpl = str(Path("data") / "%(id)s.%(ext)s")
+            ydl_opts_audio = {
+                "quiet": True,
+                "noprogress": True,
+                "format": "bestaudio/best",
+                "outtmpl": outtmpl,
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "m4a",
+                        "preferredquality": "192",
+                    }
+                ],
+            }
+            with yt_dlp.YoutubeDL(ydl_opts_audio) as ydl:
+                info_audio = ydl.extract_info(url, download=True)
+                if "requested_downloads" in info_audio:
+                    audio_path = info_audio["requested_downloads"][0]["filepath"]
+
+        return RawContent(
+            platform = "instagram",
+            url = url,
+            title = info.get("title") or "Sem título",
+            description = info.get("description"),
+            caption_text = None,  # não existe track externo no IG
+            audio_path = audio_path,
+            thumbnail_url = info.get("thumbnail"),
+            author = info.get("uploader") or info.get("channel") or "Desconhecido",
+        )
+    
+    except PrivateOrUnavailableError:
+        raise
+    except Exception as e:
+        # genérico — se não for uma das exceções tratadas, mapeamos como falha de fetch
+        raise FetchFailedError(f"Erro inesperado ao coletar vídeo: {e}")

@@ -8,3 +8,4 @@ Pipeline pessoal para extrair receitas de YouTube/Instagram:
 ## Estrutura
 - `src/services/` – fetchers e utilitários
 - `scripts/` – testes manuais
+ 
