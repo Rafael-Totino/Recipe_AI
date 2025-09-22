@@ -12,7 +12,7 @@ def _get_model() -> WhisperModel:
     global _model
     if _model is None:
         # compute_type="int8" economiza memória em CPU
-        _model = WhisperModel("small", compute_type="int8")
+        _model = WhisperModel("medium", compute_type="float16")
     return _model
 
 def transcribe_audio(path: str, language: str | None = "pt") -> str:
