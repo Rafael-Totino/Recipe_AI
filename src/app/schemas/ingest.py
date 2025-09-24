@@ -6,7 +6,6 @@ from pydantic import BaseModel, HttpUrl
 
 class IngestRequest(BaseModel):
     url: HttpUrl
-    owner_id: UUID  # UUID do auth.users
 
 
 class IngestResponse(BaseModel):

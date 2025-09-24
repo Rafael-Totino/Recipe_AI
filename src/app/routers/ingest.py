@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette.concurrency import run_in_threadpool
 from supabase import Client
 
-from src.app.deps import get_supabase
+from src.app.deps import *
 from src.app.schemas.ingest import IngestRequest, IngestResponse
 from src.services.ingest import ingest as run_ingest
 from src.services.persist_supabase import upsert_recipe_minimal
@@ -18,17 +18,18 @@ router = APIRouter(prefix="/ingest", tags=["ingest"])
 @router.post("", response_model=IngestResponse)
 async def ingest_endpoint(
     body: IngestRequest,
+    user: CurrentUser = Depends(get_current_user),
     supa: Client = Depends(get_supabase),
 ):
     t0 = time.time()
-    log.info("ingest.start url=%s owner=%s", body.url, body.owner_id)
+    log.info("ingest.start url=%s owner=%s", body.url, user.id)
     try:
         # offload pesado para threadpool (bloqueante e CPU/GPU-bound)
         content = await run_in_threadpool(run_ingest, str(body.url))
         recipe_id = await run_in_threadpool(
             upsert_recipe_minimal,
             supa,
-            str(body.owner_id),
+            str(user.id),
             content,
         )
         dt = time.time() - t0
