@@ -1,16 +1,12 @@
-# src/app/deps.py
-from __future__ import annotations
+# src/app/deps.py (mantém o singleton, mas expõe como dependência)
 from supabase import create_client, Client
 from src.app.config import settings
 
-_supabase: Client | None = None
+_client: Client | None = None
 
 def get_supabase() -> Client:
-    """
-    Retorna um cliente Supabase (service_role) singleton.
-    Use SOMENTE no backend. No frontend, use anon key.
-    """
-    global _supabase
-    if _supabase is None:
-        _supabase = create_client(str(settings.SUPABASE_URL), settings.SUPABASE_SERVICE_ROLE_KEY)
-    return _supabase
+    global _client
+    if _client is None:
+        _client = create_client(str(settings.SUPABASE_URL),
+                                settings.SUPABASE_SERVICE_ROLE_KEY)
+    return _client

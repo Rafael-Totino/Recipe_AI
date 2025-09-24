@@ -2,12 +2,14 @@ from src.services.types import RawContent
 from src.services.fetcher import fetch_youtube, fetch_instagram
 from src.services.transcribe import transcribe_audio
 from src.services.errors import FetchFailedError, UnsupportedPlatformError
+from src.services.ids import detect_platform
+
 
 def ingest(url: str) -> RawContent:
-    # 1) roteia por plataforma
-    if "youtube.com" in url or "youtu.be" in url:
+    plataform = detect_platform(url)
+    if plataform == "youtube":
         content = fetch_youtube(url)
-    elif "instagram.com" in url:
+    elif plataform == "instagram":
         content = fetch_instagram(url)
     else:
         raise UnsupportedPlatformError("Plataforma não suportada")
