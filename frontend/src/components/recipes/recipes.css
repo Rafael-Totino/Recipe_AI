@@ -1,0 +1,114 @@
+﻿.recipe-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.recipe-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid rgba(16, 22, 41, 0.05);
+  box-shadow: var(--shadow-xs);
+  min-height: 320px;
+}
+
+.recipe-card__cover {
+  position: relative;
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+}
+
+.recipe-card__favorite {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 20px -16px rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.recipe-card__favorite:hover {
+  transform: translateY(-2px);
+}
+
+.recipe-card__favorite svg {
+  width: 18px;
+  height: 18px;
+  fill: rgba(91, 62, 234, 0.4);
+  transition: fill 0.2s ease;
+}
+
+.recipe-card__favorite.is-favorite {
+  background: rgba(91, 62, 234, 0.12);
+}
+
+.recipe-card__favorite.is-favorite svg {
+  fill: var(--color-primary-strong);
+}
+
+.recipe-card__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.recipe-card__content {
+  flex: 1;
+  padding: 1.5rem 1.75rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.recipe-card__content h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.recipe-card__content p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+.recipe-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.recipe-card__actions {
+  padding: 1.25rem 1.75rem 1.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.recipe-card__actions .button {
+  font-size: 0.95rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 3rem 1rem;
+  border: 2px dashed rgba(91, 62, 234, 0.14);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.6);
+}

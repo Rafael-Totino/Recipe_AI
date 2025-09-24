@@ -1,0 +1,20 @@
+[2m00:55:05[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "./home.css" from "src/pages/HomePage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/rafae/Projetos/Site de Receitas/frontend/src/pages/HomePage.tsx[39m:6:7
+[33m  20 |  import RecipeGrid from "../components/recipes/RecipeGrid";
+  21 |  import { useRecipes } from "../context/RecipeContext";
+  22 |  import "./home.css";
+     |          ^
+  23 |  const HomePage = () => {
+  24 |    _s();[39m
+      at TransformPluginContext._formatError (file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49258:41)
+      at TransformPluginContext.error (file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49253:16)
+      at normalizeUrl (file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64306:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64438:39
+      at async Promise.all (index 7)
+      at async TransformPluginContext.transform (file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64365:7)
+      at async PluginContainer.transform (file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49099:18)
+      at async loadAndTransform (file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:51977:27)
+      at async viteTransformMiddleware (file:///C:/Users/rafae/Projetos/Site%20de%20Receitas/frontend/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:62105:24)
+^C^C

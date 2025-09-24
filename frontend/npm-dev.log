@@ -1,0 +1,21 @@
+
+> recipe-ai-frontend@0.1.0 dev
+> vite --host 0.0.0.0
+
+
+  [32m[1mVITE[22m v5.4.20[39m  [2mready in [0m[1m300[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.15.3:[1m5173[22m/[39m
+[2m21:15:33[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/shared/ProtectedRoute.tsx[22m
+[2m00:53:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m00:53:53[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/layout.css[22m
+[2m00:54:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/Sidebar.tsx[22m
+[2m00:54:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/TopBar.tsx[22m
+[2m00:55:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/HomePage.tsx[22m
+[2m00:55:22[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m00:55:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/chat/ChatDock.tsx[22m
+[2m00:55:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/chat/chat.css[22m
+[2m00:56:16[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/recipes/RecipeCard.tsx[22m
+[2m00:56:31[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/recipes/recipes.css[22m
+[2m00:56:49[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/chat/ChatInput.tsx[22m
