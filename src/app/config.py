@@ -1,12 +1,13 @@
 # src/app/config.py
 from __future__ import annotations
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import AnyUrl
+from pydantic import AnyUrl, Field
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
     SUPABASE_URL: AnyUrl
     SUPABASE_SERVICE_ROLE_KEY: str
     APP_ENV: str = "local"
+    FRONTEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
 
 settings = Settings()

@@ -12,11 +12,11 @@ from src.services.ingest import ingest as run_ingest
 from src.services.persist_supabase import upsert_recipe_minimal
 
 log = logging.getLogger("ingest")
-router = APIRouter(prefix="/ingest", tags=["ingest"])
+router = APIRouter(prefix="/recipes", tags=["ingest"])
 
 
-@router.post("", response_model=IngestResponse)
-async def ingest_endpoint(
+@router.post("/recipes/import", response_model=IngestResponse)
+async def import_recipe(
     body: IngestRequest,
     user: CurrentUser = Depends(get_current_user),
     supa: Client = Depends(get_supabase),
