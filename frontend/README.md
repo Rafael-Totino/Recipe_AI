@@ -1,6 +1,6 @@
-# Recipe AI – Frontend
+# Recipe AI - Frontend
 
-Aplicação frontend em React + Vite para o livro de receitas inteligente.
+React + Vite front-end for the recipe assistant.
 
 ## Scripts
 
@@ -11,17 +11,23 @@ npm run build
 npm run lint
 ```
 
-Configure a URL do backend no arquivo `.env` na raiz do frontend:
+## Environment setup
+
+Create a `.env.local` (or update the existing `.env`) in the `frontend` folder with:
 
 ```
 VITE_API_BASE_URL=http://localhost:8000
+VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<public-anon-key>
 ```
 
-## Funcionalidades
+The Supabase values come from project settings > API. Keep the service role key on the backend only.
 
-- Autenticação por e-mail e login social (Google) com layout dedicado.
-- Dashboard principal com resumo, receitas favoritas e novidades importadas.
-- Chat de IA persistente em toda a aplicação para busca e suporte.
-- Importação de receitas via link ou cadastro manual.
-- Página detalhada com player embutido, ingredientes, passos, observações e ações de compartilhamento/exclusão.
-- Área de configurações para preferências alimentares que alimentam a IA.
+## Features
+
+- Email and Google sign-in powered by Supabase Auth.
+- Dashboard with summary cards, favorite recipes, and newly imported content.
+- Persistent AI chat assistant for search and cooking questions.
+- Import recipes from URLs or create them manually.
+- Detailed recipe page with media, ingredients, steps, notes, and sharing actions.
+- Settings page for dietary preferences that personalize the assistant.

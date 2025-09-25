@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Location } from 'react-router-dom';
 
@@ -6,48 +6,87 @@ import SocialLoginButton from '../components/auth/SocialLoginButton';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
-  const { loginWithEmail, loginWithProvider, isLoading } = useAuth();
+  const { loginWithEmail, loginWithProvider, signUpWithEmail, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: Location })?.from?.pathname ?? '/app';
 
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+
+  const title = useMemo(
+    () => (mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'),
+    [mode]
+  );
+
+  const subtitle = useMemo(
+    () =>
+      mode === 'login'
+        ? 'Entre com seu e-mail ou use sua conta Google.'
+        : 'Cadastre-se para salvar e importar receitas com o Chef IA.',
+    [mode]
+  );
+
+  const submitLabel = mode === 'login' ? 'Entrar' : 'Criar conta';
+
+  const toggleLabel =
+    mode === 'login'
+      ? 'Ainda não tem conta? Cadastre-se'
+      : 'Já possui conta? Entre';
+
+  const resetMessages = () => {
+    setError(null);
+    setInfo(null);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    resetMessages();
     try {
-      await loginWithEmail(email, password);
+      if (mode === 'login') {
+        await loginWithEmail(email, password);
+        navigate(from, { replace: true });
+        return;
+      }
+
+      const result = await signUpWithEmail({ email, password, name: name || undefined });
+      if (result.needsConfirmation) {
+        setInfo('Verifique seu e-mail para confirmar a conta antes de continuar.');
+        setName('');
+        setPassword('');
+        return;
+      }
       navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
-      setError('NÃ£o foi possÃ­vel entrar. Verifique suas credenciais.');
+      setError(
+        mode === 'login'
+          ? 'Não foi possível entrar. Verifique suas credenciais.'
+          : 'Não foi possível criar sua conta. Verifique os dados informados.'
+      );
     }
   };
 
   const handleSocialLogin = async () => {
+    resetMessages();
     try {
-      // Em produÃ§Ã£o, substitua pelo token retornado pelo Google Identity Services
-      const fakeToken = window.prompt('Cole o token do Google para continuar:');
-      if (!fakeToken) {
-        return;
-      }
-      await loginWithProvider('google', fakeToken);
+      await loginWithProvider('google');
       navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
-      setError('Falha na autenticaÃ§Ã£o social.');
+      setError('Falha na autenticação social.');
     }
   };
 
   return (
     <div className="auth-card">
       <div>
-        <h2>Bem-vindo de volta ðŸ‘‹</h2>
-        <p style={{ margin: '0.25rem 0 0', color: 'var(--color-muted)' }}>
-          Entre com seu e-mail ou use sua conta Google.
-        </p>
+        <h2>{title}</h2>
+        <p style={{ margin: '0.25rem 0 0', color: 'var(--color-muted)' }}>{subtitle}</p>
       </div>
 
       <div className="social-login-group">
@@ -57,6 +96,18 @@ const LoginPage = () => {
       <div className="divider">ou continue com e-mail</div>
 
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
+        {mode === 'signup' ? (
+          <label style={{ display: 'grid', gap: '0.25rem' }}>
+            <span style={{ fontWeight: 500 }}>Nome</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Como podemos chamar você?"
+            />
+          </label>
+        ) : null}
+
         <label style={{ display: 'grid', gap: '0.25rem' }}>
           <span style={{ fontWeight: 500 }}>E-mail</span>
           <input
@@ -74,12 +125,13 @@ const LoginPage = () => {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+            placeholder="********"
             required
           />
         </label>
 
         {error ? <p style={{ color: '#d64545', margin: 0 }}>{error}</p> : null}
+        {info ? <p style={{ color: '#2f9e44', margin: 0 }}>{info}</p> : null}
 
         <button
           type="submit"
@@ -94,9 +146,27 @@ const LoginPage = () => {
           }}
           disabled={isLoading}
         >
-          {isLoading ? 'Entrando...' : 'Entrar'}
+          {isLoading ? `${submitLabel}...` : submitLabel}
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={() => {
+          setMode((prev) => (prev === 'login' ? 'signup' : 'login'));
+          resetMessages();
+        }}
+        style={{
+          marginTop: '1rem',
+          border: 'none',
+          background: 'none',
+          color: 'var(--color-primary)',
+          cursor: 'pointer',
+          fontWeight: 500
+        }}
+      >
+        {toggleLabel}
+      </button>
     </div>
   );
 };

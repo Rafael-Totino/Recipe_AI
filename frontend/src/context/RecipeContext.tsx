@@ -42,20 +42,20 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const loadRecipes = useCallback(async () => {
-    if (!session?.accessToken) {
+    if (!session?.access_token) {
       setRecipes([]);
       return;
     }
     setIsLoading(true);
     try {
-      const items = await fetchRecipes(session.accessToken);
+      const items = await fetchRecipes(session.access_token);
       setRecipes(items);
     } catch (error) {
       console.error('Unable to fetch recipes', error);
     } finally {
       setIsLoading(false);
     }
-  }, [session?.accessToken]);
+  }, [session?.access_token]);
 
   useEffect(() => {
     void loadRecipes();
@@ -63,26 +63,26 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
 
   const selectRecipe = useCallback(
     async (recipeId: string) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return;
       }
       try {
-        const recipe = await fetchRecipe(session.accessToken, recipeId);
+        const recipe = await fetchRecipe(session.access_token, recipeId);
         setActiveRecipe(recipe);
       } catch (error) {
         console.error('Unable to fetch recipe detail', error);
       }
     },
-    [session?.accessToken]
+    [session?.access_token]
   );
 
   const importRecipeHandler = useCallback(
     async (url: string) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return null;
       }
       try {
-        const result = await importRecipeFromUrl(session.accessToken, url);
+        const result = await importRecipeFromUrl(session.access_token, url);
         setRecipes((prev) => [result.recipe, ...prev]);
         return result;
       } catch (error) {
@@ -90,16 +90,16 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
     },
-    [session?.accessToken]
+    [session?.access_token]
   );
 
   const createManualRecipeHandler = useCallback(
     async (payload: Partial<Recipe> & { title: string }) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return null;
       }
       try {
-        const recipe = await createRecipe(session.accessToken, payload);
+        const recipe = await createRecipe(session.access_token, payload);
         setRecipes((prev) => [recipe, ...prev]);
         return recipe;
       } catch (error) {
@@ -107,16 +107,16 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
     },
-    [session?.accessToken]
+    [session?.access_token]
   );
 
   const updateNotesHandler = useCallback(
     async (recipeId: string, notes: string) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return null;
       }
       try {
-        const updated = await updateRecipeNotes(session.accessToken, recipeId, notes);
+        const updated = await updateRecipeNotes(session.access_token, recipeId, notes);
         setRecipes((prev) => prev.map((item) => (item.id === recipeId ? updated : item)));
         setActiveRecipe((prev) => (prev?.id === recipeId ? updated : prev));
         return updated;
@@ -125,12 +125,12 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
     },
-    [session?.accessToken]
+    [session?.access_token]
   );
 
   const toggleFavoriteHandler = useCallback(
     async (recipeId: string) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return;
       }
       const recipe = recipes.find((item) => item.id === recipeId);
@@ -139,30 +139,30 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
       }
       const isFavorite = Boolean(recipe.isFavorite);
       try {
-        const updated = await toggleFavorite(session.accessToken, recipeId, isFavorite);
+        const updated = await toggleFavorite(session.access_token, recipeId, isFavorite);
         setRecipes((prev) => prev.map((item) => (item.id === recipeId ? updated : item)));
         setActiveRecipe((prev) => (prev?.id === recipeId ? updated : prev));
       } catch (error) {
         console.error('Unable to toggle favorite', error);
       }
     },
-    [recipes, session?.accessToken]
+    [recipes, session?.access_token]
   );
 
   const removeRecipeHandler = useCallback(
     async (recipeId: string) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return;
       }
       try {
-        await deleteRecipe(session.accessToken, recipeId);
+        await deleteRecipe(session.access_token, recipeId);
         setRecipes((prev) => prev.filter((item) => item.id !== recipeId));
         setActiveRecipe((prev) => (prev?.id === recipeId ? undefined : prev));
       } catch (error) {
         console.error('Unable to delete recipe', error);
       }
     },
-    [session?.accessToken]
+    [session?.access_token]
   );
 
   const value = useMemo(
@@ -202,3 +202,4 @@ export const useRecipes = () => {
   }
   return context;
 };
+

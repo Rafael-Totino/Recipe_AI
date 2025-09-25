@@ -1,4 +1,4 @@
-﻿import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { ReactNode } from 'react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -8,11 +8,6 @@ import '../../index.css';
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { session, isLoading } = useAuth();
   const location = useLocation();
-  const authEnabled = false; // Temporarily bypass auth until login is available.
-
-  if (!authEnabled) {
-    return <>{children}</>;
-  }
 
   if (isLoading) {
     return (

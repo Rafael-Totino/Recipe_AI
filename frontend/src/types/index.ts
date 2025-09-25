@@ -12,13 +12,6 @@ export interface UserProfile {
   };
 }
 
-export interface AuthSession {
-  accessToken: string;
-  refreshToken?: string;
-  expiresAt?: string;
-  user: UserProfile;
-}
-
 export interface RecipeStep {
   order: number;
   description: string;
@@ -77,3 +70,4 @@ export interface ImportResult {
   recipe: Recipe;
   warnings?: string[];
 }
+

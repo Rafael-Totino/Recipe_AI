@@ -7,133 +7,148 @@ import {
   useMemo,
   useState
 } from 'react';
+import type { Session } from '@supabase/supabase-js';
 
-import type { AuthSession, SocialProvider, UserProfile } from '../types';
+import type { SocialProvider, UserProfile } from '../types';
 import {
+  type EmailSignUpPayload,
   getCurrentUser,
+  getSession,
   loginWithEmail as loginWithEmailService,
   loginWithProvider as loginWithProviderService,
-  refreshSession as refreshSessionService,
+  logout as logoutService,
+  onAuthStateChange,
+  signUpWithEmail as signUpWithEmailService,
   updateUserPreferences
 } from '../services/auth';
 
 interface AuthContextValue {
-  session: AuthSession | null;
+  session: Session | null;
   user: UserProfile | null;
   isLoading: boolean;
   loginWithEmail: (email: string, password: string) => Promise<void>;
-  loginWithProvider: (provider: SocialProvider, idToken: string) => Promise<void>;
-  logout: () => void;
+  loginWithProvider: (provider: SocialProvider) => Promise<void>;
+  signUpWithEmail: (
+    payload: EmailSignUpPayload
+  ) => Promise<{ needsConfirmation: boolean }>;
+  logout: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
   updatePreferences: (preferences: UserProfile['preferences']) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = 'recipe-ai.auth';
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<AuthSession | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const stored = JSON.parse(raw) as AuthSession;
-      setSession(stored);
-      setUser(stored.user);
-    } catch (error) {
-      console.error('Failed to parse stored session', error);
-      window.localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const persistSession = useCallback((value: AuthSession | null) => {
-    if (!value) {
-      window.localStorage.removeItem(STORAGE_KEY);
-      setSession(null);
+  const loadProfile = useCallback(async (nextSession: Session | null) => {
+    if (!nextSession?.access_token) {
       setUser(null);
       return;
     }
-
-    setSession(value);
-    setUser(value.user);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    try {
+      const profile = await getCurrentUser(nextSession.access_token);
+      setUser(profile);
+    } catch (error) {
+      console.error('Failed to fetch profile', error);
+      setUser(null);
+    }
   }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const { data } = await getSession();
+        const currentSession = data.session ?? null;
+        setSession(currentSession);
+        await loadProfile(currentSession);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void init();
+
+    const { data } = onAuthStateChange(async (_event, nextSession) => {
+      setSession(nextSession);
+      await loadProfile(nextSession);
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, [loadProfile]);
 
   const loginWithEmail = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const result = await loginWithEmailService({ email, password });
-      persistSession(result);
+      const nextSession = await loginWithEmailService({ email, password });
+      setSession(nextSession);
+      await loadProfile(nextSession);
     } finally {
       setIsLoading(false);
     }
-  }, [persistSession]);
+  }, [loadProfile]);
 
-  const loginWithProvider = useCallback(
-    async (provider: SocialProvider, idToken: string) => {
+  const signUpWithEmail = useCallback(
+    async (payload: EmailSignUpPayload) => {
       setIsLoading(true);
       try {
-        const result = await loginWithProviderService(provider, idToken);
-        persistSession(result);
+        const { needsConfirmation, session: createdSession } = await signUpWithEmailService(payload);
+        if (createdSession) {
+          setSession(createdSession);
+          await loadProfile(createdSession);
+        } else {
+          setSession(null);
+          setUser(null);
+        }
+        return { needsConfirmation };
       } finally {
         setIsLoading(false);
       }
     },
-    [persistSession]
+    [loadProfile]
   );
 
-  const logout = useCallback(() => {
-    persistSession(null);
-  }, [persistSession]);
+  const loginWithProvider = useCallback(
+    async (provider: SocialProvider) => {
+      setIsLoading(true);
+      try {
+        await loginWithProviderService(provider);
+        // OAuth flows trigger a redirect; the auth listener will load the new session.
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const logout = useCallback(async () => {
+    await logoutService();
+    setSession(null);
+    setUser(null);
+  }, []);
 
   const refreshUserProfile = useCallback(async () => {
-    if (!session?.accessToken) {
-      return;
-    }
-    const profile = await getCurrentUser(session.accessToken);
-    const nextSession = { ...session, user: profile };
-    persistSession(nextSession);
-  }, [persistSession, session]);
+    await loadProfile(session);
+  }, [loadProfile, session]);
 
-  const updatePreferences = useCallback(
+  const updatePreferencesHandler = useCallback(
     async (preferences: UserProfile['preferences']) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return;
       }
-      const updatedUser = await updateUserPreferences(session.accessToken, preferences);
-      const nextSession = { ...session, user: updatedUser };
-      persistSession(nextSession);
-    },
-    [persistSession, session]
-  );
-
-  useEffect(() => {
-    if (!session?.refreshToken) {
-      return;
-    }
-
-    const interval = window.setInterval(async () => {
       try {
-        const refreshed = await refreshSessionService(session.refreshToken!);
-        persistSession(refreshed);
+        const updated = await updateUserPreferences(session.access_token, preferences);
+        setUser(updated);
       } catch (error) {
-        console.warn('Failed to refresh session', error);
-        persistSession(null);
+        console.error('Failed to update preferences', error);
       }
-    }, 1000 * 60 * 14);
-
-    return () => window.clearInterval(interval);
-  }, [persistSession, session?.refreshToken]);
+    },
+    [session?.access_token]
+  );
 
   const value = useMemo(
     () => ({
@@ -142,9 +157,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       loginWithEmail,
       loginWithProvider,
+      signUpWithEmail,
       logout,
       refreshUserProfile,
-      updatePreferences
+      updatePreferences: updatePreferencesHandler
     }),
     [
       isLoading,
@@ -153,7 +169,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logout,
       refreshUserProfile,
       session,
-      updatePreferences,
+      signUpWithEmail,
+      updatePreferencesHandler,
       user
     ]
   );

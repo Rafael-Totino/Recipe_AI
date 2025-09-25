@@ -31,13 +31,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | undefined>(undefined);
 
   const hydrate = useCallback(async () => {
-    if (!session?.accessToken) {
+    if (!session?.access_token) {
       setMessages([]);
       return;
     }
     setIsLoading(true);
     try {
-      const history = await fetchChatHistory(session.accessToken);
+      const history = await fetchChatHistory(session.access_token);
       setMessages(history);
       setError(undefined);
     } catch (err) {
@@ -46,7 +46,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.accessToken]);
+  }, [session?.access_token]);
 
   useEffect(() => {
     void hydrate();
@@ -54,7 +54,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const sendMessageHandler = useCallback(
     async (message: string, recipeId?: string) => {
-      if (!session?.accessToken) {
+      if (!session?.access_token) {
         return;
       }
 
@@ -68,7 +68,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       setMessages((prev) => [...prev, optimisticMessage]);
       setIsSending(true);
       try {
-        const response = await sendChatMessage(session.accessToken, { message, recipeId });
+        const response = await sendChatMessage(session.access_token, { message, recipeId });
         setMessages((prev) => [...prev.filter((msg) => msg.id !== optimisticMessage.id), optimisticMessage, response.message]);
         setError(undefined);
       } catch (err) {
@@ -79,7 +79,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setIsSending(false);
       }
     },
-    [session?.accessToken]
+    [session?.access_token]
   );
 
   const value = useMemo(
@@ -97,3 +97,4 @@ export const useChat = () => {
   }
   return context;
 };
+
