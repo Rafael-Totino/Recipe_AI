@@ -55,3 +55,12 @@ def run_recipe_agent(payload: Dict[str, Any]) -> Dict[str, Any]:
     if not response:
         raise RuntimeError("Model response did not include text content.")
 
+    cleaned = response.strip()
+    if cleaned.startswith("```"):
+        lines_clean = [ln for ln in cleaned.splitlines() if not ln.strip().startswith("```")]
+        cleaned = "\n".join(lines_clean).strip()
+
+    try:
+        return json.loads(cleaned) if cleaned else {}
+    except json.JSONDecodeError as exc:
+        raise ValueError("Gemini response is not valid JSON") from exc

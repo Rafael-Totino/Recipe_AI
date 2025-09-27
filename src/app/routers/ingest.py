@@ -371,15 +371,18 @@ async def import_recipe(
     t0 = time.time()
     log.info("ingest.start url=%s owner=%s", body.url, user.id)
     try:
-        content, recipe_data = await run_in_threadpool(run_ingest, str(body.url))
+        ingest_result = await run_in_threadpool(run_ingest, str(body.url))
+        raw_content = ingest_result.get('raw_content')
+        if not isinstance(raw_content, RawContent):
+            raise RuntimeError('Ingest pipeline did not return valid raw_content')
+        recipe_data = ingest_result.get('recipe_data') if isinstance(ingest_result.get('recipe_data'), dict) else {}
         recipe_id = await run_in_threadpool(
             upsert_recipe_minimal,
             supa,
             str(user.id),
-            content,
-            recipe_data,
+            ingest_result,
         )
-        recipe_response, warnings = _build_recipe_response(recipe_id, content, recipe_data)
+        recipe_response, warnings = _build_recipe_response(recipe_id, raw_content, recipe_data)
         dt = time.time() - t0
         log.info("ingest.ok url=%s recipe=%s dt=%.2fs", body.url, recipe_id, dt)
         return IngestResponse(

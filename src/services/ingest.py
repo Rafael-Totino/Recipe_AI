@@ -1,6 +1,6 @@
 ﻿from __future__ import annotations
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 from pathlib import Path
 
@@ -47,7 +47,7 @@ def _persist_audio_transcript(text: str, audio_path: str | None) -> None:
         pass
 
 
-def ingest(url: str) -> Tuple[RawContent, str]:
+def ingest(url: str) -> Dict[str, Any]:
     platform = detect_platform(url)
     if platform == "youtube":
         content = fetch_youtube(url)
@@ -88,4 +88,39 @@ def ingest(url: str) -> Tuple[RawContent, str]:
     except Exception as exc:
         raise FetchFailedError(f"Falha ao interpretar conteudo com IA: {exc}") from exc
 
-    return content, structured_recipe
+    recipe_payload = {
+        'media': {
+            'thumbnail_url': content.thumbnail_url,
+            'author': content.author,
+            'platform': content.platform,
+            'url': content.url,
+        },
+        'provenance': {
+            'audio_path_local': content.audio_path,
+            'transcript_source': content.transcript_source,
+        },
+        'raw_text': {
+            'caption': content.caption,
+            'transcript': content.transcript,
+            'subtitles': content.subtitles,
+        },
+        'ai_recipe': structured_recipe,
+    }
+
+    return {
+        'raw_content': content,
+        'content': {
+            'platform': content.platform,
+            'url': content.url,
+            'title': content.title,
+            'caption': content.caption,
+            'transcript': content.transcript,
+            'subtitles': content.subtitles,
+            'transcript_source': content.transcript_source,
+            'audio_path': content.audio_path,
+            'thumbnail_url': content.thumbnail_url,
+            'author': content.author,
+        },
+        'recipe_data': structured_recipe,
+        'metadata': recipe_payload,
+    }
