@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Optional, Literal
+from typing import Literal, Optional
+
 
 @dataclass
 class RawContent:
@@ -7,8 +8,9 @@ class RawContent:
     url: str
     title: Optional[str]
     caption: Optional[str]
-    transcript: Optional[str]  # legendas extraídas (quando houver)
-    audio_path: Optional[str]    # caminho local do áudio (para transcrever)
+    transcript: Optional[str]
+    subtitles: Optional[str]
+    transcript_source: Optional[str]
+    audio_path: Optional[str]
     thumbnail_url: Optional[str]
     author: Optional[str]
-    

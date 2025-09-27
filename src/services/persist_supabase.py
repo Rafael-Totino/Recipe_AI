@@ -1,5 +1,7 @@
-﻿# src/services/persist_supabase.py
+from __future__ import annotations
+
 from datetime import datetime, timezone
+from typing import Any, Dict
 
 from supabase import Client
 
@@ -9,24 +11,52 @@ from src.services.slugify import slugify, unique_slug
 from src.services.types import RawContent
 
 
-def _build_raw_text(caption: str | None, transcript: str | None) -> str:
+def _build_raw_text(
+    caption: str | None,
+    transcript: str | None,
+    subtitles: str | None,
+) -> str:
     parts: list[str] = []
     if caption:
-        parts.append(f"## CAPTION\n{caption.strip()}")
+        caption_text = caption.strip()
+        if caption_text:
+            parts.append(f"## CAPTION\n{caption_text}")
     if transcript:
-        parts.append(f"## TRANSCRIPT\n{transcript.strip()}")
+        transcript_text = transcript.strip()
+        if transcript_text:
+            parts.append(f"## TRANSCRIPT\n{transcript_text}")
+    if subtitles:
+        subtitles_text = subtitles.strip()
+        if subtitles_text:
+            if not transcript or subtitles_text != transcript.strip():
+                parts.append(f"## SUBTITLES\n{subtitles_text}")
     return "\n\n".join(parts)
 
 
-def upsert_recipe_minimal(supa: Client, owner_id: str, content: RawContent) -> str:
+def upsert_recipe_minimal(
+    supa: Client,
+    owner_id: str,
+    content: RawContent,
+    recipe_data: Dict[str, Any],
+) -> str:
     platform, platform_item_id = detect_platform_and_id(content.url)
-    slug = unique_slug(slugify(content.title or "receita"))
+    title_from_ai = recipe_data.get("title") if isinstance(recipe_data, dict) else None
+    title = title_from_ai or content.title or "Sem titulo"
+    slug = unique_slug(slugify(title))
     collected_at = datetime.now(timezone.utc).isoformat()
+
+    transcript_source = content.transcript_source
+    if transcript_source == "audio":
+        transcript_source_value = "whisper"
+    elif transcript_source == "subtitles":
+        transcript_source_value = "captions"
+    else:
+        transcript_source_value = transcript_source
 
     recipe = RecipeRecord(
         owner_id=owner_id,
         slug=slug,
-        title=content.title or "Sem titulo",
+        title=title,
         metadata={
             "media": {
                 "thumbnail_url": content.thumbnail_url,
@@ -37,9 +67,10 @@ def upsert_recipe_minimal(supa: Client, owner_id: str, content: RawContent) -> s
             "provenance": {
                 "audio_path_local": content.audio_path,
                 "collected_at": collected_at,
-                "transcript_source": "whisper" if content.transcript else None,
+                "transcript_source": transcript_source_value,
             },
-            "raw_text": _build_raw_text(content.caption, content.transcript),
+            "raw_text": _build_raw_text(content.caption, content.transcript, content.subtitles),
+            "ai_recipe": recipe_data,
         },
     )
     result = supa.table("recipes").insert(recipe.model_dump()).execute()
