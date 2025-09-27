@@ -49,7 +49,7 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const items = await fetchRecipes(session.access_token);
-      setRecipes(items);
+      setRecipes(Array.isArray(items) ? items : []);
     } catch (error) {
       console.error('Unable to fetch recipes', error);
     } finally {

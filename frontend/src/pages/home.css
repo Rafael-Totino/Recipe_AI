@@ -117,3 +117,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+.home-page--loading {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+}
+
+.home-page__loader {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  text-align: center;
+  padding: 2.5rem;
+}
+
+.home-page__loader p {
+  margin: 0;
+  color: var(--color-muted);
+  font-weight: 500;
+}

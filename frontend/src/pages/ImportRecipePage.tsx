@@ -1,7 +1,11 @@
-import { FormEvent, useState } from 'react';
+﻿import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import Loader from '../components/shared/Loader';
 import { useRecipes } from '../context/RecipeContext';
+import './import.css';
+
+type StatusState = { type: 'success' | 'error'; message: string } | null;
 
 const ImportRecipePage = () => {
   const { importRecipe, createManualRecipe } = useRecipes();
@@ -10,156 +14,217 @@ const ImportRecipePage = () => {
   const [manualDescription, setManualDescription] = useState('');
   const [manualIngredients, setManualIngredients] = useState('');
   const [manualSteps, setManualSteps] = useState('');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<StatusState>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isSavingManual, setIsSavingManual] = useState(false);
   const navigate = useNavigate();
+
+  const isBusy = isImporting || isSavingManual;
+  const overlayMessage = useMemo(
+    () => (isImporting ? 'Importando receita...' : 'Salvando receita...'),
+    [isImporting]
+  );
 
   const handleImport = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!url) {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
       return;
     }
-    setIsSubmitting(true);
-    const result = await importRecipe(url);
-    setIsSubmitting(false);
-    if (result?.recipe) {
-      setStatusMessage('Receita importada com sucesso!');
-      navigate(`/app/recipes/${result.recipe.id}`);
-    } else {
-      setStatusMessage('Não conseguimos importar a receita. Tente novamente com outro link.');
+    setStatus(null);
+    setIsImporting(true);
+    try {
+      const result = await importRecipe(trimmedUrl);
+      if (result?.recipe) {
+        setStatus({ type: 'success', message: 'Receita importada com sucesso! Abrindo detalhes...' });
+        navigate(`/app/recipes/${result.recipe.id}`);
+      } else {
+        setStatus({
+          type: 'error',
+          message: 'Nao conseguimos importar a receita. Tente novamente com outro link.',
+        });
+      }
+    } catch (error) {
+      console.error('Import recipe failed', error);
+      setStatus({
+        type: 'error',
+        message: 'Falha inesperada ao importar. Verifique a conexao e tente novamente.',
+      });
+    } finally {
+      setIsImporting(false);
     }
   };
 
   const handleManualSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSubmitting(true);
+    setStatus(null);
+    setIsSavingManual(true);
+
     const ingredients = manualIngredients
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => ({ name: line }));
+
     const steps = manualSteps
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
       .map((description, index) => ({ order: index + 1, description }));
 
-    const recipe = await createManualRecipe({
-      title: manualTitle,
-      description: manualDescription,
-      ingredients,
-      steps,
-      source: { importedFrom: 'manual' }
-    });
+    try {
+      const recipe = await createManualRecipe({
+        title: manualTitle,
+        description: manualDescription,
+        ingredients,
+        steps,
+        source: { importedFrom: 'manual' },
+      });
 
-    setIsSubmitting(false);
-
-    if (recipe) {
-      setStatusMessage('Receita criada! Vamos cozinhar?');
-      navigate(`/app/recipes/${recipe.id}`);
-    } else {
-      setStatusMessage('Não foi possível salvar a receita.');
+      if (recipe) {
+        setStatus({ type: 'success', message: 'Receita criada! Vamos cozinhar?' });
+        navigate(`/app/recipes/${recipe.id}`);
+      } else {
+        setStatus({ type: 'error', message: 'Nao foi possivel salvar a receita.' });
+      }
+    } catch (error) {
+      console.error('Manual recipe creation failed', error);
+      setStatus({
+        type: 'error',
+        message: 'Falha inesperada ao salvar receita manual.',
+      });
+    } finally {
+      setIsSavingManual(false);
     }
   };
 
   return (
-    <div style={{ display: 'grid', gap: '1.5rem' }}>
-      <section className="surface-card" style={{ display: 'grid', gap: '1rem' }}>
-        <h2>Importar de redes sociais</h2>
-        <p style={{ margin: 0, color: 'var(--color-muted)' }}>
-          Cole um link do YouTube, Instagram, TikTok ou blog. A IA vai extrair instruções, ingredientes e áudio.
-        </p>
-        <form onSubmit={handleImport} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+    <div className={`import-page${isBusy ? ' import-page--busy' : ''}`}>
+      <section className="surface-card import-card" tabIndex={0}>
+        <div className="import-card__intro">
+          <h2>Importar de redes sociais</h2>
+          <p className="text-muted">
+            Cole um link do YouTube, Instagram, TikTok ou blog. A IA extrai instrucoes, ingredientes e audio automaticamente.
+          </p>
+        </div>
+        <form className="import-card__form" onSubmit={handleImport} aria-busy={isImporting}>
           <input
+            className="import-card__input"
             type="url"
             value={url}
             onChange={(event) => setUrl(event.target.value)}
             placeholder="https://www.instagram.com/p/..."
-            style={{ flex: 1, minWidth: '240px' }}
+            minLength={8}
             required
+            disabled={isBusy}
           />
           <button
             type="submit"
-            disabled={isSubmitting}
-            style={{
-              borderRadius: '16px',
-              border: 'none',
-              padding: '0.75rem 1.25rem',
-              background: 'linear-gradient(135deg, #ff6f61, #ff922b)',
-              color: '#fff',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
+            className="import-button"
+            disabled={isBusy}
+            data-loading={isImporting}
           >
-            {isSubmitting ? 'Importando...' : 'Importar'}
+            {isImporting ? (
+              <>
+                <Loader />
+                <span>Importando...</span>
+              </>
+            ) : (
+              <span>Importar</span>
+            )}
           </button>
         </form>
       </section>
 
-      <section className="surface-card" style={{ display: 'grid', gap: '1rem' }}>
-        <h2>Adicionar receita manualmente</h2>
-        <form onSubmit={handleManualSubmit} style={{ display: 'grid', gap: '1rem' }}>
-          <label style={{ display: 'grid', gap: '0.35rem' }}>
-            <span>Título</span>
+      <section className="surface-card import-card" tabIndex={0}>
+        <div className="import-card__intro">
+          <h2>Adicionar receita manualmente</h2>
+          <p className="text-muted">
+            Preencha os campos abaixo para registrar uma receita personalizada no seu livro digital.
+          </p>
+        </div>
+        <form className="import-card__layout" onSubmit={handleManualSubmit} aria-busy={isSavingManual}>
+          <label className="import-field">
+            <span>Titulo</span>
             <input
               value={manualTitle}
               onChange={(event) => setManualTitle(event.target.value)}
               required
               placeholder="O melhor bolo de cenoura"
+              disabled={isBusy}
             />
           </label>
 
-          <label style={{ display: 'grid', gap: '0.35rem' }}>
-            <span>Descrição</span>
+          <label className="import-field">
+            <span>Descricao</span>
             <textarea
               value={manualDescription}
               onChange={(event) => setManualDescription(event.target.value)}
               rows={3}
-              placeholder="Uma sobremesa rápida com cobertura de chocolate"
+              placeholder="Uma sobremesa rapida com cobertura de chocolate"
+              disabled={isBusy}
             />
           </label>
 
-          <label style={{ display: 'grid', gap: '0.35rem' }}>
+          <label className="import-field">
             <span>Ingredientes (um por linha)</span>
             <textarea
               value={manualIngredients}
               onChange={(event) => setManualIngredients(event.target.value)}
               rows={4}
-              placeholder={['3 cenouras médias', '2 xícaras de farinha', '1 xícara de açúcar'].join('\n')}
+              placeholder={['3 cenouras medias', '2 xicaras de farinha', '1 xicara de acucar'].join('\n')}
+              disabled={isBusy}
             />
           </label>
 
-          <label style={{ display: 'grid', gap: '0.35rem' }}>
+          <label className="import-field">
             <span>Modo de preparo (passo por linha)</span>
             <textarea
               value={manualSteps}
               onChange={(event) => setManualSteps(event.target.value)}
               rows={4}
-              placeholder={['Bata as cenouras com óleo e ovos', 'Misture os secos', 'Asse por 40 minutos'].join('\n')}
+              placeholder={['Bata as cenouras com oleo e ovos', 'Misture os secos', 'Asse por 40 minutos'].join('\n')}
+              disabled={isBusy}
             />
           </label>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            style={{
-              borderRadius: '16px',
-              border: 'none',
-              padding: '0.85rem 1.2rem',
-              background: 'linear-gradient(135deg, #845ef7, #5c7cfa)',
-              color: '#fff',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            {isSubmitting ? 'Salvando...' : 'Salvar receita'}
-          </button>
+          <div className="import-card__actions">
+            <button
+              type="submit"
+              className="import-button import-button--secondary"
+              disabled={isBusy || !manualTitle.trim()}
+              data-loading={isSavingManual}
+            >
+              {isSavingManual ? (
+                <>
+                  <Loader />
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <span>Salvar receita</span>
+              )}
+            </button>
+          </div>
         </form>
       </section>
 
-      {statusMessage ? (
-        <div className="surface-card surface-card--muted" style={{ color: 'var(--color-primary-strong)' }}>
-          {statusMessage}
+      {status ? (
+        <div
+          className={`surface-card surface-card--muted import-status import-status--${status.type}`}
+          role="status"
+          aria-live="polite"
+        >
+          {status.message}
+        </div>
+      ) : null}
+
+      {isBusy ? (
+        <div className="import-page__overlay" role="status" aria-live="polite">
+          <div className="import-page__overlay-content">
+            <Loader />
+            <p>{overlayMessage}</p>
+            <small>Isso pode levar alguns segundos enquanto buscamos todas as informacoes.</small>
+          </div>
         </div>
       ) : null}
     </div>

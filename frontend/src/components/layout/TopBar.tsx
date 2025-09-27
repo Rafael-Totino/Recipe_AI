@@ -33,16 +33,11 @@ const TopBar = () => {
 
   return (
     <header className="topbar">
-      <div>
-        <span className="eyebrow">Livro de receitas com IA</span>
-        <div className="topbar__title">
+      <div className="topbar__content">
+        <span className="eyebrow topbar__eyebrow">Livro de receitas com IA</span>
+        <div className="topbar__headline">
           <h1>Ola, {firstName}</h1>
-          <button
-            type="button"
-            onClick={logout}
-            className="button button--ghost"
-            style={{ padding: '0.6rem 1rem' }}
-          >
+          <button type="button" onClick={logout} className="button button--ghost topbar__logout">
             Sair
           </button>
         </div>
@@ -55,9 +50,6 @@ const TopBar = () => {
           <span className="badge">{recipes.length} receitas salvas</span>
           <span className="badge">{favoriteCount} favoritas</span>
         </div>
-      </div>
-
-      <div className="topbar__actions">
         <form onSubmit={handleSearch} className="topbar__search" role="search">
           <input
             type="search"
@@ -66,7 +58,7 @@ const TopBar = () => {
             placeholder="Busque receitas ou pergunte algo ao Chef IA"
             aria-label="Buscar receitas"
           />
-          <button type="submit" className="button button--primary">
+          <button type="submit" className="button button--primary topbar__search-button">
             Pesquisar
           </button>
         </form>

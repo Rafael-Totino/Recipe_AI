@@ -56,14 +56,6 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-
-      <div className="sidebar__cta">
-        <h3 style={{ margin: 0 }}>Chef IA sempre por perto</h3>
-        <p>Planeje menus, adapte ingredientes e transforme ideias em pratos memoraveis.</p>
-        <a className="button button--ghost" href="#chat">
-          Abrir chat
-        </a>
-      </div>
     </aside>
   );
 };

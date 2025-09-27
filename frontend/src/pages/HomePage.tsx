@@ -1,12 +1,13 @@
 ﻿import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import Loader from '../components/shared/Loader';
 import RecipeGrid from '../components/recipes/RecipeGrid';
 import { useRecipes } from '../context/RecipeContext';
 import './home.css';
 
 const HomePage = () => {
-  const { recipes, toggleFavorite } = useRecipes();
+  const { recipes, toggleFavorite, isLoading } = useRecipes();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const query = searchParams.get('q')?.toLowerCase().trim() ?? '';
@@ -39,6 +40,17 @@ const HomePage = () => {
   );
 
   const averageDuration = recipes.length ? Math.round(totalDuration / recipes.length) : 0;
+
+  if (isLoading && recipes.length === 0) {
+    return (
+      <div className="home-page home-page--loading">
+        <section className="surface-card home-page__loader">
+          <Loader />
+          <p>Carregando suas receitas...</p>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="home-page">
