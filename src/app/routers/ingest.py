@@ -375,7 +375,8 @@ async def import_recipe(
         raw_content = ingest_result.get('raw_content')
         if not isinstance(raw_content, RawContent):
             raise RuntimeError('Ingest pipeline did not return valid raw_content')
-        recipe_data = ingest_result.get('recipe_data') if isinstance(ingest_result.get('recipe_data'), dict) else {}
+        metadata = ingest_result.get('metadata') if isinstance(ingest_result.get('metadata'), dict) else {}
+        recipe_data = metadata.get('ai_recipe') if isinstance(metadata.get('ai_recipe'), dict) else {}
         recipe_id = await run_in_threadpool(
             upsert_recipe_minimal,
             supa,

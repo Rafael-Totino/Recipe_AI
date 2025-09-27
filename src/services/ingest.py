@@ -1,8 +1,7 @@
-﻿from __future__ import annotations
-
-from typing import Any, Dict
+from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, Dict
 
 from src.services.types import RawContent
 from src.services.fetcher import fetch_instagram, fetch_youtube
@@ -13,12 +12,9 @@ from src.services.Prompt import run_recipe_agent
 
 
 def _build_agent_payload(content: RawContent) -> Dict[str, Any]:
-
     transcript_text = ""
-
     if content.transcript:
         transcript_text = content.transcript.strip()
-
     elif content.subtitles:
         transcript_text = content.subtitles.strip()
 
@@ -45,6 +41,47 @@ def _persist_audio_transcript(text: str, audio_path: str | None) -> None:
         output_path.write_text(text, encoding="utf-8")
     except OSError:
         pass
+
+
+def _build_raw_text(caption: str | None, transcript: str | None, subtitles: str | None) -> str:
+    parts: list[str] = []
+    if caption:
+        caption_text = caption.strip()
+        if caption_text:
+            parts.append(f"## CAPTION\n{caption_text}")
+    if transcript:
+        transcript_text = transcript.strip()
+        if transcript_text:
+            parts.append(f"## TRANSCRIPT\n{transcript_text}")
+    if subtitles:
+        subtitles_text = subtitles.strip()
+        if subtitles_text:
+            if not transcript or subtitles_text != transcript.strip():
+                parts.append(f"## SUBTITLES\n{subtitles_text}")
+    return "\n\n".join(parts)
+
+
+def _compose_metadata(content: RawContent, ai_recipe: Dict[str, Any]) -> Dict[str, Any]:
+    raw_text_sections = {
+        "caption": content.caption,
+        "transcript": content.transcript,
+        "subtitles": content.subtitles,
+    }
+    return {
+        "media": {
+            "thumbnail_url": content.thumbnail_url,
+            "author": content.author,
+            "platform": content.platform,
+            "url": content.url,
+        },
+        "provenance": {
+            "audio_path_local": content.audio_path,
+            "transcript_source": content.transcript_source,
+        },
+        "raw_text": _build_raw_text(content.caption, content.transcript, content.subtitles),
+        "raw_text_sections": raw_text_sections,
+        "ai_recipe": ai_recipe,
+    }
 
 
 def ingest(url: str) -> Dict[str, Any]:
@@ -88,39 +125,9 @@ def ingest(url: str) -> Dict[str, Any]:
     except Exception as exc:
         raise FetchFailedError(f"Falha ao interpretar conteudo com IA: {exc}") from exc
 
-    recipe_payload = {
-        'media': {
-            'thumbnail_url': content.thumbnail_url,
-            'author': content.author,
-            'platform': content.platform,
-            'url': content.url,
-        },
-        'provenance': {
-            'audio_path_local': content.audio_path,
-            'transcript_source': content.transcript_source,
-        },
-        'raw_text': {
-            'caption': content.caption,
-            'transcript': content.transcript,
-            'subtitles': content.subtitles,
-        },
-        'ai_recipe': structured_recipe,
-    }
+    metadata = _compose_metadata(content, structured_recipe)
 
     return {
-        'raw_content': content,
-        'content': {
-            'platform': content.platform,
-            'url': content.url,
-            'title': content.title,
-            'caption': content.caption,
-            'transcript': content.transcript,
-            'subtitles': content.subtitles,
-            'transcript_source': content.transcript_source,
-            'audio_path': content.audio_path,
-            'thumbnail_url': content.thumbnail_url,
-            'author': content.author,
-        },
-        'recipe_data': structured_recipe,
-        'metadata': recipe_payload,
+        "raw_content": content,
+        "metadata": metadata,
     }

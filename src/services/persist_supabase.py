@@ -38,59 +38,62 @@ def upsert_recipe_minimal(
     owner_id: str,
     payload: Dict[str, Any],
 ) -> str:
-    raw_content = payload.get('raw_content')
+    raw_content = payload.get("raw_content")
     if not isinstance(raw_content, RawContent):
-        raise ValueError('Missing raw_content in payload')
+        raise ValueError("Missing raw_content in payload")
 
-    recipe_data = payload.get('recipe_data') if isinstance(payload.get('recipe_data'), dict) else {}
-    metadata_input = payload.get('metadata') if isinstance(payload.get('metadata'), dict) else {}
+    metadata_input = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    metadata: Dict[str, Any] = metadata_input.copy()
 
     platform, platform_item_id = detect_platform_and_id(raw_content.url)
-    title_from_ai = recipe_data.get('title') if isinstance(recipe_data, dict) else None
-    title = title_from_ai or raw_content.title or 'Sem titulo'
-    slug = unique_slug(slugify(title))
-    collected_at = datetime.now(timezone.utc).isoformat()
+
+    media = dict(metadata.get("media") or {})
+    media.setdefault("thumbnail_url", raw_content.thumbnail_url)
+    media.setdefault("author", raw_content.author)
+    media.setdefault("platform", platform)
+    media.setdefault("url", raw_content.url)
+    metadata["media"] = media
 
     transcript_source = raw_content.transcript_source
-    if transcript_source == 'audio':
-        transcript_source_value = 'whisper'
-    elif transcript_source == 'subtitles':
-        transcript_source_value = 'captions'
+    if transcript_source == "audio":
+        transcript_source_value = "whisper"
+    elif transcript_source == "subtitles":
+        transcript_source_value = "captions"
     else:
         transcript_source_value = transcript_source
 
-    raw_text_sections = {
-        'caption': raw_content.caption,
-        'transcript': raw_content.transcript,
-        'subtitles': raw_content.subtitles,
-    }
-    raw_text_combined = _build_raw_text(raw_content.caption, raw_content.transcript, raw_content.subtitles)
-
-    media_section = metadata_input.get('media') if isinstance(metadata_input.get('media'), dict) else {}
-    media_section.update(
+    provenance = dict(metadata.get("provenance") or {})
+    provenance.update(
         {
-            'thumbnail_url': raw_content.thumbnail_url,
-            'author': raw_content.author,
-            'platform': platform,
-            'url': raw_content.url,
+            "audio_path_local": raw_content.audio_path,
+            "transcript_source": transcript_source_value,
         }
     )
+    metadata["provenance"] = provenance
 
-    provenance_section = metadata_input.get('provenance') if isinstance(metadata_input.get('provenance'), dict) else {}
-    provenance_section.update(
-        {
-            'audio_path_local': raw_content.audio_path,
-            'collected_at': collected_at,
-            'transcript_source': transcript_source_value,
+    if "raw_text" not in metadata:
+        metadata["raw_text"] = _build_raw_text(
+            raw_content.caption,
+            raw_content.transcript,
+            raw_content.subtitles,
+        )
+
+    raw_sections = metadata.get("raw_text_sections")
+    if not isinstance(raw_sections, dict):
+        metadata["raw_text_sections"] = {
+            "caption": raw_content.caption,
+            "transcript": raw_content.transcript,
+            "subtitles": raw_content.subtitles,
         }
-    )
 
-    metadata = metadata_input.copy()
-    metadata['media'] = media_section
-    metadata['provenance'] = provenance_section
-    metadata['raw_text'] = raw_text_combined
-    metadata['raw_text_sections'] = raw_text_sections
-    metadata['ai_recipe'] = recipe_data
+    recipe_data = metadata.get("ai_recipe") if isinstance(metadata.get("ai_recipe"), dict) else {}
+    metadata["ai_recipe"] = recipe_data
+
+    title_from_ai = recipe_data.get("title") if isinstance(recipe_data, dict) else None
+    title = title_from_ai or raw_content.title or "Sem titulo"
+    slug = unique_slug(slugify(title))
+    collected_at = datetime.now(timezone.utc).isoformat()
+    metadata["provenance"]["collected_at"] = collected_at
 
     recipe = RecipeRecord(
         owner_id=owner_id,
@@ -98,8 +101,8 @@ def upsert_recipe_minimal(
         title=title,
         metadata=metadata,
     )
-    result = supa.table('recipes').insert(recipe.model_dump()).execute()
-    recipe_id = result.data[0]['recipe_id']
+    result = supa.table("recipes").insert(recipe.model_dump()).execute()
+    recipe_id = result.data[0]["recipe_id"]
 
     source = RecipeSourceRecord(
         recipe_id=recipe_id,
@@ -108,8 +111,7 @@ def upsert_recipe_minimal(
         url=raw_content.url,
         author_name=raw_content.author,
         collected_at=collected_at,
-        provenance={'thumbnail_url': raw_content.thumbnail_url},
+        provenance={"thumbnail_url": raw_content.thumbnail_url},
     )
-    supa.table('recipe_sources').insert(source.model_dump()).execute()
+    supa.table("recipe_sources").insert(source.model_dump()).execute()
     return recipe_id
-
