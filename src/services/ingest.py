@@ -47,7 +47,7 @@ def _persist_audio_transcript(text: str, audio_path: str | None) -> None:
         pass
 
 
-def ingest(url: str) -> Tuple[RawContent, Dict[str, Any]]:
+def ingest(url: str) -> Tuple[RawContent, str]:
     platform = detect_platform(url)
     if platform == "youtube":
         content = fetch_youtube(url)

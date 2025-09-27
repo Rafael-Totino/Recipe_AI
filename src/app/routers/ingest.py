@@ -10,7 +10,7 @@ from starlette.concurrency import run_in_threadpool
 from supabase import Client
 
 from src.app.deps import CurrentUser, get_current_user, get_supabase
-from src.app.schemas.ingest import IngestRequest, IngestResponse, RecipeResponse
+from src.app.schemas.ingest import IngestRequest, IngestResponse, RecipeMedia, RecipeResponse, RecipeSource
 from src.services.ingest import ingest as run_ingest
 from src.services.persist_supabase import upsert_recipe_minimal
 from src.services.types import RawContent
@@ -130,6 +130,100 @@ def _sanitize_source(value: Any, content: RawContent) -> Dict[str, Optional[str]
     }
 
 
+
+def _recipe_from_record(record: Dict[str, Any]) -> RecipeResponse:
+    metadata = record.get("metadata") if isinstance(record.get("metadata"), dict) else {}
+    ai_data = metadata.get("ai_recipe") if isinstance(metadata.get("ai_recipe"), dict) else {}
+    media_meta = metadata.get("media") if isinstance(metadata.get("media"), dict) else {}
+    provenance = metadata.get("provenance") if isinstance(metadata.get("provenance"), dict) else {}
+
+    title = _clean_str(ai_data.get("title")) or _clean_str(record.get("title")) or "Receita sem titulo"
+    description = _clean_str(ai_data.get("description"))
+    tags = _sanitize_tags(ai_data.get("tags"))
+    ingredients = _sanitize_ingredients(ai_data.get("ingredients"))
+    steps = _sanitize_steps(ai_data.get("steps"))
+
+    duration = _to_int(ai_data.get("durationMinutes"))
+    servings = _to_int(ai_data.get("servings"))
+
+    difficulty_candidate = _clean_str(ai_data.get("difficulty"))
+    difficulty = (
+        difficulty_candidate.lower()
+        if difficulty_candidate and difficulty_candidate.lower() in _ALLOWED_DIFFICULTIES
+        else None
+    )
+
+    notes = _clean_str(ai_data.get("notes"))
+    cover_image = _clean_str(ai_data.get("coverImage")) or _clean_str(media_meta.get("thumbnail_url"))
+
+    source_data = ai_data.get("source") if isinstance(ai_data.get("source"), dict) else {}
+    source_link = _clean_str(source_data.get("link")) or _clean_str(media_meta.get("url"))
+    imported_from = _clean_str(source_data.get("importedFrom"))
+    if imported_from and imported_from not in _ALLOWED_SOURCE_PLATFORMS:
+        imported_from = None
+    imported_at = _clean_str(source_data.get("importedAt")) or _clean_str(provenance.get("collected_at"))
+    source = None
+    if source_link or imported_from or imported_at:
+        source = RecipeSource(link=source_link, importedFrom=imported_from, importedAt=imported_at)
+
+    media_payload = ai_data.get("media") if isinstance(ai_data.get("media"), list) else []
+    media_items: List[RecipeMedia] = []
+    for entry in media_payload:
+        if not isinstance(entry, dict):
+            continue
+        media_type = entry.get("type")
+        if media_type not in _ALLOWED_MEDIA_TYPES:
+            continue
+        url = _clean_str(entry.get("url"))
+        if not url:
+            continue
+        provider = _clean_str(entry.get("provider"))
+        if provider and provider not in _ALLOWED_MEDIA_PROVIDERS:
+            provider = None
+        media_items.append(
+            RecipeMedia(
+                type=media_type,  # type: ignore[arg-type]
+                url=url,
+                thumbnailUrl=_clean_str(entry.get("thumbnailUrl")),
+                provider=provider,  # type: ignore[arg-type]
+            )
+        )
+
+    if not media_items:
+        fallback_url = _clean_str(media_meta.get("url"))
+        if fallback_url:
+            fallback_provider = _clean_str(media_meta.get("platform"))
+            if fallback_provider not in _ALLOWED_MEDIA_PROVIDERS:
+                fallback_provider = "generic"
+            media_items.append(
+                RecipeMedia(
+                    type="video",
+                    url=fallback_url,
+                    thumbnailUrl=_clean_str(media_meta.get("thumbnail_url")),
+                    provider=fallback_provider,  # type: ignore[arg-type]
+                )
+            )
+
+    return RecipeResponse(
+        id=str(record.get("recipe_id")),
+        title=title,
+        description=description,
+        isFavorite=bool(ai_data.get("isFavorite")),
+        durationMinutes=duration,
+        servings=servings,
+        difficulty=difficulty,  # type: ignore[arg-type]
+        tags=tags,
+        coverImage=cover_image,
+        ingredients=ingredients,
+        steps=steps,
+        notes=notes,
+        source=source,
+        media=media_items,
+        createdAt=_clean_str(record.get("created_at")),
+        updatedAt=_clean_str(record.get("updated_at")),
+    )
+
+
 def _sanitize_media(value: Any, content: RawContent) -> List[Dict[str, Optional[str]]]:
     media_items: List[Dict[str, Optional[str]]] = []
     if isinstance(value, list):
@@ -233,6 +327,40 @@ def _build_recipe_response(
     recipe_response = RecipeResponse(**recipe_payload)
     return recipe_response, warnings
 
+@router.get("/", response_model=list[RecipeResponse])
+async def list_recipes(
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> list[RecipeResponse]:
+    response = (
+        supa.table("recipes")
+        .select("recipe_id,title,metadata,created_at,updated_at")
+        .eq("owner_id", str(user.id))
+        .order("created_at", desc=True)
+        .execute()
+    )
+    records = response.data or []
+    return [_recipe_from_record(row) for row in records]
+
+@router.get("/{recipe_id}", response_model=RecipeResponse)
+async def get_recipe(
+    recipe_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> RecipeResponse:
+    response = (
+        supa.table("recipes")
+        .select("recipe_id,title,metadata,created_at,updated_at")
+        .eq("owner_id", str(user.id))
+        .eq("recipe_id", recipe_id)
+        .limit(1)
+        .execute()
+    )
+    records = response.data or []
+    if not records:
+        raise HTTPException(status_code=404, detail="Receita nao encontrada")
+    return _recipe_from_record(records[0])
+
 
 @router.post("/import", response_model=IngestResponse)
 async def import_recipe(
@@ -266,4 +394,3 @@ async def import_recipe(
         dt = time.time() - t0
         log.exception("ingest.fail url=%s dt=%.2fs", body.url, dt)
         raise HTTPException(status_code=500, detail="Falha na ingestao")
-
