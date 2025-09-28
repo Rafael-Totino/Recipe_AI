@@ -43,6 +43,7 @@ const TopBar = () => {
     const releaseHysteresis = 110;
     const releaseCooldownMs = 250;
 
+
     let ticking = false;
     let lastScrollY = window.scrollY;
     let lastDirection: 'up' | 'down' | 'none' = 'none';
@@ -80,6 +81,7 @@ const TopBar = () => {
       } else {
         if (direction === 'down' && scrollY > condensedAnchor) {
           condensedAnchor = scrollY;
+
         }
 
         if (direction === 'up' && condensedAnchor - scrollY >= releaseHysteresis) {
