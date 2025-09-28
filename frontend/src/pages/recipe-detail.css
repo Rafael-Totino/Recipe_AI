@@ -76,13 +76,14 @@
 }
 
 .recipe-meta__card {
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
   box-shadow: var(--shadow-xs);
+  border: 1px solid var(--color-border-strong);
 }
 
 .recipe-meta__card span {
@@ -119,7 +120,8 @@
 .recipe-ingredients li {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
-  background: rgba(45, 52, 54, 0.04);
+  background: var(--color-chip-bg);
+  border: 1px solid var(--color-border-soft);
 }
 
 .recipe-ingredients label {
