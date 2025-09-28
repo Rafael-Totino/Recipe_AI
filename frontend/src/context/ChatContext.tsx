@@ -68,7 +68,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       setMessages((prev) => [...prev, optimisticMessage]);
       setIsSending(true);
       try {
-        const response = await sendChatMessage(session.access_token, { message, recipeId });
+        const response = await sendChatMessage(session.access_token, { message, recipeId, threadId: optimisticMessage.id });
         setMessages((prev) => [...prev.filter((msg) => msg.id !== optimisticMessage.id), optimisticMessage, response.message]);
         setError(undefined);
       } catch (err) {
@@ -97,4 +97,5 @@ export const useChat = () => {
   }
   return context;
 };
+
 
