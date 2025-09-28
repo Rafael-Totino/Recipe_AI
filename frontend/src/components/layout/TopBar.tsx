@@ -33,34 +33,50 @@ const TopBar = () => {
   };
 
   useEffect(() => {
+    const condenseBreakpoint = 140;
+    const expandBreakpoint = 32;
+    const expandHysteresis = 120;
+
     let ticking = false;
+    let lastCondenseTrigger = 0;
 
-    const condenseBreakpoint = 128;
-    const expandBreakpoint = 56;
+    const updateCondensedState = () => {
+      const { scrollY } = window;
 
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const { scrollY } = window;
+      setIsCondensed((prev) => {
+        if (!prev) {
+          if (scrollY > condenseBreakpoint) {
+            lastCondenseTrigger = scrollY;
+            return true;
+          }
+          return prev;
+        }
 
-          setIsCondensed((prev) => {
-            if (prev) {
-              if (scrollY <= expandBreakpoint) {
-                return false;
-              }
-            } else if (scrollY >= condenseBreakpoint) {
-              return true;
-            }
-            return prev;
-          });
+        if (scrollY <= expandBreakpoint) {
+          return false;
+        }
 
-          ticking = false;
-        });
-        ticking = true;
-      }
+        if (scrollY + expandHysteresis < lastCondenseTrigger) {
+          lastCondenseTrigger = scrollY;
+          return false;
+        }
+
+        return prev;
+      });
+
+      ticking = false;
     };
 
-    onScroll();
+    const onScroll = () => {
+      if (ticking) {
+        return;
+      }
+
+      ticking = true;
+      window.requestAnimationFrame(updateCondensedState);
+    };
+
+    updateCondensedState();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
