@@ -39,13 +39,17 @@ const TopBar = () => {
 
     let ticking = false;
     let lastCondenseTrigger = 0;
+    let lastScrollY = window.scrollY;
+    let lastDirection: 'up' | 'down' = 'down';
 
     const updateCondensedState = () => {
       const { scrollY } = window;
+      const direction =
+        scrollY > lastScrollY ? 'down' : scrollY < lastScrollY ? 'up' : lastDirection;
 
       setIsCondensed((prev) => {
         if (!prev) {
-          if (scrollY > condenseBreakpoint) {
+          if (scrollY > condenseBreakpoint && direction === 'down') {
             lastCondenseTrigger = scrollY;
             return true;
           }
@@ -53,17 +57,24 @@ const TopBar = () => {
         }
 
         if (scrollY <= expandBreakpoint) {
+          lastCondenseTrigger = scrollY;
           return false;
         }
 
-        if (scrollY + expandHysteresis < lastCondenseTrigger) {
+        if (direction === 'up' && scrollY + expandHysteresis < lastCondenseTrigger) {
           lastCondenseTrigger = scrollY;
           return false;
+        }
+
+        if (direction === 'down') {
+          lastCondenseTrigger = Math.max(lastCondenseTrigger, scrollY);
         }
 
         return prev;
       });
 
+      lastDirection = direction;
+      lastScrollY = scrollY;
       ticking = false;
     };
 
