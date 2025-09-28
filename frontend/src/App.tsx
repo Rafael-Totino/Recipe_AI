@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import ImportRecipePage from './pages/ImportRecipePage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
+import CookingModePage from './pages/CookingModePage';
 import RecipeDetailPage from './pages/RecipeDetailPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -29,6 +30,7 @@ const App = () => {
         <Route index element={<HomePage />} />
         <Route path="import" element={<ImportRecipePage />} />
         <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
+        <Route path="recipes/:recipeId/cook" element={<CookingModePage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

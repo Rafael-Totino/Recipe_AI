@@ -1,4 +1,4 @@
-﻿import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
@@ -6,6 +6,8 @@ import { useRecipes } from '../context/RecipeContext';
 import './import.css';
 
 type StatusState = { type: 'success' | 'error'; message: string } | null;
+
+const loadingStages = ['Lendo sabores', 'Decifrando histórias', 'Estruturando a obra-prima'];
 
 const ImportRecipePage = () => {
   const { importRecipe, createManualRecipe } = useRecipes();
@@ -17,6 +19,7 @@ const ImportRecipePage = () => {
   const [status, setStatus] = useState<StatusState>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isSavingManual, setIsSavingManual] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
   const navigate = useNavigate();
 
   const isBusy = isImporting || isSavingManual;
@@ -24,6 +27,27 @@ const ImportRecipePage = () => {
     () => (isImporting ? 'Importando receita...' : 'Salvando receita...'),
     [isImporting]
   );
+
+  useEffect(() => {
+    if (!isBusy) {
+      setStageIndex(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setStageIndex((prev) => (prev + 1) % loadingStages.length);
+    }, 2000);
+    return () => window.clearInterval(id);
+  }, [isBusy]);
+
+  const favicon = useMemo(() => {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url);
+      return `https://www.google.com/s2/favicons?domain=${parsed.hostname}`;
+    } catch {
+      return null;
+    }
+  }, [url]);
 
   const handleImport = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,14 +65,14 @@ const ImportRecipePage = () => {
       } else {
         setStatus({
           type: 'error',
-          message: 'Nao conseguimos importar a receita. Tente novamente com outro link.',
+          message: 'Não conseguimos importar a receita. Tente novamente com outro link.',
         });
       }
     } catch (error) {
       console.error('Import recipe failed', error);
       setStatus({
         type: 'error',
-        message: 'Falha inesperada ao importar. Verifique a conexao e tente novamente.',
+        message: 'Falha inesperada ao importar. Verifique a conexão e tente novamente.',
       });
     } finally {
       setIsImporting(false);
@@ -85,7 +109,7 @@ const ImportRecipePage = () => {
         setStatus({ type: 'success', message: 'Receita criada! Vamos cozinhar?' });
         navigate(`/app/recipes/${recipe.id}`);
       } else {
-        setStatus({ type: 'error', message: 'Nao foi possivel salvar a receita.' });
+        setStatus({ type: 'error', message: 'Não foi possível salvar a receita.' });
       }
     } catch (error) {
       console.error('Manual recipe creation failed', error);
@@ -100,52 +124,58 @@ const ImportRecipePage = () => {
 
   return (
     <div className={`import-page${isBusy ? ' import-page--busy' : ''}`}>
-      <section className="surface-card import-card" tabIndex={0}>
-        <div className="import-card__intro">
-          <h2>Importar de redes sociais</h2>
-          <p className="text-muted">
-            Cole um link do YouTube, Instagram, TikTok ou blog. A IA extrai instrucoes, ingredientes e audio automaticamente.
-          </p>
+      <section className="import-hero">
+        <div className="import-hero__aurora" aria-hidden="true" />
+        <div className="import-hero__card glass-panel">
+          <header className="import-hero__header">
+            <span className="eyebrow">O Laboratório</span>
+            <h2 className="font-playfair">Importe uma receita e deixe a IA lapidar os detalhes</h2>
+            <p className="text-muted">
+              Cole o link de um vídeo ou artigo culinário. A assistente analisa, organiza e entrega os
+              ingredientes, passos e áudios prontos para o modo cozinha.
+            </p>
+          </header>
+
+          <form className="import-hero__form" onSubmit={handleImport} aria-busy={isImporting}>
+            <div className={`import-hero__input${favicon ? ' has-favicon' : ''}`}>
+              {favicon ? <img src={favicon} alt="Favicon do site" /> : null}
+              <input
+                className="import-card__input"
+                type="url"
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                placeholder="https://..."
+                minLength={8}
+                required
+                disabled={isBusy}
+              />
+              <button
+                type="submit"
+                className="button button--primary"
+                disabled={isBusy}
+                data-loading={isImporting}
+              >
+                {isImporting ? 'Processando...' : 'Criar receita'}
+              </button>
+            </div>
+            <small className="import-hero__hint">YouTube, Instagram, TikTok, blogs e muito mais.</small>
+          </form>
+          {status ? (
+            <p className={`import-status import-status--${status.type}`}>{status.message}</p>
+          ) : null}
         </div>
-        <form className="import-card__form" onSubmit={handleImport} aria-busy={isImporting}>
-          <input
-            className="import-card__input"
-            type="url"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            placeholder="https://www.instagram.com/p/..."
-            minLength={8}
-            required
-            disabled={isBusy}
-          />
-          <button
-            type="submit"
-            className="import-button"
-            disabled={isBusy}
-            data-loading={isImporting}
-          >
-            {isImporting ? (
-              <>
-                <Loader />
-                <span>Importando...</span>
-              </>
-            ) : (
-              <span>Importar</span>
-            )}
-          </button>
-        </form>
       </section>
 
-      <section className="surface-card import-card" tabIndex={0}>
+      <section className="surface-card import-manual" tabIndex={0}>
         <div className="import-card__intro">
-          <h2>Adicionar receita manualmente</h2>
+          <h2 className="font-playfair">Registrar receita manualmente</h2>
           <p className="text-muted">
-            Preencha os campos abaixo para registrar uma receita personalizada no seu livro digital.
+            Descreva sua criação autoral para que o atelier memorize sabores e técnicas exclusivas.
           </p>
         </div>
         <form className="import-card__layout" onSubmit={handleManualSubmit} aria-busy={isSavingManual}>
           <label className="import-field">
-            <span>Titulo</span>
+            <span>Título</span>
             <input
               value={manualTitle}
               onChange={(event) => setManualTitle(event.target.value)}
@@ -156,12 +186,12 @@ const ImportRecipePage = () => {
           </label>
 
           <label className="import-field">
-            <span>Descricao</span>
+            <span>Descrição</span>
             <textarea
               value={manualDescription}
               onChange={(event) => setManualDescription(event.target.value)}
               rows={3}
-              placeholder="Uma sobremesa rapida com cobertura de chocolate"
+              placeholder="Uma sobremesa rápida com cobertura de chocolate"
               disabled={isBusy}
             />
           </label>
@@ -172,7 +202,7 @@ const ImportRecipePage = () => {
               value={manualIngredients}
               onChange={(event) => setManualIngredients(event.target.value)}
               rows={4}
-              placeholder={['3 cenouras medias', '2 xicaras de farinha', '1 xicara de acucar'].join('\n')}
+              placeholder={['3 cenouras médias', '2 xícaras de farinha', '1 xícara de açúcar'].join('\n')}
               disabled={isBusy}
             />
           </label>
@@ -183,7 +213,7 @@ const ImportRecipePage = () => {
               value={manualSteps}
               onChange={(event) => setManualSteps(event.target.value)}
               rows={4}
-              placeholder={['Bata as cenouras com oleo e ovos', 'Misture os secos', 'Asse por 40 minutos'].join('\n')}
+              placeholder={['Bata as cenouras com óleo e ovos', 'Misture os secos', 'Asse por 40 minutos'].join('\n')}
               disabled={isBusy}
             />
           </label>
@@ -191,39 +221,25 @@ const ImportRecipePage = () => {
           <div className="import-card__actions">
             <button
               type="submit"
-              className="import-button import-button--secondary"
+              className="button button--secondary"
               disabled={isBusy || !manualTitle.trim()}
               data-loading={isSavingManual}
             >
-              {isSavingManual ? (
-                <>
-                  <Loader />
-                  <span>Salvando...</span>
-                </>
-              ) : (
-                <span>Salvar receita</span>
-              )}
+              {isSavingManual ? 'Salvando...' : 'Guardar receita'}
             </button>
           </div>
         </form>
+        {status && !isImporting ? (
+          <p className={`import-status import-status--${status.type}`}>{status.message}</p>
+        ) : null}
       </section>
 
-      {status ? (
-        <div
-          className={`surface-card surface-card--muted import-status import-status--${status.type}`}
-          role="status"
-          aria-live="polite"
-        >
-          {status.message}
-        </div>
-      ) : null}
-
       {isBusy ? (
-        <div className="import-page__overlay" role="status" aria-live="polite">
+        <div className="import-page__overlay" role="alert" aria-live="assertive">
           <div className="import-page__overlay-content">
             <Loader />
             <p>{overlayMessage}</p>
-            <small>Isso pode levar alguns segundos enquanto buscamos todas as informacoes.</small>
+            <small>{loadingStages[stageIndex]}</small>
           </div>
         </div>
       ) : null}
