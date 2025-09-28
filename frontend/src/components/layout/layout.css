@@ -1,6 +1,6 @@
 .app-shell {
-  --shell-padding-y: clamp(1.5rem, 3vw, 2.75rem);
-  --shell-padding-x: clamp(1.2rem, 3vw, 3.2rem);
+  --shell-padding-y: clamp(1.35rem, 2.8vw, 2.6rem);
+  --shell-padding-x: clamp(0.9rem, 2.6vw, 2.2rem);
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 340px;
   grid-template-rows: auto minmax(0, 1fr);
@@ -61,7 +61,7 @@ body.chat-focus .app-shell {
   padding: 2rem 1.75rem;
   border-radius: var(--radius-xl);
   background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--color-border-strong);
   box-shadow: var(--shadow-xs);
   backdrop-filter: blur(var(--blur-strong));
   transition: width 0.35s cubic-bezier(.4,0,.2,1), min-width 0.35s cubic-bezier(.4,0,.2,1), padding 0.35s cubic-bezier(.4,0,.2,1);
@@ -112,8 +112,8 @@ body.chat-focus .app-shell {
   padding: 0.9rem 1.1rem;
   border-radius: var(--radius-md);
   font-weight: 600;
-  color: rgba(45, 52, 54, 0.6);
-  background: rgba(45, 52, 54, 0.03);
+  color: var(--color-muted);
+  background: var(--color-chip-bg);
   border: 1px solid transparent;
   transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease, border 0.25s ease;
   position: relative;
@@ -167,28 +167,36 @@ body.chat-focus .app-shell {
 
 .topbar__glass {
   width: min(100%, 880px);
-  padding: clamp(1.25rem, 2vw, 2rem) clamp(1.4rem, 3vw, 2.4rem);
+  padding: clamp(1.1rem, 2vw, 1.8rem) clamp(1.2rem, 2.8vw, 2.2rem);
   border-radius: var(--radius-xl);
   background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--color-border-strong);
   box-shadow: var(--shadow-xs);
   backdrop-filter: blur(var(--blur-strong));
   display: grid;
-  gap: 1.2rem;
+  gap: 1.1rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'intro'
+    'stats'
+    'actions'
+    'search';
   transition: padding 0.3s ease, border-radius 0.3s ease, background 0.3s ease;
 }
 
 .topbar--condensed .topbar__glass {
   border-radius: 999px;
-  padding: 0.65rem 1.5rem;
-  grid-template-columns: 1fr auto;
+  padding: 0.55rem 1.2rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'search actions';
   align-items: center;
-  gap: 1.1rem;
+  gap: 0.75rem;
 }
 
 .topbar__intro {
   display: grid;
   gap: 0.4rem;
+  grid-area: intro;
 }
 
 .topbar__greeting {
@@ -208,14 +216,15 @@ body.chat-focus .app-shell {
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
+  grid-area: stats;
 }
 
 .topbar__badge {
-  background: rgba(45, 52, 54, 0.05);
+  background: var(--color-chip-bg);
   padding: 0.35rem 0.85rem;
   border-radius: 999px;
   font-size: 0.85rem;
-  color: var(--color-muted);
+  color: var(--color-muted-strong);
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -225,17 +234,21 @@ body.chat-focus .app-shell {
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  grid-area: actions;
 }
 
 .topbar__search {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(45, 52, 54, 0.06);
+  background: var(--color-search-bg);
+  border: 1px solid var(--color-border-soft);
   border-radius: 999px;
   padding: 0.55rem 0.55rem 0.55rem 1.25rem;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 0 1px var(--color-search-glow);
+  grid-area: search;
 }
 
 .topbar__search input {
@@ -258,15 +271,23 @@ body.chat-focus .app-shell {
   padding: 0.5rem 1.2rem;
 }
 
+.topbar__theme-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 1.15rem;
+  min-width: 42px;
+}
+
 .topbar--condensed .topbar__intro,
-.topbar--condensed .topbar__actions {
+.topbar--condensed .topbar__stats {
   display: none;
 }
 
 .topbar--condensed .topbar__search {
-  max-width: 360px;
-  margin-left: auto;
-  border-radius: 999px;
+  max-width: none;
+  margin: 0;
 }
 
 .topbar--condensed .topbar__greeting {
@@ -329,40 +350,32 @@ body.chat-focus .app-shell {
   .topbar__glass {
     border-radius: var(--radius-lg);
   }
-
-  .topbar--condensed .topbar__glass {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar--condensed .topbar__search {
-    max-width: none;
-    margin-left: 0;
-  }
-
-  .topbar {
-    top: 0;
-  }
 }
 
 @media (max-width: 640px) {
   .app-shell {
-    padding: 1.5rem 1.1rem 5rem;
-    gap: 1.4rem;
+    padding: 1.25rem 0.85rem 5rem;
+    gap: 1.3rem;
   }
 
   .topbar__glass {
-    padding: 1.25rem 1.4rem;
-    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    gap: 0.9rem;
   }
 
   .topbar__search {
     flex-direction: column;
     align-items: stretch;
     border-radius: var(--radius-lg);
+    padding: 0.7rem;
   }
 
   .topbar__search-button,
   .topbar__logout {
     width: 100%;
+  }
+
+  .topbar__actions {
+    justify-content: flex-start;
   }
 }
