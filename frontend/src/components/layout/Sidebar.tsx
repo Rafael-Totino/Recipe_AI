@@ -48,6 +48,7 @@ const Sidebar = () => {
             className={({ isActive }) =>
               `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
             }
+            data-label={item.label}
           >
             <span className="sidebar-link__icon" aria-hidden="true">
               {item.code}

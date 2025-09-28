@@ -26,9 +26,7 @@ const ChatDock = () => {
             O chat acompanha cada receita e traz tecnicas, substituicoes e ideias comerciais para o seu livro digital.
           </p>
         </div>
-        <button type="button" className="button button--ghost" onClick={() => hydrate()}>
-          Atualizar contexto
-        </button>
+
       </header>
 
       <div className="chat-dock__history">
