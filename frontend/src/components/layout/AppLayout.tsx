@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import ChatDock from '../chat/ChatDock';
@@ -9,6 +9,9 @@ import { useRecipes } from '../../context/RecipeContext';
 
 const AppLayout = () => {
   const { loadRecipes, recipes, isLoading } = useRecipes();
+  const location = useLocation();
+  const isCookingMode =
+    location.pathname.startsWith('/app/recipes/') && location.pathname.endsWith('/cook');
 
   useEffect(() => {
     if (!recipes.length && !isLoading) {
@@ -17,19 +20,23 @@ const AppLayout = () => {
   }, [recipes.length, isLoading, loadRecipes]);
 
   return (
-    <div className="app-shell">
-      <div className="sidebar-area">
-        <Sidebar />
-      </div>
+    <div className={`app-shell${isCookingMode ? ' app-shell--cooking' : ''}`}>
+      {!isCookingMode ? (
+        <div className="sidebar-area">
+          <Sidebar />
+        </div>
+      ) : null}
       <div className="header-area">
-        <TopBar />
+        <TopBar forceCondensed={isCookingMode} />
       </div>
       <main className="main-area">
         <Outlet />
       </main>
-      <aside className="chat-area">
-        <ChatDock />
-      </aside>
+      {!isCookingMode ? (
+        <aside className="chat-area">
+          <ChatDock />
+        </aside>
+      ) : null}
     </div>
   );
 };

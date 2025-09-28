@@ -99,8 +99,6 @@ const RecipeDetailPage = () => {
     });
   };
 
-  const isAiCreation = (activeRecipe.source?.importedFrom ?? 'manual') !== 'manual';
-
   const metadata = [
     activeRecipe.durationMinutes ? { label: 'Tempo', value: `${activeRecipe.durationMinutes} min`, icon: '⏱️' } : null,
     activeRecipe.servings ? { label: 'Porções', value: `${activeRecipe.servings}`, icon: '🍽️' } : null,
@@ -118,7 +116,6 @@ const RecipeDetailPage = () => {
         </div>
         <div className="recipe-hero__overlay" />
         <div className="recipe-hero__content">
-          {isAiCreation ? <span className="badge badge--ia">Criada com IA</span> : null}
           <h1 id="recipe-title" className="font-playfair">{activeRecipe.title}</h1>
           <p className="recipe-hero__description">{activeRecipe.description}</p>
           <div className="recipe-hero__actions">
