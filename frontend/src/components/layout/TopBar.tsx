@@ -33,14 +33,14 @@ const TopBar = () => {
   };
 
   useEffect(() => {
-    const condenseBreakpoint = 140;
-    const expandBreakpoint = 32;
-    const expandHysteresis = 120;
+    const condenseThreshold = 32;
+    const releaseThreshold = 16;
+    const releaseHysteresis = 110;
 
     let ticking = false;
-    let lastCondenseTrigger = 0;
     let lastScrollY = window.scrollY;
-    let lastDirection: 'up' | 'down' = 'down';
+    let lastDirection: 'up' | 'down' | 'none' = 'none';
+    let condensedAnchor = window.scrollY;
 
     const updateCondensedState = () => {
       const { scrollY } = window;
@@ -49,25 +49,26 @@ const TopBar = () => {
 
       setIsCondensed((prev) => {
         if (!prev) {
-          if (scrollY > condenseBreakpoint && direction === 'down') {
-            lastCondenseTrigger = scrollY;
+          if (direction === 'down' && scrollY >= condenseThreshold) {
+            condensedAnchor = scrollY;
+
             return true;
           }
           return prev;
         }
 
-        if (scrollY <= expandBreakpoint) {
-          lastCondenseTrigger = scrollY;
+        if (scrollY <= releaseThreshold) {
+          condensedAnchor = scrollY;
           return false;
         }
 
-        if (direction === 'up' && scrollY + expandHysteresis < lastCondenseTrigger) {
-          lastCondenseTrigger = scrollY;
+        if (direction === 'up' && condensedAnchor - scrollY >= releaseHysteresis) {
+          condensedAnchor = scrollY;
           return false;
         }
 
-        if (direction === 'down') {
-          lastCondenseTrigger = Math.max(lastCondenseTrigger, scrollY);
+        if (direction === 'down' && scrollY > condensedAnchor) {
+          condensedAnchor = scrollY;
         }
 
         return prev;
