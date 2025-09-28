@@ -20,8 +20,6 @@ const RecipeCard = ({ recipe, onOpen, onToggleFavorite }: RecipeCardProps) => {
     };
   }, [recipe.coverImage]);
 
-  const isAiCreation = (recipe.source?.importedFrom ?? 'manual') !== 'manual';
-
   return (
     <article className="recipe-card">
       <div className="recipe-card__cover" style={coverStyle}>
@@ -38,7 +36,6 @@ const RecipeCard = ({ recipe, onOpen, onToggleFavorite }: RecipeCardProps) => {
             </svg>
           </span>
         </button>
-        {isAiCreation ? <span className="recipe-card__badge">✨ IA</span> : null}
       </div>
       <div className="recipe-card__content">
         <h3>{recipe.title}</h3>
