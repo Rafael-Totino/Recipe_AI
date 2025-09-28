@@ -4,10 +4,12 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useRecipes } from '../../context/RecipeContext';
 import './layout.css';
+import { useTheme } from '../../context/ThemeContext';
 
 const TopBar = () => {
   const { user, logout } = useAuth();
   const { recipes } = useRecipes();
+  const { theme, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,8 +33,31 @@ const TopBar = () => {
   };
 
   useEffect(() => {
+    let ticking = false;
+
+    const condenseBreakpoint = 128;
+    const expandBreakpoint = 56;
+
     const onScroll = () => {
-      setIsCondensed(window.scrollY > 64);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const { scrollY } = window;
+
+          setIsCondensed((prev) => {
+            if (prev) {
+              if (scrollY <= expandBreakpoint) {
+                return false;
+              }
+            } else if (scrollY >= condenseBreakpoint) {
+              return true;
+            }
+            return prev;
+          });
+
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     onScroll();
@@ -64,6 +89,15 @@ const TopBar = () => {
         </div>
 
         <div className="topbar__actions">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="button button--ghost topbar__theme-toggle"
+            aria-label={`Ativar modo ${theme === 'dark' ? 'claro' : 'escuro'}`}
+            title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '🌞' : '🌙'}</span>
+          </button>
           <button type="button" onClick={logout} className="button button--ghost topbar__logout">
             Sair
           </button>
