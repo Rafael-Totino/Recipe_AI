@@ -4,10 +4,12 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useRecipes } from '../../context/RecipeContext';
 import './layout.css';
+import { useTheme } from '../../context/ThemeContext';
 
 const TopBar = () => {
   const { user, logout } = useAuth();
   const { recipes } = useRecipes();
+  const { theme, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,11 +33,61 @@ const TopBar = () => {
   };
 
   useEffect(() => {
-    const onScroll = () => {
-      setIsCondensed(window.scrollY > 64);
+    const condenseThreshold = 32;
+    const releaseThreshold = 16;
+    const releaseHysteresis = 110;
+
+    let ticking = false;
+    let lastScrollY = window.scrollY;
+    let lastDirection: 'up' | 'down' | 'none' = 'none';
+    let condensedAnchor = window.scrollY;
+
+    const updateCondensedState = () => {
+      const { scrollY } = window;
+      const direction =
+        scrollY > lastScrollY ? 'down' : scrollY < lastScrollY ? 'up' : lastDirection;
+
+      setIsCondensed((prev) => {
+        if (!prev) {
+          if (direction === 'down' && scrollY >= condenseThreshold) {
+            condensedAnchor = scrollY;
+            return true;
+          }
+          return prev;
+        }
+
+        if (scrollY <= releaseThreshold) {
+          condensedAnchor = scrollY;
+          return false;
+        }
+
+        if (direction === 'up' && condensedAnchor - scrollY >= releaseHysteresis) {
+          condensedAnchor = scrollY;
+          return false;
+        }
+
+        if (direction === 'down' && scrollY > condensedAnchor) {
+          condensedAnchor = scrollY;
+        }
+
+        return prev;
+      });
+
+      lastDirection = direction;
+      lastScrollY = scrollY;
+      ticking = false;
     };
 
-    onScroll();
+    const onScroll = () => {
+      if (ticking) {
+        return;
+      }
+
+      ticking = true;
+      window.requestAnimationFrame(updateCondensedState);
+    };
+
+    updateCondensedState();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -64,6 +116,15 @@ const TopBar = () => {
         </div>
 
         <div className="topbar__actions">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="button button--ghost topbar__theme-toggle"
+            aria-label={`Ativar modo ${theme === 'dark' ? 'claro' : 'escuro'}`}
+            title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '🌞' : '🌙'}</span>
+          </button>
           <button type="button" onClick={logout} className="button button--ghost topbar__logout">
             Sair
           </button>
