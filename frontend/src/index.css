@@ -34,6 +34,29 @@
   --radius-md: 20px;
   --radius-sm: 16px;
   --blur-strong: 28px;
+  --cooking-body-bg: radial-gradient(circle at 18% 16%, rgba(232, 93, 4, 0.16), transparent 62%),
+    radial-gradient(circle at 82% 10%, rgba(155, 89, 182, 0.15), transparent 58%),
+    linear-gradient(135deg, rgba(255, 240, 226, 0.92), rgba(255, 250, 244, 0.96));
+  --cooking-body-overlay: linear-gradient(135deg, rgba(232, 93, 4, 0.18), rgba(155, 89, 182, 0.18));
+  --cooking-surface: rgba(255, 253, 248, 0.94);
+  --cooking-surface-strong: rgba(255, 255, 255, 0.9);
+  --cooking-border: rgba(34, 25, 29, 0.1);
+  --cooking-text: #1f1a1b;
+  --cooking-muted: rgba(34, 25, 29, 0.68);
+  --cooking-progress-track: rgba(232, 93, 4, 0.18);
+  --cooking-progress-fill: linear-gradient(135deg, #e85d04 0%, #ffba08 100%);
+  --cooking-control-bg: rgba(34, 25, 29, 0.08);
+  --cooking-control-border: rgba(34, 25, 29, 0.14);
+  --cooking-control-hover: rgba(232, 93, 4, 0.16);
+  --cooking-control-text: #1f1a1b;
+  --cooking-voice-bg: rgba(232, 93, 4, 0.12);
+  --cooking-voice-border: rgba(232, 93, 4, 0.32);
+  --cooking-voice-active-glow: rgba(232, 93, 4, 0.28);
+  --cooking-tip-text: rgba(34, 25, 29, 0.72);
+  --cooking-ingredients-bg: rgba(255, 255, 255, 0.94);
+  --cooking-ingredients-border: rgba(232, 93, 4, 0.2);
+  --cooking-ingredients-shadow: 0 46px 90px -60px rgba(188, 99, 32, 0.35);
+
 }
 
 :root[data-theme='dark'] {
@@ -57,6 +80,30 @@
   --color-eyebrow: rgba(223, 230, 233, 0.62);
   --shadow-xs: 0 30px 48px -40px rgba(8, 12, 18, 0.9);
   --shadow-sm: 0 80px 110px -68px rgba(8, 12, 18, 0.85);
+
+  --cooking-body-bg: radial-gradient(circle at 18% 14%, rgba(232, 93, 4, 0.18), transparent 58%),
+    radial-gradient(circle at 80% 16%, rgba(155, 89, 182, 0.22), transparent 60%),
+    linear-gradient(135deg, rgba(9, 12, 17, 0.95), rgba(16, 20, 26, 0.96));
+  --cooking-body-overlay: linear-gradient(135deg, rgba(232, 93, 4, 0.22), rgba(155, 89, 182, 0.28));
+  --cooking-surface: rgba(16, 20, 26, 0.86);
+  --cooking-surface-strong: rgba(16, 20, 26, 0.9);
+  --cooking-border: rgba(223, 230, 233, 0.16);
+  --cooking-text: #f1f5f9;
+  --cooking-muted: rgba(223, 230, 233, 0.8);
+  --cooking-progress-track: rgba(223, 230, 233, 0.2);
+  --cooking-progress-fill: linear-gradient(135deg, #f48c06 0%, #ffba08 100%);
+  --cooking-control-bg: rgba(223, 230, 233, 0.08);
+  --cooking-control-border: rgba(223, 230, 233, 0.2);
+  --cooking-control-hover: rgba(232, 93, 4, 0.24);
+  --cooking-control-text: #f1f5f9;
+  --cooking-voice-bg: rgba(223, 230, 233, 0.12);
+  --cooking-voice-border: rgba(223, 230, 233, 0.26);
+  --cooking-voice-active-glow: rgba(232, 93, 4, 0.32);
+  --cooking-tip-text: rgba(223, 230, 233, 0.78);
+  --cooking-ingredients-bg: rgba(16, 20, 26, 0.92);
+  --cooking-ingredients-border: rgba(223, 230, 233, 0.18);
+  --cooking-ingredients-shadow: 0 60px 100px -54px rgba(4, 6, 10, 0.85);
+
 }
 
 @media (prefers-color-scheme: dark) {
@@ -127,6 +174,17 @@ body::before {
     radial-gradient(circle at 18% 52%, rgba(255, 255, 255, 0.2), transparent 55%);
   mix-blend-mode: lighten;
   opacity: 0.5;
+}
+
+body.cooking-mode-active {
+  background: var(--cooking-body-bg);
+  color: var(--cooking-text);
+}
+
+body.cooking-mode-active::before {
+  background: var(--cooking-body-overlay);
+  mix-blend-mode: normal;
+  opacity: 0.75;
 }
 
 a {

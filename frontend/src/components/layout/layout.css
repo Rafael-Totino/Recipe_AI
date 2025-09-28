@@ -1,6 +1,6 @@
 .app-shell {
-  --shell-padding-y: clamp(1.35rem, 2.8vw, 2.6rem);
-  --shell-padding-x: clamp(0.9rem, 2.6vw, 2.2rem);
+  --shell-padding-y: clamp(1.15rem, 2.4vw, 2.35rem);
+  --shell-padding-x: clamp(0.75rem, 2.2vw, 1.85rem);
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 340px;
   grid-template-rows: auto minmax(0, 1fr);
@@ -18,7 +18,9 @@
 
 .app-shell--cooking {
   --shell-padding-y: clamp(0.5rem, 1.4vw, 1rem);
-  --shell-padding-x: clamp(0.75rem, 4vw, 1.75rem);
+  --shell-padding-x: clamp(0.6rem, 3.6vw, 1.4rem);
+  --cooking-header-height: 72px;
+  --cooking-top-gap: clamp(1rem, 3vw, 1.65rem);
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   grid-template-areas:
@@ -58,6 +60,7 @@ body.chat-focus .app-shell {
 .app-shell--cooking .header-area {
   top: 0;
   z-index: 60;
+  min-height: var(--cooking-header-height);
 }
 
 .main-area {
@@ -67,7 +70,7 @@ body.chat-focus .app-shell {
 }
 
 .app-shell--cooking .main-area {
-  padding: 0;
+  padding: var(--cooking-top-gap) 0 clamp(2.5rem, 6vw, 4rem);
 }
 
 .chat-area {
