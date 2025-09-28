@@ -6,7 +6,11 @@ import { useRecipes } from '../../context/RecipeContext';
 import './layout.css';
 import { useTheme } from '../../context/ThemeContext';
 
-const TopBar = () => {
+type TopBarProps = {
+  forceCondensed?: boolean;
+};
+
+const TopBar = ({ forceCondensed = false }: TopBarProps) => {
   const { user, logout } = useAuth();
   const { recipes } = useRecipes();
   const { theme, toggleTheme } = useTheme();
@@ -14,12 +18,24 @@ const TopBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
-  const [isCondensed, setIsCondensed] = useState(false);
+  const [isCondensed, setIsCondensed] = useState(forceCondensed);
   const condensedRef = useRef(isCondensed);
 
   useEffect(() => {
     condensedRef.current = isCondensed;
   }, [isCondensed]);
+
+  useEffect(() => {
+    if (forceCondensed) {
+      setIsCondensed(true);
+      condensedRef.current = true;
+      return;
+    }
+
+    const shouldCondense = window.scrollY >= 32;
+    setIsCondensed(shouldCondense);
+    condensedRef.current = shouldCondense;
+  }, [forceCondensed]);
 
   const favoriteCount = useMemo(
     () => recipes.filter((recipe) => recipe.isFavorite).length,
@@ -38,11 +54,14 @@ const TopBar = () => {
   };
 
   useEffect(() => {
+    if (forceCondensed) {
+      return;
+    }
+
     const condenseThreshold = 32;
     const releaseThreshold = 16;
     const releaseHysteresis = 110;
     const releaseCooldownMs = 250;
-
 
     let ticking = false;
     let lastScrollY = window.scrollY;
@@ -81,7 +100,6 @@ const TopBar = () => {
       } else {
         if (direction === 'down' && scrollY > condensedAnchor) {
           condensedAnchor = scrollY;
-
         }
 
         if (direction === 'up' && condensedAnchor - scrollY >= releaseHysteresis) {
@@ -110,7 +128,7 @@ const TopBar = () => {
     updateCondensedState();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [forceCondensed]);
 
   const firstName = user?.name?.split(' ')[0] ?? 'Chef';
   const timeOfDay = (() => {
