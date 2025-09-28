@@ -56,6 +56,7 @@
   --cooking-ingredients-bg: rgba(255, 255, 255, 0.94);
   --cooking-ingredients-border: rgba(232, 93, 4, 0.2);
   --cooking-ingredients-shadow: 0 46px 90px -60px rgba(188, 99, 32, 0.35);
+
 }
 
 :root[data-theme='dark'] {
@@ -106,6 +107,7 @@
   --cooking-ingredients-bg: linear-gradient(145deg, rgba(42, 32, 68, 0.94), rgba(26, 34, 52, 0.92));
   --cooking-ingredients-border: rgba(236, 240, 247, 0.26);
   --cooking-ingredients-shadow: 0 60px 100px -54px rgba(20, 18, 32, 0.78);
+
 }
 
 @media (prefers-color-scheme: dark) {
@@ -157,6 +159,7 @@
     --cooking-ingredients-bg: linear-gradient(145deg, rgba(42, 32, 68, 0.94), rgba(26, 34, 52, 0.92));
     --cooking-ingredients-border: rgba(236, 240, 247, 0.26);
     --cooking-ingredients-shadow: 0 60px 100px -54px rgba(20, 18, 32, 0.78);
+
   }
 }
 
@@ -194,6 +197,7 @@ body::before {
     radial-gradient(circle at 12% 18%, rgba(232, 93, 4, 0.14), transparent 55%),
     radial-gradient(circle at 82% 18%, rgba(155, 89, 182, 0.2), transparent 44%),
     linear-gradient(135deg, rgba(232, 93, 4, 0.08), rgba(155, 89, 182, 0.16)),
+
     var(--color-canvas);
 }
 
@@ -203,6 +207,7 @@ body::before {
     radial-gradient(circle at 18% 52%, rgba(255, 255, 255, 0.22), transparent 55%);
   mix-blend-mode: screen;
   opacity: 0.6;
+
 }
 
 body.cooking-mode-active {

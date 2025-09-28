@@ -268,6 +268,7 @@
 
 .cooking-mode__nav-arrow--next {
   right: clamp(0.5rem, 3vw, 1.8rem);
+
 }
 
 .cooking-mode__ingredients-panel {
