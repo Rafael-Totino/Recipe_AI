@@ -303,21 +303,47 @@ const CookingModePage = () => {
             Passo {currentStepIndex + 1} de {steps.length}
           </small>
         </div>
-        <button
-          type="button"
-          className={`cooking-mode__voice${isListening ? ' is-active' : ''}`}
-          onClick={toggleVoiceCommands}
-          disabled={!isVoiceSupported}
-        >
-          {isVoiceSupported ? (isListening ? '🎙️' : '🎤') : '🚫'}
-        </button>
+        <div className="cooking-mode__actions">
+          <button type="button" className="cooking-mode__ingredients" onClick={revealIngredients}>
+            Ver ingredientes
+          </button>
+          <button
+            type="button"
+            className={`cooking-mode__voice${isListening ? ' is-active' : ''}`}
+            onClick={toggleVoiceCommands}
+            disabled={!isVoiceSupported}
+            aria-pressed={isListening}
+          >
+            {isVoiceSupported ? (isListening ? '🎙️' : '🎤') : '🚫'}
+          </button>
+        </div>
       </header>
 
-      <main className="cooking-mode__stage">
-        <p className="cooking-mode__step-label">Passo {currentStep.order}</p>
-        <div className="cooking-mode__step-text">{renderStepDescription(currentStep.description)}</div>
-        {currentStep.tips ? <p className="cooking-mode__tip">💡 {currentStep.tips}</p> : null}
-      </main>
+      <div className="cooking-mode__stage-shell">
+        <button
+          type="button"
+          className="cooking-mode__nav-arrow cooking-mode__nav-arrow--prev"
+          onClick={previousStep}
+          disabled={currentStepIndex === 0}
+          aria-label="Passo anterior"
+        >
+          ‹
+        </button>
+        <main className="cooking-mode__stage">
+          <p className="cooking-mode__step-label">Passo {currentStep.order}</p>
+          <div className="cooking-mode__step-text">{renderStepDescription(currentStep.description)}</div>
+          {currentStep.tips ? <p className="cooking-mode__tip">💡 {currentStep.tips}</p> : null}
+        </main>
+        <button
+          type="button"
+          className="cooking-mode__nav-arrow cooking-mode__nav-arrow--next"
+          onClick={nextStep}
+          disabled={currentStepIndex === steps.length - 1}
+          aria-label="Próximo passo"
+        >
+          ›
+        </button>
+      </div>
 
       <footer className="cooking-mode__footer">
         <div className="cooking-mode__status">{voiceStatus}</div>
@@ -330,22 +356,6 @@ const CookingModePage = () => {
             </button>
           </div>
         ) : null}
-        <div className="cooking-mode__nav">
-          <button type="button" className="button button--ghost" onClick={previousStep} disabled={currentStepIndex === 0}>
-            Passo anterior
-          </button>
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={nextStep}
-            disabled={currentStepIndex === steps.length - 1}
-          >
-            Próximo passo
-          </button>
-        </div>
-        <button type="button" className="cooking-mode__ingredients" onClick={revealIngredients}>
-          Ver ingredientes
-        </button>
       </footer>
 
       <aside className={`cooking-mode__ingredients-panel${showIngredients ? ' is-visible' : ''}`}>
