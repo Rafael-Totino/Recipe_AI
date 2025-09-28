@@ -1,0 +1,246 @@
+body.cooking-mode-active {
+  background: #101419;
+  color: #dfe6e9;
+}
+
+.cooking-mode {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(155, 89, 182, 0.3), transparent 65%),
+    radial-gradient(circle at 80% 15%, rgba(232, 93, 4, 0.35), transparent 60%),
+    #101419;
+  color: #fff;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  font-family: 'Manrope', sans-serif;
+}
+
+.cooking-mode__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cooking-mode__back {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.cooking-mode__info {
+  flex: 1;
+  text-align: center;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.cooking-mode__progress {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cooking-mode__progress div {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #e85d04, #ffba08);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.cooking-mode__voice {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.cooking-mode__voice.is-active {
+  background: rgba(232, 93, 4, 0.25);
+  box-shadow: 0 0 0 4px rgba(232, 93, 4, 0.25);
+}
+
+.cooking-mode__voice:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cooking-mode__stage {
+  display: grid;
+  gap: 1.5rem;
+  align-content: center;
+  text-align: center;
+}
+
+.cooking-mode__step-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cooking-mode__step-text {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  line-height: 1.25;
+}
+
+.cooking-mode__tip {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cooking-mode__timer-button {
+  background: rgba(232, 93, 4, 0.25);
+  border: none;
+  color: #fff;
+  padding: 0.15rem 0.65rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.cooking-mode__footer {
+  display: grid;
+  gap: 1rem;
+}
+
+.cooking-mode__status {
+  min-height: 24px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cooking-mode__timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.75rem 1.2rem;
+  border-radius: 18px;
+}
+
+.cooking-mode__timer button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+}
+
+.cooking-mode__nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cooking-mode__ingredients {
+  justify-self: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.cooking-mode__ingredients-panel {
+  position: fixed;
+  top: clamp(1.5rem, 3vw, 2.5rem);
+  right: clamp(1.5rem, 3vw, 2.5rem);
+  width: min(320px, 70vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  background: rgba(16, 20, 25, 0.85);
+  backdrop-filter: blur(18px);
+  border-radius: 24px;
+  padding: 1.5rem;
+  box-shadow: 0 40px 80px -50px rgba(0, 0, 0, 0.65);
+  opacity: 0;
+  transform: translateY(-16px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cooking-mode__ingredients-panel.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.cooking-mode__ingredients-panel h2 {
+  margin-top: 0;
+  font-family: 'Playfair Display', serif;
+}
+
+.cooking-mode__ingredients-panel ul {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.cooking-mode__ingredients-panel li {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cooking-mode__ingredients-panel strong {
+  color: #ffba08;
+}
+
+.cooking-mode__ingredients-panel em {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 768px) {
+  .cooking-mode {
+    padding: 1.5rem;
+  }
+
+  .cooking-mode__stage {
+    gap: 1rem;
+  }
+
+  .cooking-mode__step-text {
+    font-size: clamp(1.8rem, 8vw, 3rem);
+  }
+
+  .cooking-mode__ingredients-panel {
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -16px);
+    width: min(420px, 90vw);
+  }
+
+  .cooking-mode__ingredients-panel.is-visible {
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 480px) {
+  .cooking-mode__top {
+    flex-wrap: wrap;
+  }
+
+  .cooking-mode__nav {
+    flex-direction: column;
+  }
+
+  .cooking-mode__voice {
+    width: 40px;
+    height: 40px;
+  }
+}

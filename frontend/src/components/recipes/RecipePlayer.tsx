@@ -37,18 +37,17 @@ const RecipePlayer = ({ media, source }: RecipePlayerProps) => {
 
   if (!embedUrl) {
     return (
-      <div className="surface-card" style={{ textAlign: 'center' }}>
+      <div className="surface-card recipe-player__empty" style={{ textAlign: 'center' }}>
         <p>Nenhuma mídia vinculada a esta receita.</p>
       </div>
     );
   }
 
   return (
-    <div className="surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+    <div className="surface-card recipe-player">
       <iframe
         title="Player da receita"
         src={embedUrl}
-        style={{ width: '100%', height: 300, border: 'none' }}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       />
