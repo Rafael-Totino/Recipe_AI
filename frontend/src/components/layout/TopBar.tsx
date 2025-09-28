@@ -51,6 +51,7 @@ const TopBar = () => {
         if (!prev) {
           if (direction === 'down' && scrollY >= condenseThreshold) {
             condensedAnchor = scrollY;
+
             return true;
           }
           return prev;
