@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +15,11 @@ const TopBar = () => {
   const location = useLocation();
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [isCondensed, setIsCondensed] = useState(false);
+  const condensedRef = useRef(isCondensed);
+
+  useEffect(() => {
+    condensedRef.current = isCondensed;
+  }, [isCondensed]);
 
   const favoriteCount = useMemo(
     () => recipes.filter((recipe) => recipe.isFavorite).length,
@@ -36,43 +41,57 @@ const TopBar = () => {
     const condenseThreshold = 32;
     const releaseThreshold = 16;
     const releaseHysteresis = 110;
+    const releaseCooldownMs = 250;
+
 
     let ticking = false;
     let lastScrollY = window.scrollY;
     let lastDirection: 'up' | 'down' | 'none' = 'none';
     let condensedAnchor = window.scrollY;
+    let releaseCooldownUntil = 0;
+
+    const applyCondensed = (next: boolean) => {
+      if (condensedRef.current === next) {
+        return;
+      }
+
+      condensedRef.current = next;
+      setIsCondensed(next);
+
+      if (next) {
+        releaseCooldownUntil = performance.now() + releaseCooldownMs;
+      }
+    };
 
     const updateCondensedState = () => {
       const { scrollY } = window;
+      const delta = scrollY - lastScrollY;
       const direction =
-        scrollY > lastScrollY ? 'down' : scrollY < lastScrollY ? 'up' : lastDirection;
+        Math.abs(delta) <= 2
+          ? lastDirection
+          : delta > 0
+            ? 'down'
+            : 'up';
 
-      setIsCondensed((prev) => {
-        if (!prev) {
-          if (direction === 'down' && scrollY >= condenseThreshold) {
-            condensedAnchor = scrollY;
-
-            return true;
-          }
-          return prev;
-        }
-
-        if (scrollY <= releaseThreshold) {
+      if (!condensedRef.current) {
+        if (direction === 'down' && scrollY >= condenseThreshold) {
           condensedAnchor = scrollY;
-          return false;
+          applyCondensed(true);
+        }
+      } else {
+        if (direction === 'down' && scrollY > condensedAnchor) {
+          condensedAnchor = scrollY;
+
         }
 
         if (direction === 'up' && condensedAnchor - scrollY >= releaseHysteresis) {
           condensedAnchor = scrollY;
-          return false;
-        }
-
-        if (direction === 'down' && scrollY > condensedAnchor) {
+          applyCondensed(false);
+        } else if (scrollY <= releaseThreshold && performance.now() > releaseCooldownUntil) {
           condensedAnchor = scrollY;
+          applyCondensed(false);
         }
-
-        return prev;
-      });
+      }
 
       lastDirection = direction;
       lastScrollY = scrollY;
