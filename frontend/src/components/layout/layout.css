@@ -1,13 +1,13 @@
 .app-shell {
-  --shell-padding-y: clamp(1.15rem, 2.4vw, 2.35rem);
-  --shell-padding-x: clamp(0.75rem, 2.2vw, 1.85rem);
+  --shell-padding-y: clamp(1.05rem, 2.2vw, 2.1rem);
+  --shell-padding-x: clamp(0.45rem, 1.6vw, 1.35rem);
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 340px;
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     'sidebar header chat'
     'sidebar main chat';
-  gap: clamp(1.5rem, 2.8vw, 2.6rem);
+  gap: clamp(1.2rem, 2.4vw, 2.3rem);
   padding: var(--shell-padding-y) var(--shell-padding-x);
   width: 100%;
   margin: 0 auto;
@@ -105,6 +105,11 @@ body.chat-focus .app-shell {
   gap: 1.1rem;
 }
 
+.sidebar__brand-text {
+  display: grid;
+  gap: 0.25rem;
+}
+
 .sidebar__avatar {
   width: 56px;
   height: 56px;
@@ -173,6 +178,19 @@ body.chat-focus .app-shell {
   font-weight: 600;
 }
 
+.sidebar-link__icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.sidebar-link__label {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .sidebar-link:hover {
   background: rgba(232, 93, 4, 0.06);
   color: var(--color-heading);
@@ -188,6 +206,45 @@ body.chat-focus .app-shell {
   border-color: rgba(232, 93, 4, 0.2);
   color: var(--color-heading);
   box-shadow: inset 0 0 0 1px rgba(232, 93, 4, 0.12);
+}
+
+body.chat-focus .sidebar {
+  padding: 1rem 0.4rem;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  min-width: 0;
+}
+
+body.chat-focus .sidebar__brand-text {
+  display: none;
+}
+
+body.chat-focus .sidebar__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+}
+
+body.chat-focus .sidebar__nav {
+  justify-items: center;
+  width: 100%;
+}
+
+body.chat-focus .sidebar-link {
+  padding: 0.75rem;
+  justify-content: center;
+  width: 100%;
+}
+
+body.chat-focus .sidebar-link__label {
+  display: none;
+}
+
+body.chat-focus .sidebar-link__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
 }
 
 .topbar {
@@ -299,8 +356,13 @@ body.chat-focus .app-shell {
   padding: 0.65rem 1.4rem;
 }
 
-.topbar__logout {
-  padding: 0.5rem 1.2rem;
+.topbar__theme-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 1.15rem;
+  min-width: 42px;
 }
 
 .topbar__theme-toggle {
@@ -386,8 +448,8 @@ body.chat-focus .app-shell {
 
 @media (max-width: 640px) {
   .app-shell {
-    padding: 1.25rem 0.85rem 5rem;
-    gap: 1.3rem;
+    padding: 1.1rem 0.75rem 4.5rem;
+    gap: 1.2rem;
   }
 
   .topbar__glass {
@@ -402,8 +464,7 @@ body.chat-focus .app-shell {
     padding: 0.7rem;
   }
 
-  .topbar__search-button,
-  .topbar__logout {
+  .topbar__search-button {
     width: 100%;
   }
 

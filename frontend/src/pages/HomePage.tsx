@@ -10,7 +10,6 @@ const inspirationCapsules = [
   { label: 'Jantar Rápido', query: 'jantar rapido', helper: 'Até 30 minutos', icon: '⚡' },
   { label: 'Comfort Food', query: 'comfort', helper: 'Aconchego imediato', icon: '🍲' },
   { label: 'Ingredientes da Estação', query: 'estacao', helper: 'Sabores frescos', icon: '🌿' },
-  { label: 'Criado pela IA', query: 'ia', helper: 'Novas assinaturas', icon: '✨' },
   { label: 'Sem Glúten', query: 'sem gluten', helper: 'Opções leves', icon: '🌾' },
 ];
 
@@ -21,19 +20,17 @@ const HomePage = () => {
   const query = searchParams.get('q')?.toLowerCase().trim() ?? '';
 
   const filteredRecipes = useMemo(() => {
-    if (!query || query === 'ia') {
-      const base = query === 'ia'
-        ? recipes.filter((recipe) => (recipe.source?.importedFrom ?? 'manual') !== 'manual')
-        : recipes;
+    const sorted = [...recipes].sort((a, b) => {
+      const dateA = a.updatedAt ?? a.createdAt ?? '';
+      const dateB = b.updatedAt ?? b.createdAt ?? '';
+      return dateB.localeCompare(dateA);
+    });
 
-      return base.sort((a, b) => {
-        const dateA = a.updatedAt ?? a.createdAt ?? '';
-        const dateB = b.updatedAt ?? b.createdAt ?? '';
-        return dateB.localeCompare(dateA);
-      });
+    if (!query) {
+      return sorted;
     }
 
-    return recipes.filter((recipe) => {
+    return sorted.filter((recipe) => {
       const haystack = [
         recipe.title,
         recipe.description,

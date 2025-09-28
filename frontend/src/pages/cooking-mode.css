@@ -217,6 +217,12 @@
   color: var(--cooking-control-text);
   padding: 0.55rem 1.3rem;
   border-radius: 999px;
+  border: 1px solid var(--cooking-control-border);
+  background: var(--cooking-control-bg);
+  color: var(--cooking-control-text);
+  font-size: clamp(1.6rem, 4vw, 2rem);
+  display: grid;
+  place-items: center;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;
@@ -268,7 +274,6 @@
 
 .cooking-mode__nav-arrow--next {
   right: clamp(0.5rem, 3vw, 1.8rem);
-
 }
 
 .cooking-mode__ingredients-panel {

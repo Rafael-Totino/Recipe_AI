@@ -1,17 +1,118 @@
-﻿import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 import { useAuth } from '../../context/AuthContext';
 import './layout.css';
 
+type NavItem = {
+  path: string;
+  label: string;
+  icon: ReactNode;
+};
+
 const Sidebar = () => {
   const { user } = useAuth();
 
-  const navItems = useMemo(
+  const navItems = useMemo<NavItem[]>(
     () => [
-      { path: '/app', label: 'Visao geral', code: 'VG' },
-      { path: '/app/import', label: 'Importar receitas', code: 'IR' },
-      { path: '/app/settings', label: 'Preferencias', code: 'PR' }
+      {
+        path: '/app',
+        label: 'Início',
+        icon: (
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              d="M3.5 11.25 12 4l8.5 7.25"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M6.5 10.75V20h11V10.75"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M9.75 20v-4.5h4.5V20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )
+      },
+      {
+        path: '/app/import',
+        label: 'Importar',
+        icon: (
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              d="M12 3v12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M16 8.5 12 4.5 8 8.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <rect
+              x="4.5"
+              y="13.75"
+              width="15"
+              height="6.75"
+              rx="2"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+            />
+          </svg>
+        )
+      },
+      {
+        path: '/app/profile',
+        label: 'Perfil',
+        icon: (
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle
+              cx="12"
+              cy="9"
+              r="3.3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+            />
+            <path
+              d="M6.2 19.4a5.9 5.9 0 0 1 11.6 0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+            <circle
+              cx="12"
+              cy="12"
+              r="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+            />
+          </svg>
+        )
+      }
     ],
     []
   );
@@ -32,9 +133,9 @@ const Sidebar = () => {
         <div className="sidebar__avatar" aria-hidden="true">
           {initials}
         </div>
-        <div>
+        <div className="sidebar__brand-text">
           <span className="eyebrow">Livro inteligente</span>
-          <p className="sidebar__welcome">Ola, {firstName}</p>
+          <p className="sidebar__welcome">Olá, {firstName}</p>
           {user?.email ? <p className="sidebar__email">{user.email}</p> : null}
         </div>
       </div>
@@ -51,9 +152,9 @@ const Sidebar = () => {
             data-label={item.label}
           >
             <span className="sidebar-link__icon" aria-hidden="true">
-              {item.code}
+              {item.icon}
             </span>
-            {item.label}
+            <span className="sidebar-link__label">{item.label}</span>
           </NavLink>
         ))}
       </nav>

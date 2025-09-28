@@ -11,7 +11,7 @@ type TopBarProps = {
 };
 
 const TopBar = ({ forceCondensed = false }: TopBarProps) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { recipes } = useRecipes();
   const { theme, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
@@ -162,9 +162,6 @@ const TopBar = ({ forceCondensed = false }: TopBarProps) => {
             title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
           >
             <span aria-hidden="true">{theme === 'dark' ? '🌞' : '🌙'}</span>
-          </button>
-          <button type="button" onClick={logout} className="button button--ghost topbar__logout">
-            Sair
           </button>
         </div>
 
