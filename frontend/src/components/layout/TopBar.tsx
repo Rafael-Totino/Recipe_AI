@@ -33,20 +33,61 @@ const TopBar = () => {
   };
 
   useEffect(() => {
-    let ticking = false;
+    const condenseBreakpoint = 140;
+    const expandBreakpoint = 32;
+    const expandHysteresis = 120;
 
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const shouldCondense = window.scrollY > 72;
-          setIsCondensed((prev) => (prev !== shouldCondense ? shouldCondense : prev));
-          ticking = false;
-        });
-        ticking = true;
-      }
+    let ticking = false;
+    let lastCondenseTrigger = 0;
+    let lastScrollY = window.scrollY;
+    let lastDirection: 'up' | 'down' = 'down';
+
+    const updateCondensedState = () => {
+      const { scrollY } = window;
+      const direction =
+        scrollY > lastScrollY ? 'down' : scrollY < lastScrollY ? 'up' : lastDirection;
+
+      setIsCondensed((prev) => {
+        if (!prev) {
+          if (scrollY > condenseBreakpoint && direction === 'down') {
+            lastCondenseTrigger = scrollY;
+            return true;
+          }
+          return prev;
+        }
+
+        if (scrollY <= expandBreakpoint) {
+          lastCondenseTrigger = scrollY;
+          return false;
+        }
+
+        if (direction === 'up' && scrollY + expandHysteresis < lastCondenseTrigger) {
+          lastCondenseTrigger = scrollY;
+          return false;
+        }
+
+        if (direction === 'down') {
+          lastCondenseTrigger = Math.max(lastCondenseTrigger, scrollY);
+        }
+
+        return prev;
+      });
+
+      lastDirection = direction;
+      lastScrollY = scrollY;
+      ticking = false;
     };
 
-    onScroll();
+    const onScroll = () => {
+      if (ticking) {
+        return;
+      }
+
+      ticking = true;
+      window.requestAnimationFrame(updateCondensedState);
+    };
+
+    updateCondensedState();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
