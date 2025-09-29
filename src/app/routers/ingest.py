@@ -12,7 +12,7 @@ from supabase import Client
 from src.app.deps import CurrentUser, get_current_user, get_supabase
 from src.app.schemas.ingest import IngestRequest, IngestResponse, RecipeMedia, RecipeResponse, RecipeSource
 from src.services.ingest import ingest as run_ingest
-from src.services.persist_supabase import upsert_recipe_minimal, save_chunks
+from src.services.persist_supabase import *
 from src.services.types import RawContent
 from src.services.errors import RateLimitedError
 
@@ -386,12 +386,26 @@ async def import_recipe(
             ingest_result,
         )
         
-        save_chunks = await run_in_threadpool(
-            save_chunks,
-            supa,
-            str(recipe_id),
-            ingest_result,
-        )
+        try:
+            await run_in_threadpool(
+                save_chunks,
+                supa,
+                str(recipe_id),
+                ingest_result,
+            )
+        
+        except Exception as exc:
+            log.error("ingest.chunk_fail recipe=%s error=%s", recipe_id, str(exc))
+            try:
+                await run_in_threadpool(
+                    delete_recipe_by_id,
+                    supa,
+                    str(recipe_id),
+                )
+                log.info("ingest.recipe_deleted recipe=%s", recipe_id)
+            except Exception as del_exc:
+                log.error("ingest.recipe_delete_fail recipe=%s error=%s", recipe_id, str(del_exc))
+            raise RuntimeError(f"Falha ao salvar chunk da receita: {exc}") from exc
         
         recipe_response, warnings = _build_recipe_response(recipe_id, raw_content, recipe_data)
         dt = time.time() - t0

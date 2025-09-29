@@ -128,3 +128,9 @@ def save_chunks(supa: Client, recipe_id: str, payload: Dict[str, Any]):
         embedding=embedding_document(chunk_text),  
     )
     supa.table("recipe_chunks").insert(chunk.model_dump()).execute()
+    
+def delete_recipe_by_id(supa: Client, recipe_id: str):
+    """Exclui a receita e seus dados relacionados pelo recipe_id."""
+    supa.table("recipes").delete().eq("recipe_id", recipe_id).execute()
+    supa.table("recipe_sources").delete().eq("recipe_id", recipe_id).execute()
+    supa.table("recipe_chunks").delete().eq("recipe_id", recipe_id).execute()
