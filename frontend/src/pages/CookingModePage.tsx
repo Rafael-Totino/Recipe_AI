@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useRecipes } from '../context/RecipeContext';
@@ -26,6 +26,8 @@ const CookingModePage = () => {
   const hideIngredientsTimeout = useRef<number | null>(null);
   const wakeLockRef = useRef<any>(null);
   const touchStartRef = useRef<number | null>(null);
+  const ingredientsPanelRef = useRef<HTMLDivElement | null>(null);
+  const ingredientsButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (recipeId) {
@@ -168,7 +170,7 @@ const CookingModePage = () => {
       return;
     }
     if (transcript.includes('ingrediente')) {
-      revealIngredients();
+      showIngredientsPanel();
       return;
     }
 
@@ -184,7 +186,7 @@ const CookingModePage = () => {
     }
 
     if (transcript.includes('ingredientes')) {
-      revealIngredients();
+      showIngredientsPanel();
     }
   };
 
@@ -209,19 +211,64 @@ const CookingModePage = () => {
     }
   };
 
-  const revealIngredients = () => {
-    setShowIngredients(true);
+  const clearHideIngredientsTimeout = useCallback(() => {
     if (hideIngredientsTimeout.current) {
       window.clearTimeout(hideIngredientsTimeout.current);
-    }
-    hideIngredientsTimeout.current = window.setTimeout(() => setShowIngredients(false), 8000);
-  };
-
-  useEffect(() => () => {
-    if (hideIngredientsTimeout.current) {
-      window.clearTimeout(hideIngredientsTimeout.current);
+      hideIngredientsTimeout.current = null;
     }
   }, []);
+
+  const showIngredientsPanel = useCallback(() => {
+    setShowIngredients(true);
+    clearHideIngredientsTimeout();
+    hideIngredientsTimeout.current = window.setTimeout(() => {
+      setShowIngredients(false);
+      hideIngredientsTimeout.current = null;
+    }, 8000);
+  }, [clearHideIngredientsTimeout]);
+
+  const hideIngredientsPanel = useCallback(() => {
+    clearHideIngredientsTimeout();
+    setShowIngredients(false);
+  }, [clearHideIngredientsTimeout]);
+
+  const toggleIngredientsPanel = useCallback(() => {
+    if (showIngredients) {
+      hideIngredientsPanel();
+    } else {
+      showIngredientsPanel();
+    }
+  }, [hideIngredientsPanel, showIngredients, showIngredientsPanel]);
+
+  useEffect(() => () => {
+    clearHideIngredientsTimeout();
+  }, [clearHideIngredientsTimeout]);
+
+  useEffect(() => {
+    if (!showIngredients) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
+      }
+      if (ingredientsPanelRef.current?.contains(target)) {
+        return;
+      }
+      if (ingredientsButtonRef.current?.contains(target)) {
+        return;
+      }
+      hideIngredientsPanel();
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [hideIngredientsPanel, showIngredients]);
 
   const handleTouchStart = (clientX: number) => {
     touchStartRef.current = clientX;
@@ -303,21 +350,53 @@ const CookingModePage = () => {
             Passo {currentStepIndex + 1} de {steps.length}
           </small>
         </div>
-        <button
-          type="button"
-          className={`cooking-mode__voice${isListening ? ' is-active' : ''}`}
-          onClick={toggleVoiceCommands}
-          disabled={!isVoiceSupported}
-        >
-          {isVoiceSupported ? (isListening ? '🎙️' : '🎤') : '🚫'}
-        </button>
+        <div className="cooking-mode__actions">
+          <button
+            ref={ingredientsButtonRef}
+            type="button"
+            className="cooking-mode__ingredients"
+            onClick={toggleIngredientsPanel}
+            aria-expanded={showIngredients}
+          >
+            Ver ingredientes
+          </button>
+          <button
+            type="button"
+            className={`cooking-mode__voice${isListening ? ' is-active' : ''}`}
+            onClick={toggleVoiceCommands}
+            disabled={!isVoiceSupported}
+            aria-pressed={isListening}
+          >
+            {isVoiceSupported ? (isListening ? '🎙️' : '🎤') : '🚫'}
+          </button>
+        </div>
       </header>
 
-      <main className="cooking-mode__stage">
-        <p className="cooking-mode__step-label">Passo {currentStep.order}</p>
-        <div className="cooking-mode__step-text">{renderStepDescription(currentStep.description)}</div>
-        {currentStep.tips ? <p className="cooking-mode__tip">💡 {currentStep.tips}</p> : null}
-      </main>
+      <div className="cooking-mode__stage-shell">
+        <button
+          type="button"
+          className="cooking-mode__nav-arrow cooking-mode__nav-arrow--prev"
+          onClick={previousStep}
+          disabled={currentStepIndex === 0}
+          aria-label="Passo anterior"
+        >
+          ‹
+        </button>
+        <main className="cooking-mode__stage">
+          <p className="cooking-mode__step-label">Passo {currentStep.order}</p>
+          <div className="cooking-mode__step-text">{renderStepDescription(currentStep.description)}</div>
+          {currentStep.tips ? <p className="cooking-mode__tip">💡 {currentStep.tips}</p> : null}
+        </main>
+        <button
+          type="button"
+          className="cooking-mode__nav-arrow cooking-mode__nav-arrow--next"
+          onClick={nextStep}
+          disabled={currentStepIndex === steps.length - 1}
+          aria-label="Próximo passo"
+        >
+          ›
+        </button>
+      </div>
 
       <footer className="cooking-mode__footer">
         <div className="cooking-mode__status">{voiceStatus}</div>
@@ -330,25 +409,12 @@ const CookingModePage = () => {
             </button>
           </div>
         ) : null}
-        <div className="cooking-mode__nav">
-          <button type="button" className="button button--ghost" onClick={previousStep} disabled={currentStepIndex === 0}>
-            Passo anterior
-          </button>
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={nextStep}
-            disabled={currentStepIndex === steps.length - 1}
-          >
-            Próximo passo
-          </button>
-        </div>
-        <button type="button" className="cooking-mode__ingredients" onClick={revealIngredients}>
-          Ver ingredientes
-        </button>
       </footer>
 
-      <aside className={`cooking-mode__ingredients-panel${showIngredients ? ' is-visible' : ''}`}>
+      <aside
+        ref={ingredientsPanelRef}
+        className={`cooking-mode__ingredients-panel${showIngredients ? ' is-visible' : ''}`}
+      >
         <h2>Ingredientes</h2>
         <ul>
           {(activeRecipe.ingredients ?? []).map((ingredient) => (

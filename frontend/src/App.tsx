@@ -9,7 +9,7 @@ import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import CookingModePage from './pages/CookingModePage';
 import RecipeDetailPage from './pages/RecipeDetailPage';
-import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
 
 const App = () => {
   return (
@@ -31,7 +31,7 @@ const App = () => {
         <Route path="import" element={<ImportRecipePage />} />
         <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
         <Route path="recipes/:recipeId/cook" element={<CookingModePage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
