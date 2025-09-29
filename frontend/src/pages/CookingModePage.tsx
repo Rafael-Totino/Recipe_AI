@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useRecipes } from '../context/RecipeContext';
@@ -26,6 +26,8 @@ const CookingModePage = () => {
   const hideIngredientsTimeout = useRef<number | null>(null);
   const wakeLockRef = useRef<any>(null);
   const touchStartRef = useRef<number | null>(null);
+  const ingredientsPanelRef = useRef<HTMLDivElement | null>(null);
+  const ingredientsButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (recipeId) {
@@ -168,7 +170,7 @@ const CookingModePage = () => {
       return;
     }
     if (transcript.includes('ingrediente')) {
-      revealIngredients();
+      showIngredientsPanel();
       return;
     }
 
@@ -184,7 +186,7 @@ const CookingModePage = () => {
     }
 
     if (transcript.includes('ingredientes')) {
-      revealIngredients();
+      showIngredientsPanel();
     }
   };
 
@@ -209,19 +211,64 @@ const CookingModePage = () => {
     }
   };
 
-  const revealIngredients = () => {
-    setShowIngredients(true);
+  const clearHideIngredientsTimeout = useCallback(() => {
     if (hideIngredientsTimeout.current) {
       window.clearTimeout(hideIngredientsTimeout.current);
-    }
-    hideIngredientsTimeout.current = window.setTimeout(() => setShowIngredients(false), 8000);
-  };
-
-  useEffect(() => () => {
-    if (hideIngredientsTimeout.current) {
-      window.clearTimeout(hideIngredientsTimeout.current);
+      hideIngredientsTimeout.current = null;
     }
   }, []);
+
+  const showIngredientsPanel = useCallback(() => {
+    setShowIngredients(true);
+    clearHideIngredientsTimeout();
+    hideIngredientsTimeout.current = window.setTimeout(() => {
+      setShowIngredients(false);
+      hideIngredientsTimeout.current = null;
+    }, 8000);
+  }, [clearHideIngredientsTimeout]);
+
+  const hideIngredientsPanel = useCallback(() => {
+    clearHideIngredientsTimeout();
+    setShowIngredients(false);
+  }, [clearHideIngredientsTimeout]);
+
+  const toggleIngredientsPanel = useCallback(() => {
+    if (showIngredients) {
+      hideIngredientsPanel();
+    } else {
+      showIngredientsPanel();
+    }
+  }, [hideIngredientsPanel, showIngredients, showIngredientsPanel]);
+
+  useEffect(() => () => {
+    clearHideIngredientsTimeout();
+  }, [clearHideIngredientsTimeout]);
+
+  useEffect(() => {
+    if (!showIngredients) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
+      }
+      if (ingredientsPanelRef.current?.contains(target)) {
+        return;
+      }
+      if (ingredientsButtonRef.current?.contains(target)) {
+        return;
+      }
+      hideIngredientsPanel();
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [hideIngredientsPanel, showIngredients]);
 
   const handleTouchStart = (clientX: number) => {
     touchStartRef.current = clientX;
@@ -304,7 +351,13 @@ const CookingModePage = () => {
           </small>
         </div>
         <div className="cooking-mode__actions">
-          <button type="button" className="cooking-mode__ingredients" onClick={revealIngredients}>
+          <button
+            ref={ingredientsButtonRef}
+            type="button"
+            className="cooking-mode__ingredients"
+            onClick={toggleIngredientsPanel}
+            aria-expanded={showIngredients}
+          >
             Ver ingredientes
           </button>
           <button
@@ -358,7 +411,10 @@ const CookingModePage = () => {
         ) : null}
       </footer>
 
-      <aside className={`cooking-mode__ingredients-panel${showIngredients ? ' is-visible' : ''}`}>
+      <aside
+        ref={ingredientsPanelRef}
+        className={`cooking-mode__ingredients-panel${showIngredients ? ' is-visible' : ''}`}
+      >
         <h2>Ingredientes</h2>
         <ul>
           {(activeRecipe.ingredients ?? []).map((ingredient) => (

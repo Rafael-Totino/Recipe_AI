@@ -21,6 +21,7 @@
   --color-primary-strong: #d9480f;
   --color-secondary: #9b59b6;
   --color-secondary-soft: rgba(155, 89, 182, 0.2);
+  --gradient-brand: linear-gradient(135deg, #e85d04 0%, #ff9f1c 100%);
   --color-chip-bg: rgba(45, 52, 54, 0.08);
   --color-search-bg: rgba(255, 255, 255, 0.92);
   --color-search-glow: rgba(255, 255, 255, 0.38);
@@ -29,6 +30,18 @@
   --color-eyebrow: rgba(31, 37, 40, 0.66);
   --shadow-xs: 0 20px 40px -32px rgba(32, 40, 42, 0.45);
   --shadow-sm: 0 42px 94px -68px rgba(32, 40, 42, 0.5);
+  --chat-history-bg: rgba(247, 248, 255, 0.66);
+  --chat-input-bg: rgba(255, 255, 255, 0.92);
+  --chat-input-border: rgba(16, 22, 41, 0.08);
+  --chat-assistant-bg: rgba(255, 255, 255, 0.94);
+  --chat-assistant-border: rgba(16, 22, 41, 0.08);
+  --chat-textarea-bg: rgba(255, 255, 255, 0.9);
+  --chat-textarea-border: rgba(16, 22, 41, 0.12);
+  --chat-textarea-text: var(--color-text);
+  --chat-textarea-placeholder: rgba(31, 37, 40, 0.5);
+  --chat-send-button-bg: linear-gradient(135deg, #e85d04 0%, #ff9f1c 100%);
+  --chat-send-button-shadow: 0 24px 44px -30px rgba(232, 93, 4, 0.55);
+  --chat-send-button-disabled-opacity: 0.6;
   --radius-xl: 32px;
   --radius-lg: 24px;
   --radius-md: 20px;
@@ -84,6 +97,19 @@
   --color-eyebrow: rgba(226, 232, 240, 0.78);
   --shadow-xs: 0 30px 48px -36px rgba(18, 16, 28, 0.65);
   --shadow-sm: 0 80px 110px -60px rgba(18, 16, 28, 0.72);
+  --gradient-brand: linear-gradient(135deg, #ff9f1c 0%, #f48c06 45%, #e85d04 100%);
+  --chat-history-bg: linear-gradient(145deg, rgba(32, 42, 60, 0.82), rgba(26, 34, 52, 0.88));
+  --chat-input-bg: linear-gradient(145deg, rgba(28, 36, 54, 0.92), rgba(24, 30, 46, 0.9));
+  --chat-input-border: rgba(236, 240, 247, 0.16);
+  --chat-assistant-bg: linear-gradient(145deg, rgba(36, 28, 56, 0.9), rgba(26, 34, 52, 0.88));
+  --chat-assistant-border: rgba(236, 240, 247, 0.14);
+  --chat-textarea-bg: rgba(24, 32, 46, 0.88);
+  --chat-textarea-border: rgba(236, 240, 247, 0.18);
+  --chat-textarea-text: #f0f4f8;
+  --chat-textarea-placeholder: rgba(236, 240, 247, 0.6);
+  --chat-send-button-bg: linear-gradient(135deg, #ffb703 0%, #f48c06 50%, #e85d04 100%);
+  --chat-send-button-shadow: 0 28px 48px -26px rgba(232, 93, 4, 0.65);
+  --chat-send-button-disabled-opacity: 0.5;
   --cooking-body-bg: radial-gradient(circle at 18% 14%, rgba(232, 93, 4, 0.22), transparent 60%),
     radial-gradient(circle at 78% 18%, rgba(155, 89, 182, 0.26), transparent 58%),
     linear-gradient(145deg, rgba(46, 30, 70, 0.96), rgba(28, 36, 54, 0.94));
@@ -135,6 +161,19 @@
     --color-eyebrow: rgba(226, 232, 240, 0.78);
     --shadow-xs: 0 30px 48px -36px rgba(18, 16, 28, 0.65);
     --shadow-sm: 0 80px 110px -60px rgba(18, 16, 28, 0.72);
+    --gradient-brand: linear-gradient(135deg, #ff9f1c 0%, #f48c06 45%, #e85d04 100%);
+    --chat-history-bg: linear-gradient(145deg, rgba(32, 42, 60, 0.82), rgba(26, 34, 52, 0.88));
+    --chat-input-bg: linear-gradient(145deg, rgba(28, 36, 54, 0.92), rgba(24, 30, 46, 0.9));
+    --chat-input-border: rgba(236, 240, 247, 0.16);
+    --chat-assistant-bg: linear-gradient(145deg, rgba(36, 28, 56, 0.9), rgba(26, 34, 52, 0.88));
+    --chat-assistant-border: rgba(236, 240, 247, 0.14);
+    --chat-textarea-bg: rgba(24, 32, 46, 0.88);
+    --chat-textarea-border: rgba(236, 240, 247, 0.18);
+    --chat-textarea-text: #f0f4f8;
+    --chat-textarea-placeholder: rgba(236, 240, 247, 0.6);
+    --chat-send-button-bg: linear-gradient(135deg, #ffb703 0%, #f48c06 50%, #e85d04 100%);
+    --chat-send-button-shadow: 0 28px 48px -26px rgba(232, 93, 4, 0.65);
+    --chat-send-button-disabled-opacity: 0.5;
     --cooking-body-bg: radial-gradient(circle at 18% 14%, rgba(232, 93, 4, 0.22), transparent 60%),
       radial-gradient(circle at 78% 18%, rgba(155, 89, 182, 0.26), transparent 58%),
       linear-gradient(145deg, rgba(46, 30, 70, 0.96), rgba(28, 36, 54, 0.94));
