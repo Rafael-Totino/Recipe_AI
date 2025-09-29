@@ -23,3 +23,10 @@ class RecipeSourceRecord(BaseModel):
     author_name: Optional[str] = None
     collected_at: str
     provenance: dict = Field(default_factory=dict)
+
+
+class ChunkRecord(BaseModel):
+    recipe_id: str
+    chunk_index: int
+    chunk_text: str
+    embedding: list[float]

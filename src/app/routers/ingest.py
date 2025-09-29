@@ -12,7 +12,7 @@ from supabase import Client
 from src.app.deps import CurrentUser, get_current_user, get_supabase
 from src.app.schemas.ingest import IngestRequest, IngestResponse, RecipeMedia, RecipeResponse, RecipeSource
 from src.services.ingest import ingest as run_ingest
-from src.services.persist_supabase import upsert_recipe_minimal
+from src.services.persist_supabase import upsert_recipe_minimal, save_chunks
 from src.services.types import RawContent
 from src.services.errors import RateLimitedError
 
@@ -375,21 +375,33 @@ async def import_recipe(
         raw_content = ingest_result.get('raw_content')
         if not isinstance(raw_content, RawContent):
             raise RuntimeError('Ingest pipeline did not return valid raw_content')
+        
         metadata = ingest_result.get('metadata') if isinstance(ingest_result.get('metadata'), dict) else {}
         recipe_data = metadata.get('ai_recipe') if isinstance(metadata.get('ai_recipe'), dict) else {}
+        
         recipe_id = await run_in_threadpool(
             upsert_recipe_minimal,
             supa,
             str(user.id),
             ingest_result,
         )
+        
+        save_chunks = await run_in_threadpool(
+            save_chunks,
+            supa,
+            str(recipe_id),
+            ingest_result,
+        )
+        
         recipe_response, warnings = _build_recipe_response(recipe_id, raw_content, recipe_data)
         dt = time.time() - t0
         log.info("ingest.ok url=%s recipe=%s dt=%.2fs", body.url, recipe_id, dt)
+        
         return IngestResponse(
             recipe=recipe_response,
             warnings=warnings or None,
         )
+        
     except RateLimitedError as exc:
         dt = time.time() - t0
         log.warning("ingest.rate_limited url=%s dt=%.2fs", body.url, dt)

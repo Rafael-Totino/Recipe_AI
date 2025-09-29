@@ -6,9 +6,10 @@ from typing import Any, Dict
 from supabase import Client
 
 from src.services.ids import detect_platform_and_id
-from src.services.persist_models import RecipeRecord, RecipeSourceRecord
+from src.services.persist_models import *
 from src.services.slugify import slugify, unique_slug
 from src.services.types import RawContent
+from src.services.embedding import *
 
 
 def _build_raw_text(
@@ -115,3 +116,15 @@ def upsert_recipe_minimal(
     )
     supa.table("recipe_sources").insert(source.model_dump()).execute()
     return recipe_id
+
+
+def save_chunks(supa: Client, recipe_id: str, payload: Dict[str, Any]):
+    
+    chunk_text = stringify_payload(payload)
+    chunk = ChunkRecord(
+        recipe_id=recipe_id,  
+        chunk_index=0,  
+        chunk_text=chunk_text,
+        embedding=embedding_document(chunk_text),  
+    )
+    supa.table("recipe_chunks").insert(chunk.model_dump()).execute()
