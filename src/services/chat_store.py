@@ -10,6 +10,10 @@ from src.services.embedding import embedding_query
 from src.services import persist_supabase
 
 
+MAX_CONTEXT_CHARS = 4000
+MAX_HISTORY_MESSAGES = 50
+
+
 def send_message(
     user: CurrentUser,
     supa: Client,
@@ -46,8 +50,17 @@ def send_message(
     )
 
     # 3. Busca o histórico completo do banco de dados para dar memória à IA
-    full_history = persist_supabase.get_chat_history(user_id, supa)
+    full_history = persist_supabase.get_chat_history(
+        user_id,
+        supa,
+        limit=MAX_HISTORY_MESSAGES,
+    )
     history_payload = _build_history_payload(full_history)
+
+    if history_payload:
+        last_entry = history_payload[-1]
+        if last_entry.get("role") == "user" and last_entry.get("content") == message:
+            history_payload = history_payload[:-1]
 
     # 4. Chama o agente com o histórico correto e o contexto
     assistant_text = run_chat_agent(history_payload, message, context_text)
@@ -83,7 +96,7 @@ def get_context(
     if recipe_id:
         chunks = persist_supabase.get_recipe_chunks(supa, recipe_id)
         if not chunks:
-            return None, [recipe_id]
+            return None, [str(recipe_id)]
 
         context_parts: List[str] = []
         for chunk in chunks:
@@ -91,11 +104,15 @@ def get_context(
             if compressed:
                 context_parts.append(compressed)
 
-        context_text = "\n\n".join(context_parts).strip()
-        return (context_text or None, [recipe_id])
+        context_text = _truncate_context("\n\n".join(context_parts).strip())
+        return (context_text or None, [str(recipe_id)])
 
     # Cenário 2: O usuário faz uma pergunta genérica
-    message_embeded = embedding_query(message)
+    try:
+        message_embeded = embedding_query(message)
+    except Exception as exc:
+        print(f"Erro ao gerar embedding da mensagem: {exc}")
+        return None, []
     similar_chunks = persist_supabase.find_similar_chunks(
         supa,
         user_id,
@@ -112,8 +129,10 @@ def get_context(
 
     for chunk in similar_chunks:
         recipe_id_value = chunk.get("recipe_id")
-        if recipe_id_value and recipe_id_value not in related_recipe_ids:
-            related_recipe_ids.append(recipe_id_value)
+        if recipe_id_value:
+            recipe_id_str = str(recipe_id_value)
+            if recipe_id_str not in related_recipe_ids:
+                related_recipe_ids.append(recipe_id_str)
 
         full_chunk_text = chunk.get("chunk_text", "")
         compressed_text = compress_chunk_text(full_chunk_text)
@@ -121,9 +140,17 @@ def get_context(
             context_parts.append(f"\n--- Trecho de Receita ---\n{compressed_text}")
 
     if len(context_parts) > 1:
-        return "\n".join(context_parts), related_recipe_ids
+        return _truncate_context("\n".join(context_parts)), related_recipe_ids
 
     return None, related_recipe_ids
+
+
+def _truncate_context(context: str) -> str:
+    if not context:
+        return ""
+    if len(context) <= MAX_CONTEXT_CHARS:
+        return context
+    return context[:MAX_CONTEXT_CHARS].rstrip() + "..."
         
         
 def compress_chunk_text(full_text: str) -> str:
