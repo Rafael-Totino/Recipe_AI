@@ -23,25 +23,63 @@ def get_chunk_by_id(recipe_id: str, user_id: str, supa: Client):
     ).execute()
 
 
-def find_similar_chunks(supa: Client, user_id: str, query_embedding: list[float], match_threshold: float = 0.75, match_count: int = 3) -> list[dict]:
+def find_similar_chunks(
+    supa: Client,
+    user_id: str,
+    query_embedding: list[float],
+    match_threshold: float = 0.75,
+    match_count: int = 3,
+) -> list[dict]:
     """
     Encontra chunks de receita similares usando busca por similaridade de vetores,
     filtrando apenas os chunks que pertencem ao usuário especificado.
     """
-    try:
-        result = supa.rpc(
-            "match_recipe_chunks",
-            {
-                "owner_id_filter": user_id,
-                "query_embedding": query_embedding,
-                "match_threshold": match_threshold,
-                "match_count": match_count,
-            },
-        ).execute()
+    payload = {
+        "owner_id_filter": user_id,
+        "query_embedding": query_embedding,
+        "match_threshold": match_threshold,
+        "match_count": match_count,
+    }
 
-        return result.data if result.data else []
-    except Exception as e:
-        print(f"Erro ao buscar chunks similares: {e}") # Idealmente, use um logger
+    try:
+        result = supa.rpc("match_recipe_chunks", payload).execute()
+        data = result.data or []
+        if data:
+            return data
+    except Exception as err:
+        error_message = str(err)
+        if "PGRST202" not in error_message:
+            print(f"Erro ao buscar chunks similares: {err}")  # Idealmente, use um logger
+            return []
+
+    # Fallback para implementações antigas da função SQL que não aceitam owner_id_filter.
+    try:
+        legacy_payload = {
+            "query_embedding": query_embedding,
+            "match_threshold": match_threshold,
+            "match_count": match_count,
+        }
+        result = supa.rpc("match_recipe_chunks", legacy_payload).execute()
+        data = result.data or []
+        if not data:
+            return []
+
+        # Caso a função antiga retorne chunks de múltiplos usuários, filtramos manualmente.
+        filtered: list[dict] = []
+        for item in data:
+            owner_id = str(
+                item.get("owner_id")
+                or item.get("user_id")
+                or item.get("recipe_owner_id")
+                or item.get("owner")
+                or ""
+            )
+            if owner_id and owner_id != user_id:
+                continue
+            filtered.append(item)
+        return filtered or data
+    except Exception as err:
+        print(f"Erro ao buscar chunks similares (fallback): {err}")
         return []
 
 
@@ -102,14 +140,32 @@ def save_chat_message(
         if normalized_related:
             message_data["related_recipe_ids"] = normalized_related
 
-        result = (
+        insert_builder = supa.table("chat_messages").insert(message_data)
+        try:
+            result = insert_builder.execute()
+        except AttributeError:
+            # Algumas versões do cliente não suportam encadeamento de execute, repetimos a chamada.
+            result = supa.table("chat_messages").insert(message_data).execute()
+
+        data = result.data
+        if isinstance(data, list) and data:
+            return data[0]
+        if isinstance(data, dict) and data:
+            return data
+
+        # Se o Supabase não retornou a linha criada, buscamos a mensagem mais recente do usuário.
+        history = (
             supa.table("chat_messages")
-            .insert(message_data)
             .select("*")
-            .single()
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(1)
             .execute()
         )
-        return result.data if result.data else {}
+        if history.data:
+            return history.data[0]
+
+        return {}
     except Exception as e:
         print(f"Erro ao salvar mensagem do chat: {e}")
         return {}
