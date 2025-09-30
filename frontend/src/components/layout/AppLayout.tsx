@@ -5,6 +5,7 @@ import ChatDock from '../chat/ChatDock';
 import './layout.css';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import BottomNav from './BottomNav';
 import { useRecipes } from '../../context/RecipeContext';
 
 const AppLayout = () => {
@@ -20,24 +21,27 @@ const AppLayout = () => {
   }, [recipes.length, isLoading, loadRecipes]);
 
   return (
-    <div className={`app-shell${isCookingMode ? ' app-shell--cooking' : ''}`}>
-      {!isCookingMode ? (
-        <div className="sidebar-area">
-          <Sidebar />
+    <>
+      <div className={`app-shell${isCookingMode ? ' app-shell--cooking' : ''}`}>
+        {!isCookingMode ? (
+          <div className="sidebar-area">
+            <Sidebar />
+          </div>
+        ) : null}
+        <div className="header-area">
+          <TopBar forceCondensed={isCookingMode} />
         </div>
-      ) : null}
-      <div className="header-area">
-        <TopBar forceCondensed={isCookingMode} />
+        <main className="main-area">
+          <Outlet />
+        </main>
+        {!isCookingMode ? (
+          <aside className="chat-area">
+            <ChatDock />
+          </aside>
+        ) : null}
       </div>
-      <main className="main-area">
-        <Outlet />
-      </main>
-      {!isCookingMode ? (
-        <aside className="chat-area">
-          <ChatDock />
-        </aside>
-      ) : null}
-    </div>
+      {!isCookingMode ? <BottomNav /> : null}
+    </>
   );
 };
 
