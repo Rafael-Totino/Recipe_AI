@@ -10,25 +10,48 @@ CHAT_SYSTEM_PROMPT = Path("data/Prompt/CHAT_SYSTEM_PROMPT.txt")
 _MODEL_NAME = "gemini-2.5-flash"
 
 
-def run_chat_agent(history: Iterable[Mapping[str, str]], user_message: str, context: Optional[str] = None) -> str:
+def run_chat_agent(
+    history: Iterable[Mapping[str, str]],
+    user_message: str,
+    context: Optional[str] = None,
+) -> str:
     client = GeminiClient(api_key=get_api_key("GEMINI_API_KEY"), model_name=_MODEL_NAME)
-    
-    final_user_message = user_message
-    if context:
-        final_user_message = f"""Use o seguinte contexto para responder à pergunta do usuário:
 
-Contexto:
----
-{context}
----
+    prompt_sections: list[str] = []
 
-Pergunta do Usuário: {user_message}
-"""
-    
-    payload = {
-        "history": list(history),
-        "user_message": final_user_message,
-    }
+    cleaned_context = context.strip() if context else ""
+    if cleaned_context:
+        prompt_sections.append(
+            "Contexto recuperado das receitas do usuário:\n"
+            f"{cleaned_context}"
+        )
+
+    formatted_history: list[str] = []
+    for item in history:
+        role = (item.get("role") or "").strip().lower()
+        content = (item.get("content") or "").strip()
+        if not content:
+            continue
+        if role == "assistant":
+            speaker = "Assistente"
+        elif role == "user":
+            speaker = "Usuário"
+        else:
+            speaker = role.capitalize() or "Mensagem"
+        formatted_history.append(f"{speaker}: {content}")
+
+    if formatted_history:
+        prompt_sections.append(
+            "Histórico recente do chat (mais antigo primeiro):\n"
+            + "\n".join(formatted_history)
+        )
+
+    prompt_sections.append(
+        "Pergunta atual do usuário:\n"
+        f"{user_message.strip()}"
+    )
+
+    payload = "\n\n".join(section for section in prompt_sections if section)
     response = client.generate_content(payload, CHAT_SYSTEM_PROMPT)
     return response.strip()
 
