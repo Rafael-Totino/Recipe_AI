@@ -1,5 +1,6 @@
-import { FormEvent, useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+
+import { FormEvent, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import './layout.css';
 
@@ -8,10 +9,18 @@ type TopBarProps = {
 };
 
 const TopBar = ({ forceCondensed }: TopBarProps) => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [query, setQuery] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('q') ?? '';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nextQuery = params.get('q') ?? '';
+    setQuery((current) => (current === nextQuery ? current : nextQuery));
+  }, [location.search]);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,6 +32,14 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
     }
     navigate({ pathname: location.pathname, search: params.toString() });
   };
+
+  const clearSearch = () => {
+    setQuery('');
+    const params = new URLSearchParams(location.search);
+    params.delete('q');
+    navigate({ pathname: location.pathname, search: params.toString() });
+  };
+
   const topbarClassName = `topbar${forceCondensed ? ' topbar--condensed' : ''}`;
 
   return (
@@ -42,16 +59,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           />
           <div className="topbar__search-actions">
             {query ? (
-              <button
-                type="button"
-                className="topbar__clear"
-                onClick={() => {
-                  setQuery('');
-                  const params = new URLSearchParams(location.search);
-                  params.delete('q');
-                  navigate({ pathname: location.pathname, search: params.toString() });
-                }}
-              >
+              <button type="button" className="topbar__clear" onClick={clearSearch}>
                 Limpar
               </button>
             ) : null}
