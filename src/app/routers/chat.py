@@ -11,8 +11,11 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.get("/history", response_model=list[ChatMessage])
-async def get_history(user: CurrentUser = Depends(get_current_user)) -> list[ChatMessage]:
-    return [ChatMessage(**msg) for msg in chat_store.list_messages(str(user.id))]
+async def get_history(
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> list[ChatMessage]:
+    return [ChatMessage(**msg) for msg in chat_store.list_messages(str(user.id), supa)]
 
 
 
