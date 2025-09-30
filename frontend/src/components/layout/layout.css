@@ -240,44 +240,6 @@ body.chat-focus .app-shell {
   white-space: nowrap;
 }
 
-.topbar__theme-toggle {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: clamp(3rem, 8vw, 3.4rem);
-  height: clamp(3rem, 8vw, 3.4rem);
-  border-radius: 999px;
-  border: 1px solid var(--topbar-search-border);
-  background: var(--topbar-search-bg);
-  color: var(--color-heading);
-  font-size: clamp(1.35rem, 4vw, 1.55rem);
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-}
-
-.topbar__theme-toggle:hover,
-.topbar__theme-toggle:focus-visible {
-  background: var(--topbar-search-focus-bg);
-  border-color: var(--topbar-search-focus-border);
-}
-
-.topbar__theme-toggle:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.22);
-}
-
-:root[data-theme='dark'] .topbar__theme-toggle {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(41, 46, 60, 0.6);
-}
-
-:root[data-theme='dark'] .topbar__theme-toggle:hover,
-:root[data-theme='dark'] .topbar__theme-toggle:focus-visible {
-  background: rgba(54, 60, 77, 0.85);
-  border-color: rgba(255, 255, 255, 0.28);
-}
-
 .topbar--condensed .topbar__glass {
   width: 100%;
   padding: clamp(0.75rem, 2vw, 1.1rem) clamp(0.9rem, 2.4vw, 1.3rem);
@@ -311,14 +273,8 @@ body.chat-focus .app-shell {
     justify-content: flex-end;
   }
 
-  .topbar__search-actions {
-    justify-content: flex-end;
-  }
-
-  .topbar__theme-toggle {
+  .topbar__search-button {
     width: 100%;
-    height: clamp(3.1rem, 12vw, 3.6rem);
-    border-radius: var(--radius-lg);
   }
 }
 

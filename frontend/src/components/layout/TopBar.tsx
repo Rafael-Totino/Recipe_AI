@@ -8,7 +8,6 @@ type TopBarProps = {
 };
 
 const TopBar = ({ forceCondensed }: TopBarProps) => {
-  const { theme, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,15 +60,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
             </button>
           </div>
         </form>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="topbar__theme-toggle"
-          aria-label={`Ativar modo ${theme === 'dark' ? 'claro' : 'escuro'}`}
-          title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-        >
-          <span aria-hidden="true">{theme === 'dark' ? '🌞' : '🌙'}</span>
-        </button>
       </div>
     </header>
   );
