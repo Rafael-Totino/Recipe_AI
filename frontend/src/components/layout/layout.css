@@ -311,8 +311,8 @@ body.chat-focus .app-shell {
     justify-content: flex-end;
   }
 
-  .topbar__search-button {
-    width: 100%;
+  .topbar__search-actions {
+    justify-content: flex-end;
   }
 
   .topbar__theme-toggle {

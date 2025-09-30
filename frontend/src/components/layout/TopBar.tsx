@@ -2,7 +2,6 @@ import { FormEvent, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import './layout.css';
-import { useTheme } from '../../context/ThemeContext';
 
 type TopBarProps = {
   forceCondensed?: boolean;
