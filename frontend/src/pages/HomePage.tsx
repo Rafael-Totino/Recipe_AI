@@ -18,6 +18,7 @@ const HomePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const query = searchParams.get('q')?.toLowerCase().trim() ?? '';
+  const view = searchParams.get('view')?.toLowerCase().trim() ?? '';
 
   const filteredRecipes = useMemo(() => {
     const sorted = [...recipes].sort((a, b) => {
@@ -26,11 +27,17 @@ const HomePage = () => {
       return dateB.localeCompare(dateA);
     });
 
-    if (!query) {
-      return sorted;
+    let scoped = sorted;
+
+    if (view === 'favorites') {
+      scoped = scoped.filter((recipe) => recipe.isFavorite);
     }
 
-    return sorted.filter((recipe) => {
+    if (!query) {
+      return scoped;
+    }
+
+    return scoped.filter((recipe) => {
       const haystack = [
         recipe.title,
         recipe.description,
@@ -42,7 +49,7 @@ const HomePage = () => {
         .toLowerCase();
       return haystack.includes(query);
     });
-  }, [query, recipes]);
+  }, [query, recipes, view]);
 
   const favorites = useMemo(
     () => recipes.filter((recipe) => recipe.isFavorite),
@@ -56,14 +63,40 @@ const HomePage = () => {
   }, [recipes]);
 
   const handleCapsuleSelect = (nextQuery: string) => {
+    searchParams.delete('view');
     if (!nextQuery) {
       searchParams.delete('q');
-      setSearchParams(searchParams, { replace: true });
-      return;
+    } else {
+      searchParams.set('q', nextQuery);
     }
-    searchParams.set('q', nextQuery);
     setSearchParams(searchParams, { replace: true });
   };
+
+  const feedTitle = useMemo(() => {
+    if (query) {
+      return `Explorando "${query}"`;
+    }
+    if (view === 'favorites') {
+      return 'Suas receitas salvas com carinho';
+    }
+    if (view === 'explore') {
+      return 'Explorar novas criações do atelier';
+    }
+    return 'Linha do tempo das suas receitas';
+  }, [query, view]);
+
+  const feedSubtitle = useMemo(() => {
+    if (query) {
+      return 'Resultados refinados de acordo com o filtro escolhido.';
+    }
+    if (view === 'favorites') {
+      return 'Somente as receitas marcadas como favoritas aparecem por aqui.';
+    }
+    if (view === 'explore') {
+      return 'Descubra sugestões recentes, cápsulas criativas e combinações da IA.';
+    }
+    return 'Uma seleção cronológica entre o calor da cozinha e a precisão da IA.';
+  }, [query, view]);
 
   if (isLoading && recipes.length === 0) {
     return (
@@ -131,14 +164,8 @@ const HomePage = () => {
 
       <section className="atelier__feed" aria-live="polite">
         <header className="atelier__feed-header">
-          <h3 className="font-playfair">
-            {query ? `Explorando "${query}"` : 'Linha do tempo das suas receitas'}
-          </h3>
-          <p className="text-muted">
-            {query
-              ? 'Resultados refinados de acordo com o filtro escolhido.'
-              : 'Uma seleção cronológica entre o calor da cozinha e a precisão da IA.'}
-          </p>
+          <h3 className="font-playfair">{feedTitle}</h3>
+          <p className="text-muted">{feedSubtitle}</p>
         </header>
 
         <RecipeGrid
@@ -148,6 +175,8 @@ const HomePage = () => {
           emptyMessage={
             query
               ? 'Sem correspondências para este filtro. Que tal tentar outra cápsula?'
+              : view === 'favorites'
+              ? 'Você ainda não favoritou nenhuma receita. Marque suas preferidas para vê-las aqui.'
               : 'Importe sua primeira receita para ativar o atelier.'
           }
         />
