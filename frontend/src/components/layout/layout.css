@@ -377,6 +377,12 @@ body.chat-focus .sidebar-link__icon {
   box-shadow: var(--topbar-search-card-shadow), 0 18px 38px -28px var(--topbar-search-focus-shadow);
 }
 
+.topbar__search:focus-within {
+  background: var(--topbar-search-focus-bg);
+  border-color: var(--topbar-search-focus-border);
+  box-shadow: var(--topbar-search-shadow), 0 16px 34px -26px var(--topbar-search-focus-shadow);
+}
+
 .topbar__search-button {
   padding: 0.7rem clamp(1.35rem, 3vw, 1.8rem);
 }
