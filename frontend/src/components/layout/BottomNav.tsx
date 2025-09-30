@@ -95,31 +95,25 @@ const BottomNav = () => {
       label: 'Importar',
       icon: (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path
-            d="M12 3v12"
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeWidth="1.8"
           />
           <path
-            d="M16 8.5 12 4.5 8 8.5"
-            fill="none"
+            d="M12 8v8"
             stroke="currentColor"
-            strokeWidth="1.7"
+            strokeWidth="1.8"
             strokeLinecap="round"
-            strokeLinejoin="round"
           />
-          <rect
-            x="4.5"
-            y="13.75"
-            width="15"
-            height="6.75"
-            rx="2"
-            fill="none"
+          <path
+            d="M8 12h8"
             stroke="currentColor"
-            strokeWidth="1.7"
+            strokeWidth="1.8"
+            strokeLinecap="round"
           />
         </svg>
       ),
@@ -182,18 +176,29 @@ const BottomNav = () => {
   return (
     <nav className="bottom-nav" aria-label="Navegação principal">
       <div className="bottom-nav__inner">
-        {navItems.map((item) => (
-          <Link
-            key={item.key}
-            to={item.to}
-            className={`bottom-nav__item${item.isActive ? ' bottom-nav__item--active' : ''}`}
-          >
-            <span className="bottom-nav__icon" aria-hidden="true">
-              {item.icon}
-            </span>
-            <span className="bottom-nav__label">{item.label}</span>
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const itemClasses = ['bottom-nav__item'];
+          if (item.key === 'import') {
+            itemClasses.push('bottom-nav__item--import');
+          }
+          if (item.isActive) {
+            itemClasses.push('bottom-nav__item--active');
+          }
+
+          return (
+            <Link
+              key={item.key}
+              to={item.to}
+              className={itemClasses.join(' ')}
+              aria-current={item.isActive ? 'page' : undefined}
+            >
+              <span className="bottom-nav__icon" aria-hidden="true">
+                {item.icon}
+              </span>
+              <span className="bottom-nav__label">{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );
