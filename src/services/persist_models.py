@@ -30,3 +30,10 @@ class ChunkRecord(BaseModel):
     chunk_index: int
     chunk_text: str
     embedding: list[float]
+    
+class GetChunk(BaseModel):
+    chunk_id: str
+    recipe_id: str
+    chunk_index: int
+    chunk_text: str
+    embedding: list[float]

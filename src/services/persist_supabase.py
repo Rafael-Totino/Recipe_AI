@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from supabase import Client
 
@@ -10,6 +10,72 @@ from src.services.persist_models import *
 from src.services.slugify import slugify, unique_slug
 from src.services.types import RawContent
 from src.services.embedding import *
+
+
+def get_chunk_by_id(recipe_id: str, user_id: str, supa: Client):
+    """
+    Busca o chunk de uma receita específica, garantindo que ela pertence ao usuário.
+    Chama a função SQL segura 'get_user_chunk_by_id' para evitar vazamento de dados.
+    """
+    return supa.rpc(
+        "get_user_chunk_by_id",
+        {"recipe_id_filter": recipe_id, "user_id_filter": user_id},
+    ).execute()
+
+
+def find_similar_chunks(supa: Client, user_id: str, query_embedding: list[float], match_threshold: float = 0.75, match_count: int = 3) -> list[dict]:
+    """
+    Encontra chunks de receita similares usando busca por similaridade de vetores,
+    filtrando apenas os chunks que pertencem ao usuário especificado.
+    """
+    try:
+        result = supa.rpc(
+            "match_recipe_chunks",
+            {
+                "owner_id_filter": user_id,
+                "query_embedding": query_embedding,
+                "match_threshold": match_threshold,
+                "match_count": match_count,
+            },
+        ).execute()
+
+        return result.data if result.data else []
+    except Exception as e:
+        print(f"Erro ao buscar chunks similares: {e}") # Idealmente, use um logger
+        return []
+
+
+def get_chat_history(user_id: str, supa: Client, limit: int = 50) -> List[Dict[str, Any]]:
+    """Busca o histórico de mensagens de um usuário no banco de dados."""
+    try:
+        result = (
+            supa.table("chat_messages")
+            .select("role, content")
+            .eq("user_id", user_id)
+            .order("created_at", desc=False)
+            .limit(limit)
+            .execute()
+        )
+        return result.data if result.data else []
+    except Exception as e:
+        print(f"Erro ao buscar histórico do chat: {e}")
+        return []
+
+
+def save_chat_message(user_id: str, role: str, content: str, recipe_id: Optional[str], supa: Client) -> Dict[str, Any]:
+    """Salva uma única mensagem de chat no banco de dados e retorna o registro salvo."""
+    try:
+        message_data = {
+            "user_id": user_id,
+            "role": role,
+            "content": content,
+            "related_recipe_ids": [recipe_id] if recipe_id else None,
+        }
+        result = supa.table("chat_messages").insert(message_data).select("*").single().execute()
+        return result.data if result.data else {}
+    except Exception as e:
+        print(f"Erro ao salvar mensagem do chat: {e}")
+        return {}
 
 
 def _build_raw_text(
@@ -134,3 +200,13 @@ def delete_recipe_by_id(supa: Client, recipe_id: str):
     supa.table("recipes").delete().eq("recipe_id", recipe_id).execute()
     supa.table("recipe_sources").delete().eq("recipe_id", recipe_id).execute()
     supa.table("recipe_chunks").delete().eq("recipe_id", recipe_id).execute()
+    
+def get_recipe_by_id(recipe_id: str, supa):
+    recipe = (
+        supa.table("recipes")
+        .select("recipe_id,title,metadata,created_at,updated_at")
+        .eq("recipe_id", recipe_id)
+        .limit(1)
+        .execute()
+    )
+    return "recipe"

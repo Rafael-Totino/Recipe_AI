@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from supabase import Client
 
-from src.app.deps import CurrentUser, get_current_user
+from src.app.deps import CurrentUser, get_current_user, get_supabase
 from src.app.schemas.chat import ChatMessage, ChatRequest, ChatResponse
 from src.services import chat_store
-from fastapi import HTTPException
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -20,11 +20,13 @@ async def get_history(user: CurrentUser = Depends(get_current_user)) -> list[Cha
 async def post_message(
     payload: ChatRequest,
     user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
 ) -> ChatResponse:
     try:
         assistant_msg = chat_store.send_message(
-            str(user.id),
-            payload.message,
+            user=user,
+            supa=supa,
+            message=payload.message,
             recipe_id=payload.recipeId,
             client_message_id=payload.threadId,
         )
@@ -35,3 +37,6 @@ async def post_message(
             status_code=500,
             detail=f"Erro ao processar mensagem do chat: {str(exc)}"
         )
+        
+        
+
