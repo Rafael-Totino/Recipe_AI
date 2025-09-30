@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 
 import ChatDock from '../chat/ChatDock';
 import './layout.css';
-import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import BottomNav from './BottomNav';
 import { useRecipes } from '../../context/RecipeContext';
@@ -23,11 +22,6 @@ const AppLayout = () => {
   return (
     <>
       <div className={`app-shell${isCookingMode ? ' app-shell--cooking' : ''}`}>
-        {!isCookingMode ? (
-          <div className="sidebar-area">
-            <Sidebar />
-          </div>
-        ) : null}
         <div className="header-area">
           <TopBar forceCondensed={isCookingMode} />
         </div>
