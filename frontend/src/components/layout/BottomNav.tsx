@@ -186,7 +186,12 @@ const BottomNav = () => {
           }
 
           return (
-            <Link key={item.key} to={item.to} className={itemClasses.join(' ')}>
+            <Link
+              key={item.key}
+              to={item.to}
+              className={itemClasses.join(' ')}
+              aria-current={item.isActive ? 'page' : undefined}
+            >
               <span className="bottom-nav__icon" aria-hidden="true">
                 {item.icon}
               </span>
