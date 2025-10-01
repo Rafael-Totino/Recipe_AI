@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { ChatModal } from '../chat/ChatModal';
 
 import './layout.css';
 
@@ -7,7 +9,8 @@ type BottomNavItem = {
   key: string;
   label: string;
   icon: ReactNode;
-  to: string | { pathname: string; search?: string };
+  to?: string | { pathname: string; search?: string };
+  onClick?: () => void;
   isActive: boolean;
 };
 
@@ -28,6 +31,8 @@ const BottomNav = () => {
     const serialized = params.toString();
     return serialized ? `?${serialized}` : '';
   };
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const navItems: BottomNavItem[] = [
     {
@@ -65,30 +70,34 @@ const BottomNav = () => {
       isActive: location.pathname === '/app' && (view === '' || view === 'home')
     },
     {
-      key: 'explore',
-      label: 'Explorar',
+      key: 'chat',
+      label: 'Chef IA',
       icon: (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <circle
-            cx="12"
-            cy="12"
-            r="8"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-          />
           <path
-            d="m9.5 9.5 7-2-2 7-7 2z"
+            d="M12 3C17.5228 3 22 6.58172 22 11C22 15.4183 17.5228 19 12 19C11.1558 19 10.3373 18.9179 9.54992 18.7646L5.40604 20.4188C4.91882 20.6223 4.43123 20.2733 4.51272 19.7447L5.03602 16.6911C3.17765 15.2987 2 13.2595 2 11C2 6.58172 6.47715 3 12 3Z"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.7"
+            strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+          <path
+            d="M8 11H16"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M10 15H14"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
         </svg>
       ),
-      to: { pathname: '/app', search: buildSearch('explore') },
-      isActive: location.pathname === '/app' && view === 'explore'
+      onClick: () => setIsChatOpen(true),
+      isActive: isChatOpen
     },
     {
       key: 'import',
@@ -174,33 +183,48 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="bottom-nav" aria-label="Navegação principal">
-      <div className="bottom-nav__inner">
-        {navItems.map((item) => {
-          const itemClasses = ['bottom-nav__item'];
-          if (item.key === 'import') {
-            itemClasses.push('bottom-nav__item--import');
-          }
-          if (item.isActive) {
-            itemClasses.push('bottom-nav__item--active');
-          }
+    <>
+      <nav className="bottom-nav" aria-label="Navegação principal">
+        <div className="bottom-nav__inner">
+          {navItems.map((item) => {
+            const itemClasses = ['bottom-nav__item'];
+            if (item.key === 'import') {
+              itemClasses.push('bottom-nav__item--import');
+            }
+            if (item.isActive) {
+              itemClasses.push('bottom-nav__item--active');
+            }
 
-          return (
-            <Link
-              key={item.key}
-              to={item.to}
-              className={itemClasses.join(' ')}
-              aria-current={item.isActive ? 'page' : undefined}
-            >
-              <span className="bottom-nav__icon" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span className="bottom-nav__label">{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+            return item.to ? (
+              <Link
+                key={item.key}
+                to={item.to}
+                className={itemClasses.join(' ')}
+                aria-current={item.isActive ? 'page' : undefined}
+              >
+                <span className="bottom-nav__icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span className="bottom-nav__label">{item.label}</span>
+              </Link>
+            ) : (
+              <button
+                key={item.key}
+                onClick={item.onClick}
+                className={itemClasses.join(' ')}
+                type="button"
+              >
+                <span className="bottom-nav__icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span className="bottom-nav__label">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+      <ChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+    </>
   );
 };
 

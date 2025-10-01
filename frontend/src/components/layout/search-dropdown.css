@@ -1,0 +1,158 @@
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: 0;
+  right: 0;
+  background: linear-gradient(140deg, rgba(34, 44, 72, 0.98), rgba(20, 27, 47, 2));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--chat-dock-shadow),
+              0 18px 38px -16px rgba(3, 8, 20, 0.45),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  overflow: hidden;
+  z-index: 200;
+  animation: dropdownIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: calc(85vh - 6rem);
+  overflow-y: auto;
+}
+
+.search-dropdown::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.08) 65%,
+    transparent 85%
+  );
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-dropdown__section {
+  position: relative;
+}
+
+.search-dropdown__section + .search-dropdown__section {
+  border-top: 1px solid rgba(var(--topbar-glass-border-rgb), 0.15);
+  position: relative;
+}
+
+.search-dropdown__section + .search-dropdown__section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 5%;
+  right: 5%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(255, 255, 255, 0.08) 80%,
+    transparent
+  );
+}
+
+.search-dropdown__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.2rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+}
+
+.search-dropdown__heading svg {
+  color: var(--color-muted);
+  opacity: 0.7;
+}
+
+.search-dropdown__content {
+  padding: 0.2rem 0 0.6rem;
+}
+
+.search-dropdown__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.65rem 1.2rem;
+  border: none;
+  background: none;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-dropdown__item:hover {
+  background: var(--topbar-search-bg);
+}
+
+.search-dropdown__recipe-image {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.search-dropdown__recipe-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.search-dropdown__recipe-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-dropdown__recipe-meta {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.search-dropdown__item--ai {
+  padding: 0.8rem 1.2rem;
+  font-weight: 500;
+}
+
+.search-dropdown__empty,
+.search-dropdown__loading,
+.search-dropdown__more {
+  padding: 0.8rem 1.2rem;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.search-dropdown__more {
+  font-size: 0.85rem;
+  padding-top: 0.4rem;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,7 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
-import ChatDock from '../chat/ChatDock';
 import './layout.css';
 import TopBar from './TopBar';
 import BottomNav from './BottomNav';
@@ -28,11 +27,7 @@ const AppLayout = () => {
         <main className="main-area">
           <Outlet />
         </main>
-        {!isCookingMode ? (
-          <aside className="chat-area">
-            <ChatDock />
-          </aside>
-        ) : null}
+        {/* A área lateral do chat foi removida daqui */}
       </div>
       {!isCookingMode ? <BottomNav /> : null}
     </>

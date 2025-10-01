@@ -1,13 +1,13 @@
 .app-shell {
   --shell-padding-y: clamp(1.2rem, 3vw, 2.2rem);
   --shell-padding-x: clamp(1rem, 3vw, 2.6rem);
-  --shell-bottom-gap: clamp(3.5rem, 6vw, 4.75rem);
+  --shell-bottom-gap: clamp(6.5rem, 8vw, 7.75rem); /* Aumentado para acomodar a bottom nav */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 28vw, 360px);
+  grid-template-columns: minmax(0, 1fr); /* MUDANÇA: Apenas uma coluna principal */
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
-    'header header'
-    'main chat';
+    'header'
+    'main'; /* MUDANÇA: Removida a área 'chat' */
   gap: clamp(1.6rem, 3vw, 2.6rem);
   padding: var(--shell-padding-y) var(--shell-padding-x) var(--shell-bottom-gap);
   width: 100%;
@@ -53,32 +53,25 @@ body.chat-focus .app-shell {
 .main-area {
   grid-area: main;
   min-height: 0;
+  /* Adicionado para centralizar o conteúdo que antes era espremido pela coluna do chat */
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .app-shell--cooking .main-area {
   padding: var(--cooking-top-gap) 0 clamp(2.5rem, 6vw, 4rem);
+  max-width: 100%; /* Garante que o modo de cozinha use a tela toda */
 }
 
 .chat-area {
-  grid-area: chat;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  position: sticky;
-  top: var(--shell-padding-y);
-  height: calc(100vh - var(--shell-padding-y) * 2);
-  max-height: calc(100vh - var(--shell-padding-y) * 2);
-  gap: 1.25rem;
+  /* MUDANÇA: Esta área não faz mais parte do grid principal. */
+  /* O componente de chat agora será um modal e terá seu próprio estilo. */
+  display: none;
 }
 
 .app-shell--cooking .chat-area {
   display: none;
-}
-
-@media (max-width: 1280px) {
-  .app-shell {
-    grid-template-columns: minmax(0, 1fr) clamp(280px, 32vw, 340px);
-  }
 }
 
 @media (max-width: 1100px) {
@@ -86,15 +79,13 @@ body.chat-focus .app-shell {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'header'
-      'main'
-      'chat';
+      'main';
     max-width: 1200px;
   }
 
   .chat-area {
-    position: static;
-    height: auto;
-    max-height: none;
+    /* Regra não é mais necessária */
+    display: none;
   }
 }
 
@@ -109,7 +100,9 @@ body.chat-focus .app-shell {
   }
 
   .header-area {
-    position: static;
+    position: sticky;
+    top: clamp(0.6rem, 4vw, 1.1rem);
+    z-index: 60;
   }
 
   .chat-area {
@@ -118,6 +111,7 @@ body.chat-focus .app-shell {
 
   .main-area {
     padding-bottom: clamp(4.75rem, 12vw, 6.25rem);
+    max-width: 100%; /* Em telas pequenas, o conteúdo principal ocupa tudo */
   }
 }
 
@@ -152,7 +146,7 @@ body.chat-focus .app-shell {
   box-shadow: var(--topbar-glass-shadow);
   backdrop-filter: blur(28px) saturate(170%);
   -webkit-backdrop-filter: blur(28px) saturate(170%);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .topbar__glass::before {
@@ -170,6 +164,7 @@ body.chat-focus .app-shell {
 }
 
 .topbar__search {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
@@ -179,6 +174,17 @@ body.chat-focus .app-shell {
   background: var(--topbar-search-bg);
   border: 1px solid var(--topbar-search-border);
   box-shadow: var(--topbar-search-shadow);
+  z-index: 1;
+}
+
+.topbar__search:focus-within {
+  border-color: var(--topbar-search-focus-border);
+  box-shadow: var(--topbar-search-shadow), 0 8px 28px -12px var(--topbar-search-focus-shadow);
+}
+
+.topbar__search-icon {
+  color: var(--color-muted);
+  flex-shrink: 0;
 }
 
 .topbar__search:focus-within {
@@ -285,7 +291,7 @@ body.chat-focus .app-shell {
   right: 0;
   bottom: 0;
   z-index: 120;
-  display: none;
+  display: block;
   pointer-events: none;
   padding: 0 clamp(1rem, 7vw, 2.4rem) clamp(env(safe-area-inset-bottom) + 1.1rem, 6vw, 1.75rem);
 }
@@ -433,8 +439,7 @@ body.chat-focus .app-shell {
   color: #fff;
 }
 
-@media (max-width: 960px) {
-  .bottom-nav {
-    display: block;
-  }
-}
+/* Removida a media query que controlava a exibição da bottom-nav */
+
+
+
