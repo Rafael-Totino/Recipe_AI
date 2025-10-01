@@ -1,10 +1,12 @@
-
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Bell, ChefHat, Moon, Plus, Search, Sun } from 'lucide-react';
+
 import { SearchDropdown } from './SearchDropdown';
 import { useRecipes } from '../../context/RecipeContext';
 import type { Recipe } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 import './layout.css';
 
@@ -12,16 +14,33 @@ type TopBarProps = {
   forceCondensed?: boolean;
 };
 
+const getInitials = (value?: string | null) => {
+  if (!value) {
+    return '?';
+  }
+  const cleaned = value.trim();
+  if (!cleaned) {
+    return '?';
+  }
+  const parts = cleaned.split(/\s+/);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? '' : '';
+  const combined = `${first}${last}`.trim() || first;
+  return combined.toUpperCase() || '?';
+};
+
 const TopBar = ({ forceCondensed }: TopBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { recipes, isLoading } = useRecipes();
+  const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
   const [query, setQuery] = useState(() => {
     const params = new URLSearchParams(location.search);
     return params.get('q') ?? '';
   });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const searchAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -49,8 +68,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
 
   const topbarClassName = `topbar${forceCondensed ? ' topbar--condensed' : ''}`;
 
-  // Filtra as receitas baseado na query
-  const filteredRecipes = recipes.filter(recipe =>
+  const filteredRecipes = recipes.filter((recipe) =>
     recipe.title.toLowerCase().includes(query.toLowerCase())
   );
 
@@ -61,13 +79,24 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
 
   const handleAskAI = (question: string) => {
     setShowDropdown(false);
-    // TODO: Implementar a lÃ³gica para abrir o modal do chat com a pergunta
+    // TODO: Implementar a lógica para abrir o modal do chat com a pergunta
   };
 
-  // Fecha o dropdown quando clicar fora
+  const userInitials = useMemo(() => getInitials(user?.name ?? user?.email), [user?.name, user?.email]);
+
+  const greeting = useMemo(() => {
+    if (!user?.name) {
+      return 'Chef IA';
+    }
+    const firstName = user.name.trim().split(/\s+/)[0];
+    return `Olá, ${firstName}`;
+  }, [user?.name]);
+
+  const subheadline = forceCondensed ? 'Modo cozinha ativo' : 'Sua cozinha inteligente';
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (searchAreaRef.current && !searchAreaRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
       }
     };
@@ -76,43 +105,115 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleAddRecipe = () => {
+    navigate('/app/import');
+  };
+
+  const handleProfile = () => {
+    navigate('/app/profile');
+  };
+
+  const handleGoHome = () => {
+    navigate('/app');
+  };
+
+  const themeIsDark = theme === 'dark';
+  const themeLabel = themeIsDark ? 'Ativar tema claro' : 'Ativar tema escuro';
+  const isDropdownVisible = showDropdown && Boolean(query);
+
   return (
     <header className={topbarClassName}>
-      <div className="topbar__glass" role="search" ref={containerRef}>
-        <form onSubmit={handleSearch} className="topbar__search">
-          <Search size={20} className="topbar__search-icon" />
-          <input
-            id="recipe-search"
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setShowDropdown(true);
-            }}
-            onFocus={() => setShowDropdown(true)}
-            placeholder="Busque receitas ou converse com o Chef IA..."
-            aria-label="Buscar receitas ou fazer perguntas"
-          />
-          <div className="topbar__search-actions">
-            {query ? (
-              <button type="button" className="topbar__clear" onClick={clearSearch}>
-                Limpar
+      {isDropdownVisible ? (
+        <div className="search-dropdown-backdrop" aria-hidden="true" />
+      ) : null}
+      <div className="topbar__glass">
+        <button type="button" className="topbar__brand" onClick={handleGoHome} aria-label="Ir para a página inicial">
+          <span className="topbar__brand-icon">
+            <ChefHat size={18} />
+          </span>
+          <span className="topbar__brand-text">
+            <span className="topbar__brand-eyebrow">Chef IA</span>
+            <span className="topbar__brand-title">Cozinha viva</span>
+          </span>
+        </button>
+
+        <div className="topbar__center" role="search" ref={searchAreaRef}>
+          <span className="topbar__center-eyebrow">{subheadline}</span>
+          <form onSubmit={handleSearch} className="topbar__search">
+            <Search size={20} className="topbar__search-icon" />
+            <input
+              id="recipe-search"
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              placeholder="Busque receitas ou converse com o Chef IA..."
+              aria-label="Buscar receitas ou fazer perguntas"
+            />
+            <div className="topbar__search-actions">
+              {query ? (
+                <button type="button" className="topbar__clear" onClick={clearSearch}>
+                  Limpar
+                </button>
+              ) : null}
+              <button type="submit" className="button button--primary topbar__search-button">
+                Pesquisar
               </button>
-            ) : null}
-            <button type="submit" className="button button--primary topbar__search-button">
-              Pesquisar
-            </button>
-          </div>
-        </form>
-        {showDropdown && query && (
-          <SearchDropdown
-            query={query}
-            recipes={filteredRecipes}
-            isLoading={isLoading}
-            onSelectRecipe={handleRecipeSelect}
-            onAskAI={handleAskAI}
-          />
-        )}
+            </div>
+          </form>
+          {isDropdownVisible ? (
+            <SearchDropdown
+              query={query}
+              recipes={filteredRecipes}
+              isLoading={isLoading}
+              onSelectRecipe={handleRecipeSelect}
+              onAskAI={handleAskAI}
+            />
+          ) : null}
+        </div>
+
+        <div className="topbar__actions">
+          <button
+            type="button"
+            className="topbar__action topbar__action--ghost"
+            onClick={toggleTheme}
+            aria-label={themeLabel}
+            title={themeLabel}
+          >
+            {themeIsDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button
+            type="button"
+            className="topbar__action topbar__action--ghost"
+            aria-label="Notificações em breve"
+            title="Notificações em breve"
+            disabled
+          >
+            <Bell size={18} />
+          </button>
+          <button
+            type="button"
+            className="topbar__action topbar__action--highlight"
+            onClick={handleAddRecipe}
+          >
+            <Plus size={18} />
+            <span>Adicionar</span>
+          </button>
+          <button type="button" className="topbar__profile" onClick={handleProfile} aria-label="Abrir perfil">
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" className="topbar__avatar" />
+            ) : (
+              <span className="topbar__avatar">{userInitials}</span>
+            )}
+            <span className="topbar__profile-info">
+              <span className="topbar__profile-greeting">{greeting}</span>
+              <span className="topbar__profile-meta">Minha conta</span>
+            </span>
+          </button>
+        </div>
       </div>
     </header>
   );

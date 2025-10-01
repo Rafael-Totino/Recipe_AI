@@ -47,7 +47,7 @@ export function SearchDropdown({
 
   return (
     <div className="search-dropdown">
-      <div className="search-dropdown__section">
+      <div className="search-dropdown__section search-dropdown__section--recipes">
         <h3 className="search-dropdown__heading">
           <Search size={16} />
           <span>Receitas encontradas</span>
@@ -90,7 +90,7 @@ export function SearchDropdown({
         </div>
       </div>
 
-      <div className="search-dropdown__section">
+      <div className="search-dropdown__section search-dropdown__section--ai">
         <h3 className="search-dropdown__heading">
           <MessageCircle size={16} />
           <span>Pergunte ao Chef IA</span>
