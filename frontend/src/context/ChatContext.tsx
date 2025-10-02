@@ -255,18 +255,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const selectChatHandler = useCallback(
     (chatId?: string) => {
-      setActiveChatId((current) => {
-        if (current === chatId) {
-          return current;
-        }
-        return chatId;
-      });
-      if (chatId === activeChatId) {
-        return;
-      }
+      setActiveChatId(chatId);
       void loadMessagesForChat(chatId);
     },
-    [activeChatId, loadMessagesForChat]
+    [loadMessagesForChat]
   );
 
   const startNewChat = useCallback(() => {

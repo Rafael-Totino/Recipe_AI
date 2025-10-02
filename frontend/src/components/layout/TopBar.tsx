@@ -83,9 +83,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
 
   const handleAskAI = async (question: string) => {
     setShowDropdown(false);
-    setQuery('');
-    setShowChatModal(true);
-    await sendMessage(question);
+    navigate('/app/chat', { state: { prompt: question } });
   };
 
   const userInitials = useMemo(() => getInitials(user?.name ?? user?.email), [user?.name, user?.email]);
@@ -95,7 +93,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
       return 'Chef IA';
     }
     const firstName = user.name.trim().split(/\s+/)[0];
-    return `Ol�, ${firstName}`;
+    return `Ol, ${firstName}`;
   }, [user?.name]);
 
   const subheadline = forceCondensed ? 'Modo cozinha ativo' : 'Sua cozinha inteligente';
@@ -129,7 +127,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
         <div className="search-dropdown-backdrop" aria-hidden="true" />
       ) : null}
       <div className="topbar__glass">
-        <button type="button" className="topbar__brand" onClick={handleGoHome} aria-label="Ir para a p�gina inicial">
+        <button type="button" className="topbar__brand" onClick={handleGoHome} aria-label="Ir para a pgina inicial">
           <span className="topbar__brand-icon">
             <ChefHat size={18} />
           </span>
@@ -190,8 +188,8 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           <button
             type="button"
             className="topbar__action topbar__action--ghost"
-            aria-label="Notifica��es em breve"
-            title="Notifica��es em breve"
+            aria-label="Notificaes em breve"
+            title="Notificaes em breve"
             disabled
           >
             <Bell size={18} />
