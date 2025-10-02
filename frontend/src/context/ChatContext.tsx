@@ -216,7 +216,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     [activeChatId, token]
   );
 
-  const startNewChat = useCallback(() => {
+  const startNewChatHandler = useCallback(() => {
     const newChatId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `chat-${Date.now()}`;
@@ -277,7 +277,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       activeChatId,
       sendMessage: sendMessageHandler,
       hydrate,
-      startNewChat,
+      startNewChat: startNewChatHandler,
       selectChat
     }),
     [
@@ -290,7 +290,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       selectChat,
       sendMessageHandler,
       sessions,
-      startNewChat
+      startNewChatHandler
     ]
   );
 
