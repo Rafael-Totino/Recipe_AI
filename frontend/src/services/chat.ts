@@ -35,3 +35,4 @@ export const fetchChatSessions = (token: string) =>
     method: 'GET',
     authToken: token
   });
+};
