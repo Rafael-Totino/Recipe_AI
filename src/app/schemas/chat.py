@@ -11,6 +11,7 @@ class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: str
     createdAt: datetime
+    chatId: str
     relatedRecipeIds: Optional[list[str]] = None
     suggestions: Optional[list[dict[str, str]]] = None
 
@@ -19,8 +20,18 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1)
     recipeId: Optional[str] = None
     threadId: Optional[str] = None
+    chatId: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
     message: ChatMessage
+    userMessage: ChatMessage
+
+
+class ChatSession(BaseModel):
+    id: str
+    title: str
+    createdAt: datetime
+    updatedAt: datetime
+    messageCount: int
 
