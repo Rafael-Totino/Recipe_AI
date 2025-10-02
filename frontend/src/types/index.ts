@@ -62,6 +62,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: string;
+  chatId?: string;
   relatedRecipeIds?: string[];
   suggestions?: Array<{ label: string; prompt: string }>;
 }

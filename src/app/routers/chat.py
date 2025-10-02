@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from supabase import Client
 
 from src.app.deps import CurrentUser, get_current_user, get_supabase
@@ -12,10 +12,11 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.get("/history", response_model=list[ChatMessage])
 async def get_history(
+    chat_id: str | None = Query(None, alias='chat_id'),
     user: CurrentUser = Depends(get_current_user),
     supa: Client = Depends(get_supabase),
 ) -> list[ChatMessage]:
-    return [ChatMessage(**msg) for msg in chat_store.list_messages(str(user.id), supa)]
+    return [ChatMessage(**msg) for msg in chat_store.list_messages(str(user.id), supa, chat_id=chat_id)]
 
 
 
@@ -32,6 +33,7 @@ async def post_message(
             message=payload.message,
             recipe_id=payload.recipeId,
             client_message_id=payload.threadId,
+            chat_id=payload.chatId,
         )
         return ChatResponse(message=ChatMessage(**assistant_msg))
     except Exception as exc:
