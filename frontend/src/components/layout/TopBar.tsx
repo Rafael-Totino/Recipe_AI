@@ -1,12 +1,14 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChefHat, Moon, Plus, Search, Sun } from 'lucide-react';
+import { Bell, ChefHat, Moon, Search, Sun } from 'lucide-react';
 
 import { SearchDropdown } from './SearchDropdown';
 import { useRecipes } from '../../context/RecipeContext';
 import type { Recipe } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useChat } from '../../context/ChatContext';
+import { ChatModal } from '../chat/ChatModal';
 
 import './layout.css';
 
@@ -35,7 +37,9 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
   const { recipes, isLoading } = useRecipes();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { sendMessage } = useChat();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
   const [query, setQuery] = useState(() => {
     const params = new URLSearchParams(location.search);
     return params.get('q') ?? '';
@@ -77,9 +81,11 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
     navigate(`/app/recipes/${recipe.id}`);
   };
 
-  const handleAskAI = (question: string) => {
+  const handleAskAI = async (question: string) => {
     setShowDropdown(false);
-    // TODO: Implementar a lógica para abrir o modal do chat com a pergunta
+    setQuery('');
+    setShowChatModal(true);
+    await sendMessage(question);
   };
 
   const userInitials = useMemo(() => getInitials(user?.name ?? user?.email), [user?.name, user?.email]);
@@ -89,7 +95,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
       return 'Chef IA';
     }
     const firstName = user.name.trim().split(/\s+/)[0];
-    return `Olá, ${firstName}`;
+    return `Olï¿½, ${firstName}`;
   }, [user?.name]);
 
   const subheadline = forceCondensed ? 'Modo cozinha ativo' : 'Sua cozinha inteligente';
@@ -104,10 +110,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleAddRecipe = () => {
-    navigate('/app/import');
-  };
 
   const handleProfile = () => {
     navigate('/app/profile');
@@ -127,7 +129,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
         <div className="search-dropdown-backdrop" aria-hidden="true" />
       ) : null}
       <div className="topbar__glass">
-        <button type="button" className="topbar__brand" onClick={handleGoHome} aria-label="Ir para a página inicial">
+        <button type="button" className="topbar__brand" onClick={handleGoHome} aria-label="Ir para a pï¿½gina inicial">
           <span className="topbar__brand-icon">
             <ChefHat size={18} />
           </span>
@@ -188,19 +190,11 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           <button
             type="button"
             className="topbar__action topbar__action--ghost"
-            aria-label="Notificações em breve"
-            title="Notificações em breve"
+            aria-label="Notificaï¿½ï¿½es em breve"
+            title="Notificaï¿½ï¿½es em breve"
             disabled
           >
             <Bell size={18} />
-          </button>
-          <button
-            type="button"
-            className="topbar__action topbar__action--highlight"
-            onClick={handleAddRecipe}
-          >
-            <Plus size={18} />
-            <span>Adicionar</span>
           </button>
           <button type="button" className="topbar__profile" onClick={handleProfile} aria-label="Abrir perfil">
             {user?.avatarUrl ? (
@@ -215,6 +209,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           </button>
         </div>
       </div>
+      <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
     </header>
   );
 };
