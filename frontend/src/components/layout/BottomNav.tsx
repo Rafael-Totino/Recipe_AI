@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { ChatModal } from '../chat/ChatModal';
 
 import './layout.css';
 
@@ -32,7 +30,7 @@ const BottomNav = () => {
     return serialized ? `?${serialized}` : '';
   };
 
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const isChatRoute = location.pathname.startsWith('/app/chat');
 
   const navItems: BottomNavItem[] = [
     {
@@ -96,8 +94,8 @@ const BottomNav = () => {
           />
         </svg>
       ),
-      onClick: () => setIsChatOpen(true),
-      isActive: isChatOpen
+      to: '/app/chat',
+      isActive: isChatRoute
     },
     {
       key: 'import',
@@ -223,7 +221,6 @@ const BottomNav = () => {
           })}
         </div>
       </nav>
-      <ChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </>
   );
 };

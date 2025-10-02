@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from supabase import Client
 
 from src.app.deps import CurrentUser, get_current_user, get_supabase
-from src.app.schemas.chat import ChatMessage, ChatRequest, ChatResponse
+from src.app.schemas.chat import (
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    ChatSession,
+)
 from src.services import chat_store
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -12,11 +17,26 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.get("/history", response_model=list[ChatMessage])
 async def get_history(
+    chat_id: str | None = Query(default=None, alias="chatId"),
     user: CurrentUser = Depends(get_current_user),
     supa: Client = Depends(get_supabase),
 ) -> list[ChatMessage]:
-    return [ChatMessage(**msg) for msg in chat_store.list_messages(str(user.id), supa)]
+    return [
+        ChatMessage(**msg)
+        for msg in chat_store.list_messages(str(user.id), supa, chat_id=chat_id)
+    ]
 
+
+
+@router.get("/sessions", response_model=list[ChatSession])
+async def list_sessions(
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> list[ChatSession]:
+    return [
+        ChatSession(**session)
+        for session in chat_store.list_sessions(str(user.id), supa)
+    ]
 
 
 @router.post("/", response_model=ChatResponse)
@@ -26,14 +46,18 @@ async def post_message(
     supa: Client = Depends(get_supabase),
 ) -> ChatResponse:
     try:
-        assistant_msg = chat_store.send_message(
+        chat_result = chat_store.send_message(
             user=user,
             supa=supa,
             message=payload.message,
             recipe_id=payload.recipeId,
             client_message_id=payload.threadId,
+            chat_id=payload.chatId,
         )
-        return ChatResponse(message=ChatMessage(**assistant_msg))
+        return ChatResponse(
+            message=ChatMessage(**chat_result["assistant"]),
+            userMessage=ChatMessage(**chat_result["user"]),
+        )
     except Exception as exc:
         # Log do erro pode ser adicionado aqui se necessário
         raise HTTPException(

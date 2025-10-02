@@ -10,6 +10,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import CookingModePage from './pages/CookingModePage';
 import RecipeDetailPage from './pages/RecipeDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import ChatPage from './pages/ChatPage';
 
 const App = () => {
   return (
@@ -32,6 +33,7 @@ const App = () => {
         <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
         <Route path="recipes/:recipeId/cook" element={<CookingModePage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="chat" element={<ChatPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
