@@ -43,3 +43,10 @@ export const fetchChatSessions = (token: string) =>
     authToken: token
   });
 };
+
+export const fetchChatSessions = (token: string) =>
+  apiRequest<ChatSession[]>('/chat/sessions', {
+    method: 'GET',
+    authToken: token
+  });
+};

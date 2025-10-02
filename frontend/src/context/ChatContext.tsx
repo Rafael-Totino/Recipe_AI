@@ -238,7 +238,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setError(undefined);
   }, []);
 
-  const selectChat = useCallback(
+  const selectChatHandler = useCallback(
     (chatId?: string) => {
       setActiveChatId((current) => {
         if (current === chatId) {
@@ -278,7 +278,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       sendMessage: sendMessageHandler,
       hydrate,
       startNewChat: startNewChatHandler,
-      selectChat
+      selectChat: selectChatHandler
     }),
     [
       activeChatId,
@@ -287,7 +287,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       isSending,
       messages,
-      selectChat,
+      selectChatHandler,
       sendMessageHandler,
       sessions,
       startNewChatHandler
