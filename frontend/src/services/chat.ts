@@ -15,12 +15,13 @@ export interface ChatResponse {
   followUpPrompts?: Array<{ label: string; prompt: string }>;
 }
 
-export const sendChatMessage = (token: string, payload: ChatRequestPayload) =>
-  apiRequest<ChatResponse>('/chat', {
+export const sendChatMessage = (token: string, payload: ChatRequestPayload) => {
+  return apiRequest<ChatResponse>('/chat', {
     method: 'POST',
     authToken: token,
     body: JSON.stringify(payload)
   });
+};
 
 export const fetchChatHistory = (token: string, chatId?: string) => {
   const query = chatId ? `?chatId=${encodeURIComponent(chatId)}` : '';
@@ -30,22 +31,8 @@ export const fetchChatHistory = (token: string, chatId?: string) => {
   });
 };
 
-export const fetchChatSessions = (token: string) =>
-  apiRequest<ChatSession[]>('/chat/sessions', {
-    method: 'GET',
-    authToken: token
-  });
-};
-
-export const fetchChatSessions = (token: string) =>
-  apiRequest<ChatSession[]>('/chat/sessions', {
-    method: 'GET',
-    authToken: token
-  });
-};
-
-export const fetchChatSessions = (token: string) =>
-  apiRequest<ChatSession[]>('/chat/sessions', {
+export const fetchChatSessions = (token: string) => {
+  return apiRequest<ChatSession[]>('/chat/sessions', {
     method: 'GET',
     authToken: token
   });
