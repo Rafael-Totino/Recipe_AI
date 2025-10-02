@@ -285,6 +285,16 @@
     padding: 0.3rem 0.65rem 0.5rem;
   }
 
+  .chat-dock__tabs {
+    padding: 0.6rem 1rem 0.35rem;
+    gap: 0.35rem;
+  }
+
+  .chat-dock__tab {
+    min-width: 140px;
+    padding: 0.45rem 0.75rem;
+  }
+
   .chat-dock__history {
     padding: 1rem;
   }

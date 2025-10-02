@@ -1,12 +1,14 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChefHat, Moon, Plus, Search, Sun } from 'lucide-react';
+import { Bell, ChefHat, Moon, Search, Sun } from 'lucide-react';
 
 import { SearchDropdown } from './SearchDropdown';
 import { useRecipes } from '../../context/RecipeContext';
 import type { Recipe } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useChat } from '../../context/ChatContext';
+import { ChatModal } from '../chat/ChatModal';
 
 import './layout.css';
 
@@ -35,7 +37,9 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
   const { recipes, isLoading } = useRecipes();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { sendMessage } = useChat();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
   const [query, setQuery] = useState(() => {
     const params = new URLSearchParams(location.search);
     return params.get('q') ?? '';
@@ -77,7 +81,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
     navigate(`/app/recipes/${recipe.id}`);
   };
 
-  const handleAskAI = (question: string) => {
+  const handleAskAI = async (question: string) => {
     setShowDropdown(false);
     navigate('/app/chat', { state: { prompt: question } });
   };
@@ -104,10 +108,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleAddRecipe = () => {
-    navigate('/app/import');
-  };
 
   const handleProfile = () => {
     navigate('/app/profile');
@@ -194,14 +194,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           >
             <Bell size={18} />
           </button>
-          <button
-            type="button"
-            className="topbar__action topbar__action--highlight"
-            onClick={handleAddRecipe}
-          >
-            <Plus size={18} />
-            <span>Adicionar</span>
-          </button>
           <button type="button" className="topbar__profile" onClick={handleProfile} aria-label="Abrir perfil">
             {user?.avatarUrl ? (
               <img src={user.avatarUrl} alt="" className="topbar__avatar" />
@@ -215,6 +207,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           </button>
         </div>
       </div>
+      <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
     </header>
   );
 };

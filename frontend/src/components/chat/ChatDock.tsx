@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useChat } from '../../context/ChatContext';
@@ -152,6 +153,31 @@ const ChatDock = ({ initialPrompt }: ChatDockProps) => {
           <span aria-hidden="true">+</span>
         </button>
       </div>
+
+      {sessions.length > 1 ? (
+        <div className="chat-dock__tabs" role="tablist" aria-label="Conversas salvas">
+          {sessions.map((session) => {
+            const isActive = session.id === activeChatId;
+            return (
+              <button
+                key={session.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`chat-dock__tab${isActive ? ' is-active' : ''}`}
+                onClick={() => selectChat(session.id)}
+              >
+                <span className="chat-dock__tab-title" title={session.title}>
+                  {session.title}
+                </span>
+                <span className="chat-dock__tab-meta">
+                  {formatTabMeta(session.updatedAt, session.messageCount)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className="chat-dock__history">
         {isLoading ? (

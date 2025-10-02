@@ -146,14 +146,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      const clientMessageId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => { const rand = Math.random() * 16 | 0; const value = char === "x" ? rand : (rand & 0x3) | 0x8; return value.toString(16); });
       const optimisticMessage: ChatMessage = {
-        id: `temp-${Date.now()}`,
+        id: clientMessageId,
         role: 'user',
         content: message,
         createdAt: new Date().toISOString(),
         chatId: activeChatId ?? 'pending-chat'
       };
-
       setMessages((prev) => [...prev, optimisticMessage]);
       setIsSending(true);
       try {
@@ -223,7 +223,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         console.error(err);
         setError('Falha ao enviar mensagem. Tente novamente.');
-        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
+        setMessages((prev) => prev.filter((msg) => msg.id !== clientMessageId));
       } finally {
         setIsSending(false);
       }
@@ -260,6 +260,19 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     },
     [loadMessagesForChat]
   );
+
+  const startNewChat = useCallback(() => {
+    const newChatId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `chat-${Date.now()}`;
+    setActiveChatId(newChatId);
+    setMessages([]);
+    setError(undefined);
+  }, []);
+
+  const selectChat = useCallback((chatId?: string) => {
+    setActiveChatId(chatId);
+  }, []);
 
   const value = useMemo(
     () => ({
