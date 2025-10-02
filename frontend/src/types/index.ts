@@ -67,6 +67,14 @@ export interface ChatMessage {
   suggestions?: Array<{ label: string; prompt: string }>;
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+}
+
 export interface ImportResult {
   recipe: Recipe;
   warnings?: string[];

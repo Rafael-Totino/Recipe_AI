@@ -115,6 +115,58 @@ def list_messages(
     return [_format_chat_message(record) for record in records]
 
 
+def list_sessions(
+    user_id: str,
+    supa: Client,
+    limit: int = 20,
+) -> List[Dict[str, Any]]:
+    """Agrupa as conversas do usuário e retorna metadados para a lista de abas."""
+    session_records = persist_supabase.list_chat_sessions(
+        user_id,
+        supa,
+        limit=limit,
+    )
+
+    sorted_sessions = sorted(
+        session_records,
+        key=lambda item: item.get("updated_at"),
+        reverse=True,
+    )
+
+    normalized: List[Dict[str, Any]] = []
+    for index, record in enumerate(sorted_sessions, start=1):
+        chat_id = str(record.get("chat_id") or f"legacy-{index}")
+        title_value = record.get("title")
+        title = str(title_value).strip() if title_value else ""
+        if not title:
+            title = f"Conversa {index}"
+
+        created_at = record.get("created_at")
+        updated_at = record.get("updated_at")
+
+        # Normaliza para datetime com timezone UTC
+        created_at_dt = _coerce_datetime(created_at)
+        updated_at_dt = _coerce_datetime(updated_at)
+
+        message_count = record.get("message_count")
+        try:
+            message_count_int = int(message_count)
+        except (TypeError, ValueError):
+            message_count_int = 0
+
+        normalized.append(
+            {
+                "id": chat_id,
+                "title": title,
+                "createdAt": created_at_dt,
+                "updatedAt": updated_at_dt,
+                "messageCount": message_count_int,
+            }
+        )
+
+    return normalized
+
+
 def get_context(
     message: str,
     recipe_id: Optional[str],
@@ -299,4 +351,17 @@ def _format_chat_message(record: Dict[str, Any]) -> Dict[str, Any]:
         "relatedRecipeIds": related_recipe_ids,
         "suggestions": suggestions,
     }
+
+
+def _coerce_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc)
+    if isinstance(value, str) and value:
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
+                timezone.utc
+            )
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
 

@@ -113,6 +113,70 @@ def get_chat_history(
         return []
 
 
+def list_chat_sessions(
+    user_id: str,
+    supa: Client,
+    limit: int = 20,
+) -> List[Dict[str, Any]]:
+    """Retorna metadados resumidos das conversas de um usuário."""
+    try:
+        response = (
+            supa.table("chat_messages")
+            .select("chat_id, role, content, created_at")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(limit * 50)
+            .execute()
+        )
+
+        messages: List[Dict[str, Any]] = response.data or []
+        sessions: Dict[str, Dict[str, Any]] = {}
+
+        for record in messages:
+            chat_id_value = record.get("chat_id")
+            if not chat_id_value:
+                # Ignora mensagens antigas sem chat_id definido
+                continue
+
+            chat_id = str(chat_id_value)
+            created_at_value = record.get("created_at")
+            created_at_dt = _coerce_datetime(created_at_value)
+
+            session_info = sessions.get(chat_id)
+            if not session_info:
+                session_info = {
+                    "chat_id": chat_id,
+                    "created_at": created_at_dt,
+                    "updated_at": created_at_dt,
+                    "message_count": 0,
+                    "title": None,
+                }
+                sessions[chat_id] = session_info
+
+            session_info["message_count"] = session_info.get("message_count", 0) + 1
+
+            if created_at_dt < session_info["created_at"]:
+                session_info["created_at"] = created_at_dt
+            if created_at_dt > session_info["updated_at"]:
+                session_info["updated_at"] = created_at_dt
+
+            if not session_info.get("title"):
+                role = str(record.get("role") or "").lower()
+                if role == "user":
+                    content = str(record.get("content") or "").strip()
+                    if content:
+                        max_length = 60
+                        snippet = content[:max_length]
+                        if len(content) > max_length:
+                            snippet += "…"
+                        session_info["title"] = snippet
+
+        return list(sessions.values())
+    except Exception as e:
+        print(f"Erro ao listar sessões de chat: {e}")
+        return []
+
+
 
 def _normalize_chat_id(chat_id: Optional[str]) -> str:
     if chat_id is None:
@@ -255,6 +319,19 @@ def _build_raw_text(
             if not transcript or subtitles_text != transcript.strip():
                 parts.append(f"## SUBTITLES\n{subtitles_text}")
     return "\n\n".join(parts)
+
+
+def _coerce_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc)
+    if isinstance(value, str) and value:
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
+                timezone.utc
+            )
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
 
 
 def upsert_recipe_minimal(

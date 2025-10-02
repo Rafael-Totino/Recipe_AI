@@ -1,5 +1,5 @@
 import { apiRequest } from './api';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, ChatSession } from '../types';
 
 export interface ChatRequestPayload {
   message: string;
@@ -25,6 +25,13 @@ export const sendChatMessage = (token: string, payload: ChatRequestPayload) =>
 export const fetchChatHistory = (token: string, chatId?: string) => {
   const query = chatId ? `?chatId=${encodeURIComponent(chatId)}` : '';
   return apiRequest<ChatMessage[]>(`/chat/history${query}`, {
+    method: 'GET',
+    authToken: token
+  });
+};
+
+export const fetchChatSessions = (token: string) =>
+  apiRequest<ChatSession[]>('/chat/sessions', {
     method: 'GET',
     authToken: token
   });

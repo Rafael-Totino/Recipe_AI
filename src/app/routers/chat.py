@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from supabase import Client
 
 from src.app.deps import CurrentUser, get_current_user, get_supabase
-from src.app.schemas.chat import ChatMessage, ChatRequest, ChatResponse
+from src.app.schemas.chat import (
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    ChatSession,
+)
 from src.services import chat_store
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -21,6 +26,17 @@ async def get_history(
         for msg in chat_store.list_messages(str(user.id), supa, chat_id=chat_id)
     ]
 
+
+
+@router.get("/sessions", response_model=list[ChatSession])
+async def list_sessions(
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> list[ChatSession]:
+    return [
+        ChatSession(**session)
+        for session in chat_store.list_sessions(str(user.id), supa)
+    ]
 
 
 @router.post("/", response_model=ChatResponse)

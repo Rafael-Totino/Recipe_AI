@@ -27,3 +27,11 @@ class ChatResponse(BaseModel):
     message: ChatMessage
     userMessage: ChatMessage
 
+
+class ChatSession(BaseModel):
+    id: str
+    title: str
+    createdAt: datetime
+    updatedAt: datetime
+    messageCount: int
+

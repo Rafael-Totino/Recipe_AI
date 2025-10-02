@@ -1,4 +1,4 @@
-﻿import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { useChat } from '../../context/ChatContext';
 import Loader from '../shared/Loader';
@@ -7,7 +7,44 @@ import MessageBubble from './MessageBubble';
 import './chat.css';
 
 const ChatDock = () => {
-  const { messages, isLoading, isSending, error, sendMessage, hydrate, startNewChat } = useChat();
+  const {
+    messages,
+    sessions,
+    isLoading,
+    isSending,
+    error,
+    sendMessage,
+    startNewChat,
+    activeChatId,
+    selectChat
+  } = useChat();
+
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+    []
+  );
+
+  const formatTabMeta = useCallback(
+    (updatedAt: string, messageCount: number) => {
+      try {
+        const formatted = dateFormatter.format(new Date(updatedAt));
+        if (messageCount <= 0) {
+          return formatted;
+        }
+        return `${formatted} · ${messageCount} mensagens`;
+      } catch (err) {
+        console.error(err);
+        return messageCount > 0 ? `${messageCount} mensagens` : '';
+      }
+    },
+    [dateFormatter]
+  );
 
   const handleSuggestion = useCallback(
     async (prompt: string) => {
@@ -33,8 +70,32 @@ const ChatDock = () => {
         >
           Nova conversa
         </button>
-
       </header>
+
+      {sessions.length > 1 ? (
+        <div className="chat-dock__tabs" role="tablist" aria-label="Conversas salvas">
+          {sessions.map((session) => {
+            const isActive = session.id === activeChatId;
+            return (
+              <button
+                key={session.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`chat-dock__tab${isActive ? ' is-active' : ''}`}
+                onClick={() => selectChat(session.id)}
+              >
+                <span className="chat-dock__tab-title" title={session.title}>
+                  {session.title}
+                </span>
+                <span className="chat-dock__tab-meta">
+                  {formatTabMeta(session.updatedAt, session.messageCount)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className="chat-dock__history">
         {isLoading ? (
