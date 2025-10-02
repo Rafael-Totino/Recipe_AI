@@ -243,6 +243,25 @@ def save_chat_message(
         except AttributeError:
             # Algumas versões do cliente não suportam encadeamento de execute, repetimos a chamada.
             result = supa.table("chat_messages").insert(message_data).execute()
+        except Exception as first_error:
+            fallback_result, chat_id_override = _retry_chat_insert(
+                supa,
+                message_data,
+                first_error,
+                client_message_id=client_message_id,
+            )
+            if fallback_result is None:
+                return _build_local_chat_record(
+                    user_id,
+                    role,
+                    content,
+                    normalized_chat_id,
+                    related_recipe_ids=normalized_related or None,
+                )
+            if chat_id_override:
+                normalized_chat_id = chat_id_override
+                message_data["chat_id"] = chat_id_override
+            result = fallback_result
 
         data = result.data
         def _ensure_chat_id(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -274,7 +293,67 @@ def save_chat_message(
         return {}
     except Exception as e:
         print(f"Erro ao salvar mensagem do chat: {e}")
-        return {}
+        fallback_related: Optional[List[str]] = None
+        if related_recipe_ids:
+            fallback_related = [str(value) for value in related_recipe_ids if value]
+        return _build_local_chat_record(
+            user_id,
+            role,
+            content,
+            str(chat_id or uuid4()),
+            related_recipe_ids=fallback_related,
+        )
+
+
+def _retry_chat_insert(
+    supa: Client,
+    message_data: Dict[str, Any],
+    error: Exception,
+    *,
+    client_message_id: Optional[str] = None,
+):
+    error_text = str(error).lower()
+    updated_payload = message_data.copy()
+    chat_id_override: Optional[str] = None
+
+    if "client_message_id" in error_text and "column" in error_text:
+        updated_payload.pop("client_message_id", None)
+    elif "invalid input syntax for type uuid" in error_text and "chat_id" in error_text:
+        new_chat_id = str(uuid4())
+        updated_payload["chat_id"] = new_chat_id
+        chat_id_override = new_chat_id
+    else:
+        print(f"Erro ao salvar mensagem do chat: {error}")
+        return None, None
+
+    try:
+        result = supa.table("chat_messages").insert(updated_payload).execute()
+        return result, chat_id_override
+    except Exception as retry_error:
+        print(f"Erro ao salvar mensagem do chat após tentativa de correção: {retry_error}")
+        return None, None
+
+
+def _build_local_chat_record(
+    user_id: str,
+    role: str,
+    content: str,
+    chat_id: str,
+    *,
+    related_recipe_ids: Optional[Sequence[str]] = None,
+) -> Dict[str, Any]:
+    now_iso = datetime.now(timezone.utc).isoformat()
+    payload: Dict[str, Any] = {
+        "message_id": str(uuid4()),
+        "user_id": user_id,
+        "role": role,
+        "content": content,
+        "chat_id": chat_id,
+        "created_at": now_iso,
+    }
+    if related_recipe_ids:
+        payload["related_recipe_ids"] = list(related_recipe_ids)
+    return payload
 
 
 def get_recipe_chunks(

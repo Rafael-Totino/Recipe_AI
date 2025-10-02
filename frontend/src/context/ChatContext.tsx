@@ -171,13 +171,22 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
         setMessages((prev) => {
           const withoutOptimistic = prev.filter((msg) => msg.id !== optimisticMessage.id);
-          const userMessage = response.userMessage ?? {
+          const serverUser = response.userMessage;
+          const fallbackUser: ChatMessage = {
             ...optimisticMessage,
-            id: `temp-confirmed-${Date.now()}`,
+            id: serverUser?.id ?? `user-${Date.now()}`,
             chatId: resolvedChatId,
-            createdAt: new Date().toISOString()
+            createdAt: serverUser?.createdAt ?? new Date().toISOString(),
+            content: serverUser?.content?.trim() ? serverUser.content : message,
+            role: 'user',
+            relatedRecipeIds: serverUser?.relatedRecipeIds,
+            suggestions: serverUser?.suggestions
           };
-          return [...withoutOptimistic, userMessage, response.message];
+          const normalizedUser =
+            serverUser && serverUser.role === 'user' && serverUser.content?.trim()
+              ? { ...serverUser, chatId: resolvedChatId }
+              : fallbackUser;
+          return [...withoutOptimistic, normalizedUser, response.message];
         });
 
         setSessions((prev) => {
@@ -198,12 +207,18 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             messageCount
           };
 
-          const others = prev.filter((sessionItem) => sessionItem.id !== resolvedChatId);
+          const others = prev.filter(
+            (sessionItem) =>
+              sessionItem.id !== resolvedChatId && (activeChatId ? sessionItem.id !== activeChatId : true)
+          );
           const nextSessions = [updatedSession, ...others];
           return nextSessions.sort(
             (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
           );
         });
+
+        await loadMessagesForChat(resolvedChatId, { showLoader: false });
+
         setError(undefined);
       } catch (err) {
         console.error(err);
@@ -213,7 +228,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setIsSending(false);
       }
     },
-    [activeChatId, token]
+    [activeChatId, loadMessagesForChat, token]
   );
 
   const startNewChatHandler = useCallback(() => {
