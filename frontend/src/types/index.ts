@@ -62,8 +62,17 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: string;
+  chatId: string;
   relatedRecipeIds?: string[];
   suggestions?: Array<{ label: string; prompt: string }>;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
 }
 
 export interface ImportResult {

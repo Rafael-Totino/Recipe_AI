@@ -20,7 +20,8 @@ def send_message(
     message: str,
     recipe_id: Optional[str] = None,
     client_message_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    chat_id: Optional[str] = None,
+) -> Dict[str, Dict[str, Any]]:
     """
     Orquestra o processo de resposta do chat:
     1. Salva a mensagem do usuário.
@@ -32,14 +33,26 @@ def send_message(
     user_id = str(user.id)
 
     # 1. Salva a mensagem do usuário no banco de dados
-    persist_supabase.save_chat_message(
+    user_record = persist_supabase.save_chat_message(
         user_id,
         "user",
         message,
         supa,
         recipe_id=recipe_id,
         client_message_id=client_message_id,
+        chat_id=chat_id,
     )
+
+    normalized_chat_id: Optional[str] = None
+    if isinstance(user_record, dict):
+        chat_id_value = user_record.get("chat_id")
+        if chat_id_value:
+            normalized_chat_id = str(chat_id_value)
+
+    if not normalized_chat_id:
+        normalized_chat_id = str(chat_id or uuid4())
+        if isinstance(user_record, dict):
+            user_record["chat_id"] = normalized_chat_id
 
     # 2. Busca o contexto relevante (da receita específica ou por similaridade)
     context_text, context_recipe_ids = get_context(
@@ -54,6 +67,7 @@ def send_message(
         user_id,
         supa,
         limit=MAX_HISTORY_MESSAGES,
+        chat_id=normalized_chat_id,
     )
     history_payload = _build_history_payload(full_history)
 
@@ -72,15 +86,85 @@ def send_message(
         assistant_text,
         supa,
         related_recipe_ids=context_recipe_ids or None,
+        chat_id=normalized_chat_id,
     )
 
-    return _format_chat_message(assistant_record)
+    if isinstance(assistant_record, dict) and "chat_id" not in assistant_record:
+        assistant_record["chat_id"] = normalized_chat_id
+
+    formatted_user = _format_chat_message(user_record)
+    formatted_assistant = _format_chat_message(assistant_record)
+
+    return {"user": formatted_user, "assistant": formatted_assistant}
 
 
-def list_messages(user_id: str, supa: Client, limit: int = 50) -> List[Dict[str, Any]]:
+def list_messages(
+    user_id: str,
+    supa: Client,
+    limit: int = 50,
+    *,
+    chat_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
     """Retorna o histórico do chat no formato esperado pela API."""
-    records = persist_supabase.get_chat_history(user_id, supa, limit=limit)
+    records = persist_supabase.get_chat_history(
+        user_id,
+        supa,
+        limit=limit,
+        chat_id=chat_id,
+    )
     return [_format_chat_message(record) for record in records]
+
+
+def list_sessions(
+    user_id: str,
+    supa: Client,
+    limit: int = 20,
+) -> List[Dict[str, Any]]:
+    """Agrupa as conversas do usuário e retorna metadados para a lista de abas."""
+    session_records = persist_supabase.list_chat_sessions(
+        user_id,
+        supa,
+        limit=limit,
+    )
+
+    sorted_sessions = sorted(
+        session_records,
+        key=lambda item: item.get("updated_at"),
+        reverse=True,
+    )
+
+    normalized: List[Dict[str, Any]] = []
+    for index, record in enumerate(sorted_sessions, start=1):
+        chat_id = str(record.get("chat_id") or f"legacy-{index}")
+        title_value = record.get("title")
+        title = str(title_value).strip() if title_value else ""
+        if not title:
+            title = f"Conversa {index}"
+
+        created_at = record.get("created_at")
+        updated_at = record.get("updated_at")
+
+        # Normaliza para datetime com timezone UTC
+        created_at_dt = _coerce_datetime(created_at)
+        updated_at_dt = _coerce_datetime(updated_at)
+
+        message_count = record.get("message_count")
+        try:
+            message_count_int = int(message_count)
+        except (TypeError, ValueError):
+            message_count_int = 0
+
+        normalized.append(
+            {
+                "id": chat_id,
+                "title": title,
+                "createdAt": created_at_dt,
+                "updatedAt": updated_at_dt,
+                "messageCount": message_count_int,
+            }
+        )
+
+    return normalized
 
 
 def get_context(
@@ -207,11 +291,13 @@ def _build_history_payload(records: Sequence[Dict[str, Any]]) -> List[Dict[str, 
 def _format_chat_message(record: Dict[str, Any]) -> Dict[str, Any]:
     """Normaliza o formato da mensagem para o contrato da API."""
     if not record:
+        fallback_chat_id = "legacy-chat"
         return {
             "id": str(uuid4()),
             "role": "assistant",
             "content": "",
             "createdAt": datetime.now(timezone.utc).isoformat(),
+            "chatId": fallback_chat_id,
         }
 
     message_id = (
@@ -220,6 +306,16 @@ def _format_chat_message(record: Dict[str, Any]) -> Dict[str, Any]:
         or record.get("uuid")
         or str(uuid4())
     )
+
+    chat_id_value = (
+        record.get("chat_id")
+        or record.get("thread_id")
+        or record.get("conversation_id")
+    )
+    if chat_id_value:
+        chat_id_str = str(chat_id_value)
+    else:
+        chat_id_str = "legacy-chat"
 
     created_at = record.get("created_at")
     if isinstance(created_at, datetime):
@@ -248,10 +344,24 @@ def _format_chat_message(record: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "id": str(message_id),
-        "role": record.get("role", "assistant"),
-        "content": record.get("content", ""),
+        "role": str(record.get("role") or "assistant"),
+        "content": str(record.get("content") or ""),
         "createdAt": created_at_iso,
+        "chatId": chat_id_str,
         "relatedRecipeIds": related_recipe_ids,
         "suggestions": suggestions,
     }
+
+
+def _coerce_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc)
+    if isinstance(value, str) and value:
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
+                timezone.utc
+            )
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
 

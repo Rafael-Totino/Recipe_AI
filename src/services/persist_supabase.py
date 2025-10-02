@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence
+from uuid import uuid4
 
 from supabase import Client
 
@@ -83,23 +84,91 @@ def find_similar_chunks(
         return []
 
 
-def get_chat_history(user_id: str, supa: Client, limit: int = 50) -> List[Dict[str, Any]]:
+def get_chat_history(
+    user_id: str,
+    supa: Client,
+    limit: int = 50,
+    *,
+    chat_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
     """Busca o histórico de mensagens de um usuário no banco de dados."""
     try:
-        response = (
-            supa.table("chat_messages")
-            .select("*")
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
+        query = supa.table("chat_messages").select("*").eq("user_id", user_id)
+
+        if chat_id:
+            query = query.eq("chat_id", chat_id)
+
+        response = query.order("created_at", desc=True).limit(limit).execute()
 
         records: List[Dict[str, Any]] = response.data or []
         records.reverse()
         return records
     except Exception as e:
         print(f"Erro ao buscar histórico do chat: {e}")
+        return []
+
+
+def list_chat_sessions(
+    user_id: str,
+    supa: Client,
+    limit: int = 20,
+) -> List[Dict[str, Any]]:
+    """Retorna metadados resumidos das conversas de um usuário."""
+    try:
+        response = (
+            supa.table("chat_messages")
+            .select("chat_id, role, content, created_at")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(limit * 50)
+            .execute()
+        )
+
+        messages: List[Dict[str, Any]] = response.data or []
+        sessions: Dict[str, Dict[str, Any]] = {}
+
+        for record in messages:
+            chat_id_value = record.get("chat_id")
+            if not chat_id_value:
+                # Ignora mensagens antigas sem chat_id definido
+                continue
+
+            chat_id = str(chat_id_value)
+            created_at_value = record.get("created_at")
+            created_at_dt = _coerce_datetime(created_at_value)
+
+            session_info = sessions.get(chat_id)
+            if not session_info:
+                session_info = {
+                    "chat_id": chat_id,
+                    "created_at": created_at_dt,
+                    "updated_at": created_at_dt,
+                    "message_count": 0,
+                    "title": None,
+                }
+                sessions[chat_id] = session_info
+
+            session_info["message_count"] = session_info.get("message_count", 0) + 1
+
+            if created_at_dt < session_info["created_at"]:
+                session_info["created_at"] = created_at_dt
+            if created_at_dt > session_info["updated_at"]:
+                session_info["updated_at"] = created_at_dt
+
+            if not session_info.get("title"):
+                role = str(record.get("role") or "").lower()
+                if role == "user":
+                    content = str(record.get("content") or "").strip()
+                    if content:
+                        max_length = 60
+                        snippet = content[:max_length]
+                        if len(content) > max_length:
+                            snippet += "…"
+                        session_info["title"] = snippet
+
+        return list(sessions.values())
+    except Exception as e:
+        print(f"Erro ao listar sessões de chat: {e}")
         return []
 
 
@@ -111,6 +180,7 @@ def save_chat_message(
     *,
     recipe_id: Optional[str] = None,
     client_message_id: Optional[str] = None,
+    chat_id: Optional[str] = None,
     related_recipe_ids: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
     """Salva uma única mensagem de chat no banco de dados e retorna o registro salvo."""
@@ -120,6 +190,9 @@ def save_chat_message(
             "role": role,
             "content": content,
         }
+
+        normalized_chat_id = str(chat_id or uuid4())
+        message_data["chat_id"] = normalized_chat_id
 
         normalized_related: List[str] = []
         if recipe_id:
@@ -146,29 +219,117 @@ def save_chat_message(
         except AttributeError:
             # Algumas versões do cliente não suportam encadeamento de execute, repetimos a chamada.
             result = supa.table("chat_messages").insert(message_data).execute()
+        except Exception as first_error:
+            fallback_result, chat_id_override = _retry_chat_insert(
+                supa,
+                message_data,
+                first_error,
+                client_message_id=client_message_id,
+            )
+            if fallback_result is None:
+                return _build_local_chat_record(
+                    user_id,
+                    role,
+                    content,
+                    normalized_chat_id,
+                    related_recipe_ids=normalized_related or None,
+                )
+            if chat_id_override:
+                normalized_chat_id = chat_id_override
+                message_data["chat_id"] = chat_id_override
+            result = fallback_result
 
         data = result.data
+        def _ensure_chat_id(payload: Dict[str, Any]) -> Dict[str, Any]:
+            if "chat_id" not in payload:
+                payload["chat_id"] = normalized_chat_id
+            return payload
+
         if isinstance(data, list) and data:
-            return data[0]
+            return _ensure_chat_id(data[0])
         if isinstance(data, dict) and data:
-            return data
+            return _ensure_chat_id(data)
 
         # Se o Supabase não retornou a linha criada, buscamos a mensagem mais recente do usuário.
         history = (
             supa.table("chat_messages")
             .select("*")
             .eq("user_id", user_id)
+            .eq("chat_id", normalized_chat_id)
             .order("created_at", desc=True)
             .limit(1)
             .execute()
         )
         if history.data:
-            return history.data[0]
+            record = history.data[0]
+            if isinstance(record, dict) and "chat_id" not in record:
+                record["chat_id"] = normalized_chat_id
+            return record
 
         return {}
     except Exception as e:
         print(f"Erro ao salvar mensagem do chat: {e}")
-        return {}
+        fallback_related: Optional[List[str]] = None
+        if related_recipe_ids:
+            fallback_related = [str(value) for value in related_recipe_ids if value]
+        return _build_local_chat_record(
+            user_id,
+            role,
+            content,
+            str(chat_id or uuid4()),
+            related_recipe_ids=fallback_related,
+        )
+
+
+def _retry_chat_insert(
+    supa: Client,
+    message_data: Dict[str, Any],
+    error: Exception,
+    *,
+    client_message_id: Optional[str] = None,
+):
+    error_text = str(error).lower()
+    updated_payload = message_data.copy()
+    chat_id_override: Optional[str] = None
+
+    if "client_message_id" in error_text and "column" in error_text:
+        updated_payload.pop("client_message_id", None)
+    elif "invalid input syntax for type uuid" in error_text and "chat_id" in error_text:
+        new_chat_id = str(uuid4())
+        updated_payload["chat_id"] = new_chat_id
+        chat_id_override = new_chat_id
+    else:
+        print(f"Erro ao salvar mensagem do chat: {error}")
+        return None, None
+
+    try:
+        result = supa.table("chat_messages").insert(updated_payload).execute()
+        return result, chat_id_override
+    except Exception as retry_error:
+        print(f"Erro ao salvar mensagem do chat após tentativa de correção: {retry_error}")
+        return None, None
+
+
+def _build_local_chat_record(
+    user_id: str,
+    role: str,
+    content: str,
+    chat_id: str,
+    *,
+    related_recipe_ids: Optional[Sequence[str]] = None,
+) -> Dict[str, Any]:
+    now_iso = datetime.now(timezone.utc).isoformat()
+    payload: Dict[str, Any] = {
+        "message_id": str(uuid4()),
+        "user_id": user_id,
+        "role": role,
+        "content": content,
+        "chat_id": chat_id,
+        "created_at": now_iso,
+    }
+    if related_recipe_ids:
+        payload["related_recipe_ids"] = list(related_recipe_ids)
+    return payload
 
 
 def get_recipe_chunks(
@@ -213,6 +374,19 @@ def _build_raw_text(
             if not transcript or subtitles_text != transcript.strip():
                 parts.append(f"## SUBTITLES\n{subtitles_text}")
     return "\n\n".join(parts)
+
+
+def _coerce_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc)
+    if isinstance(value, str) and value:
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
+                timezone.utc
+            )
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
 
 
 def upsert_recipe_minimal(
