@@ -5,12 +5,17 @@ from typing import Any, Dict, List, Optional, Sequence
 from uuid import uuid4
 
 from supabase import Client
+from uuid import UUID
 
 from src.services.ids import detect_platform_and_id
 from src.services.persist_models import *
 from src.services.slugify import slugify, unique_slug
 from src.services.types import RawContent
 from src.services.embedding import *
+
+
+
+DEFAULT_CHAT_ID = "default"
 
 
 def get_chunk_by_id(recipe_id: str, user_id: str, supa: Client):
@@ -172,6 +177,22 @@ def list_chat_sessions(
         return []
 
 
+
+def _normalize_chat_id(chat_id: Optional[str]) -> str:
+    if chat_id is None:
+        return DEFAULT_CHAT_ID
+    value = str(chat_id).strip()
+    if not value:
+        return DEFAULT_CHAT_ID
+    lowered = value.lower()
+    if lowered == DEFAULT_CHAT_ID:
+        return DEFAULT_CHAT_ID
+    try:
+        return str(UUID(value))
+    except (ValueError, TypeError):
+        return DEFAULT_CHAT_ID
+
+
 def save_chat_message(
     user_id: str,
     role: str,
@@ -200,7 +221,10 @@ def save_chat_message(
             normalized_related.append(str(recipe_id))
 
         if client_message_id:
-            message_data["client_message_id"] = client_message_id
+            try:
+                message_data["client_message_id"] = str(UUID(str(client_message_id)))
+            except (ValueError, TypeError):
+                pass
 
         if related_recipe_ids:
             for value in related_recipe_ids:
