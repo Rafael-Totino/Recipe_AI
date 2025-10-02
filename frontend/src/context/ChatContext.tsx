@@ -17,8 +17,11 @@ interface ChatContextValue {
   isLoading: boolean;
   isSending: boolean;
   error?: string;
+  activeChatId?: string;
   sendMessage: (message: string, recipeId?: string) => Promise<void>;
   hydrate: () => Promise<void>;
+  startNewChat: () => void;
+  selectChat: (chatId?: string) => void;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -29,6 +32,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [activeChatId, setActiveChatId] = useState<string | undefined>(undefined);
 
   const hydrate = useCallback(async () => {
     if (!session?.access_token) {
@@ -37,7 +41,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
     setIsLoading(true);
     try {
-      const history = await fetchChatHistory(session.access_token);
+      const history = await fetchChatHistory(session.access_token, activeChatId);
+      if (!activeChatId && history.length > 0) {
+        setActiveChatId(history[history.length - 1]?.chatId);
+      }
       setMessages(history);
       setError(undefined);
     } catch (err) {
@@ -46,7 +53,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token]);
+  }, [activeChatId, session?.access_token]);
 
   useEffect(() => {
     void hydrate();
@@ -62,14 +69,33 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         id: `temp-${Date.now()}`,
         role: 'user',
         content: message,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        chatId: activeChatId ?? 'pending-chat'
       };
 
       setMessages((prev) => [...prev, optimisticMessage]);
       setIsSending(true);
       try {
-        const response = await sendChatMessage(session.access_token, { message, recipeId, threadId: optimisticMessage.id });
-        setMessages((prev) => [...prev.filter((msg) => msg.id !== optimisticMessage.id), optimisticMessage, response.message]);
+        const response = await sendChatMessage(session.access_token, {
+          message,
+          recipeId,
+          threadId: optimisticMessage.id,
+          chatId: activeChatId
+        });
+
+        const resolvedChatId = response.message.chatId;
+        setActiveChatId(resolvedChatId);
+
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter((msg) => msg.id !== optimisticMessage.id);
+          const userMessage = response.userMessage ?? {
+            ...optimisticMessage,
+            id: `temp-confirmed-${Date.now()}`,
+            chatId: resolvedChatId,
+            createdAt: new Date().toISOString()
+          };
+          return [...withoutOptimistic, userMessage, response.message];
+        });
         setError(undefined);
       } catch (err) {
         console.error(err);
@@ -79,12 +105,45 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setIsSending(false);
       }
     },
-    [session?.access_token]
+    [activeChatId, session?.access_token]
   );
 
+  const startNewChat = useCallback(() => {
+    const newChatId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `chat-${Date.now()}`;
+    setActiveChatId(newChatId);
+    setMessages([]);
+    setError(undefined);
+  }, []);
+
+  const selectChat = useCallback((chatId?: string) => {
+    setActiveChatId(chatId);
+  }, []);
+
   const value = useMemo(
-    () => ({ messages, isLoading, isSending, error, sendMessage: sendMessageHandler, hydrate }),
-    [error, hydrate, isLoading, isSending, messages, sendMessageHandler]
+    () => ({
+      messages,
+      isLoading,
+      isSending,
+      error,
+      activeChatId,
+      sendMessage: sendMessageHandler,
+      hydrate,
+      startNewChat,
+      selectChat
+    }),
+    [
+      activeChatId,
+      error,
+      hydrate,
+      isLoading,
+      isSending,
+      messages,
+      selectChat,
+      sendMessageHandler,
+      startNewChat
+    ]
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

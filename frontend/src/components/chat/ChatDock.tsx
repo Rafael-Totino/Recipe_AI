@@ -7,7 +7,7 @@ import MessageBubble from './MessageBubble';
 import './chat.css';
 
 const ChatDock = () => {
-  const { messages, isLoading, isSending, error, sendMessage, hydrate } = useChat();
+  const { messages, isLoading, isSending, error, sendMessage, hydrate, startNewChat } = useChat();
 
   const handleSuggestion = useCallback(
     async (prompt: string) => {
@@ -26,6 +26,13 @@ const ChatDock = () => {
             O chat acompanha cada receita e traz tecnicas, substituicoes e ideias comerciais para o seu livro digital.
           </p>
         </div>
+        <button
+          type="button"
+          className="button button--secondary"
+          onClick={startNewChat}
+        >
+          Nova conversa
+        </button>
 
       </header>
 
