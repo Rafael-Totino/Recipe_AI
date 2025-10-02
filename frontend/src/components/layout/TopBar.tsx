@@ -126,15 +126,23 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
       ) : null}
       <div className="topbar__glass">
         <div className="topbar__header">
-          <button type="button" className="topbar__brand" onClick={handleGoHome} aria-label="Ir para a pgina inicial">
-            <span className="topbar__brand-icon">
-              <ChefHat size={18} />
-            </span>
-            <span className="topbar__brand-text">
-              <span className="topbar__brand-eyebrow">Chef IA</span>
-              <span className="topbar__brand-title">Cozinha viva</span>
-            </span>
-          </button>
+          <div className="topbar__identity">
+            <button
+              type="button"
+              className="topbar__brand"
+              onClick={handleGoHome}
+              aria-label="Ir para a pgina inicial"
+            >
+              <span className="topbar__brand-icon">
+                <ChefHat size={18} />
+              </span>
+              <span className="topbar__brand-text">
+                <span className="topbar__brand-eyebrow">Chef IA</span>
+                <span className="topbar__brand-title">Cozinha viva</span>
+              </span>
+            </button>
+            <span className="topbar__center-eyebrow">{subheadline}</span>
+          </div>
 
           <div className="topbar__header-actions">
             <div className="topbar__actions">
@@ -198,7 +206,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
         </div>
 
         <div className="topbar__center" role="search" ref={searchAreaRef}>
-          <span className="topbar__center-eyebrow">{subheadline}</span>
           <form onSubmit={handleSearch} className="topbar__search">
             <Search size={20} className="topbar__search-icon" />
             <input

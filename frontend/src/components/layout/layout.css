@@ -2,8 +2,8 @@
   --shell-padding-y: clamp(1.2rem, 3vw, 2.2rem);
   --shell-padding-x: clamp(1rem, 3vw, 2.6rem);
   --shell-bottom-gap: clamp(6.5rem, 8vw, 7.75rem); /* Aumentado para acomodar a bottom nav */
-  --topbar-fixed-height: clamp(6.25rem, 12vw, 7.4rem);
-  --topbar-fixed-gap: clamp(0.75rem, 2.4vw, 1.25rem);
+  --topbar-fixed-height: clamp(5.85rem, 11vw, 6.8rem);
+  --topbar-fixed-gap: clamp(0.65rem, 2.2vw, 1.1rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr); /* MUDANÇA: Apenas uma coluna principal */
   grid-template-rows: auto minmax(0, 1fr);
@@ -23,8 +23,8 @@
   --shell-padding-x: clamp(0.9rem, 2.6vw, 1.6rem);
   --cooking-header-height: 72px;
   --cooking-top-gap: clamp(1rem, 3vw, 1.65rem);
-  --topbar-fixed-height: clamp(5.4rem, 11vw, 6.3rem);
-  --topbar-fixed-gap: clamp(0.55rem, 2vw, 0.95rem);
+  --topbar-fixed-height: clamp(5.1rem, 10vw, 6rem);
+  --topbar-fixed-gap: clamp(0.5rem, 1.8vw, 0.85rem);
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   grid-template-areas:
@@ -51,7 +51,7 @@ body.chat-focus .app-shell {
   display: flex;
   justify-content: center;
   width: 100%;
-  padding: clamp(0.45rem, 1.4vw, 0.75rem) 0;
+  padding: clamp(0.3rem, 1.2vw, 0.6rem) 0;
   pointer-events: none;
 }
 
@@ -65,7 +65,7 @@ body.chat-focus .app-shell {
   /* Adicionado para centralizar o conteúdo que antes era espremido pela coluna do chat */
   max-width: 820px;
   width: 100%;
-  margin: calc(var(--topbar-fixed-height) + var(--topbar-fixed-gap) - var(--shell-padding-y)) auto 0;
+  margin: calc(var(--topbar-fixed-height) + var(--topbar-fixed-gap)) auto 0;
 }
 
 .app-shell--cooking .main-area {
@@ -100,9 +100,9 @@ body.chat-focus .app-shell {
 
 @media (max-width: 960px) {
   .app-shell {
-    --shell-padding-y: clamp(1.1rem, 4vw, 1.65rem);
-    --topbar-fixed-height: clamp(5.9rem, 20vw, 7.05rem);
-    --topbar-fixed-gap: clamp(0.6rem, 4vw, 1.05rem);
+    --shell-padding-y: clamp(1.05rem, 3.6vw, 1.55rem);
+    --topbar-fixed-height: clamp(5.45rem, 18vw, 6.6rem);
+    --topbar-fixed-gap: clamp(0.55rem, 3.6vw, 0.95rem);
     grid-template-areas:
       'header'
       'main';
@@ -111,12 +111,8 @@ body.chat-focus .app-shell {
     max-width: 100%;
   }
 
-  .header-area {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding: clamp(0.35rem, 3vw, 0.6rem) 0;
+  .topbar__identity {
+    gap: clamp(0.65rem, 3.2vw, 1.25rem);
   }
 
   .chat-area {
@@ -155,9 +151,9 @@ body.chat-focus .app-shell {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: clamp(0.75rem, 2.3vw, 1.35rem);
+  gap: clamp(0.35rem, 1.8vw, 0.75rem);
   width: 100%;
-  padding: clamp(0.75rem, 2.1vw, 1.2rem) clamp(1.2rem, 3.2vw, 2.2rem);
+  padding: clamp(0.65rem, 1.8vw, 1.05rem) clamp(1.1rem, 3vw, 2.05rem);
   border-radius: clamp(1.6rem, 3.6vw, 2.4rem);
   background: var(--topbar-glass-bg);
   border: 1px solid var(--topbar-glass-border);
@@ -172,8 +168,16 @@ body.chat-focus .app-shell {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: clamp(0.85rem, 2.2vw, 1.35rem);
+  gap: clamp(0.75rem, 2.2vw, 1.2rem);
   width: 100%;
+}
+
+.topbar__identity {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2.8vw, 1.6rem);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .topbar__header-actions {
@@ -291,20 +295,31 @@ body.chat-focus .app-shell {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(0.45rem, 1.6vw, 0.75rem);
+  gap: clamp(0.2rem, 1.4vw, 0.45rem);
   position: relative;
   isolation: isolate;
 }
 
 .topbar__center-eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.34em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  max-width: clamp(16rem, 28vw, 24rem);
+  padding: 0.35rem clamp(0.85rem, 2.4vw, 1.45rem);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(31, 37, 40, 0.62);
+  color: rgba(31, 37, 40, 0.68);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 18px 34px -30px rgba(12, 18, 28, 0.45);
 }
 
 :root[data-theme='dark'] .topbar__center-eyebrow {
-  color: rgba(236, 240, 247, 0.66);
+  color: rgba(236, 240, 247, 0.76);
+  background: rgba(236, 240, 247, 0.12);
+  box-shadow: inset 0 1px 0 rgba(236, 240, 247, 0.18), 0 18px 34px -30px rgba(0, 0, 0, 0.55);
 }
 
 .topbar__actions {
@@ -499,9 +514,9 @@ body.chat-focus .app-shell {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: clamp(0.55rem, 1.6vw, 1.1rem);
-  padding: clamp(0.5rem, 1.4vw, 0.8rem) clamp(0.65rem, 1.8vw, 1.1rem);
-  border-radius: clamp(1.1rem, 2.6vw, 1.6rem);
+  gap: clamp(0.45rem, 1.4vw, 0.9rem);
+  padding: clamp(0.42rem, 1.2vw, 0.65rem) clamp(0.6rem, 1.6vw, 1rem);
+  border-radius: clamp(1rem, 2.4vw, 1.45rem);
   background: var(--topbar-search-bg);
   border: none;
   box-shadow: inset 0 0 0 1px var(--topbar-search-border), var(--topbar-search-shadow);
@@ -544,7 +559,7 @@ body.chat-focus .app-shell {
 .topbar__search-actions {
   display: flex;
   align-items: center;
-  gap: clamp(0.45rem, 1.6vw, 0.8rem);
+  gap: clamp(0.35rem, 1.2vw, 0.7rem);
   flex-shrink: 0;
 }
 
@@ -575,7 +590,7 @@ body.chat-focus .app-shell {
 }
 
 .topbar__search-button {
-  padding: 0.7rem clamp(1.4rem, 3vw, 1.95rem);
+  padding: 0.62rem clamp(1.3rem, 2.6vw, 1.85rem);
   white-space: nowrap;
 }
 
@@ -690,10 +705,23 @@ body.chat-focus .app-shell {
     gap: clamp(0.85rem, 3.8vw, 1.2rem);
   }
 
+  .topbar__identity {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: clamp(0.55rem, 3.6vw, 0.95rem);
+  }
+
   .topbar__brand {
     width: 100%;
     justify-content: space-between;
     padding: 0.45rem 0.9rem;
+  }
+
+  .topbar__center-eyebrow {
+    max-width: 100%;
+    justify-content: center;
+    padding: 0.45rem clamp(0.75rem, 6vw, 1.2rem);
   }
 
   .topbar__header-actions {
