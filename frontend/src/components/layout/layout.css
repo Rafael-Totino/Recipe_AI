@@ -290,7 +290,7 @@ body.chat-focus .app-shell {
   border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.12);
-  color: var(--color-heading);
+  color: var(--color-muted);
   font-weight: 600;
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.25s ease;
 }
@@ -319,28 +319,8 @@ body.chat-focus .app-shell {
   box-shadow: none;
 }
 
-.topbar__action--ghost {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--color-muted);
-}
-
-:root[data-theme='dark'] .topbar__action--ghost {
-  border-color: rgba(236, 240, 247, 0.22);
-  background: rgba(236, 240, 247, 0.1);
+:root[data-theme='dark'] .topbar__action {
   color: rgba(236, 240, 247, 0.82);
-}
-
-.topbar__action--highlight {
-  background: var(--gradient-brand);
-  color: #fff;
-  border: none;
-  box-shadow: 0 32px 52px -28px rgba(232, 93, 4, 0.65);
-  padding: 0.55rem 1.15rem;
-}
-
-.topbar__action--highlight span {
-  font-size: 0.85rem;
-  letter-spacing: 0.01em;
 }
 
 .topbar__profile {
@@ -423,13 +403,15 @@ body.chat-focus .app-shell {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: clamp(0.65rem, 2vw, 1.25rem);
-  padding: clamp(0.55rem, 1.6vw, 0.85rem) clamp(0.75rem, 2vw, 1.2rem);
-  border-radius: clamp(1.1rem, 2.8vw, 1.65rem);
+  gap: clamp(0.55rem, 1.6vw, 1.1rem);
+  padding: clamp(0.5rem, 1.4vw, 0.8rem) clamp(0.65rem, 1.8vw, 1.1rem);
+  border-radius: clamp(1.1rem, 2.6vw, 1.6rem);
   background: var(--topbar-search-bg);
   border: none;
   box-shadow: inset 0 0 0 1px var(--topbar-search-border), var(--topbar-search-shadow);
   z-index: 1;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .topbar__search-icon {
@@ -448,6 +430,7 @@ body.chat-focus .app-shell {
   background: transparent;
   font-size: 1rem;
   color: var(--color-text);
+  min-width: 0;
 }
 
 .topbar__search input::placeholder {
@@ -465,7 +448,12 @@ body.chat-focus .app-shell {
 .topbar__search-actions {
   display: flex;
   align-items: center;
-  gap: clamp(0.5rem, 2vw, 0.9rem);
+  gap: clamp(0.45rem, 1.6vw, 0.8rem);
+  flex-shrink: 0;
+}
+
+.topbar__search-actions button {
+  flex-shrink: 0;
 }
 
 .topbar__clear {
@@ -573,6 +561,54 @@ body.chat-focus .app-shell {
 
   display: none;
 
+}
+
+@media (max-width: 1180px) {
+  .topbar__glass {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: clamp(0.75rem, 2.2vw, 1.35rem);
+  }
+
+  .topbar__brand {
+    flex: 0 0 auto;
+    margin-right: auto;
+  }
+
+  .topbar__actions {
+    order: 2;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: clamp(0.35rem, 1.8vw, 0.7rem);
+  }
+
+  .topbar__center {
+    order: 3;
+    width: 100%;
+  }
+
+  .topbar__search {
+    margin-top: clamp(0.35rem, 1vw, 0.55rem);
+  }
+
+  .topbar__profile-info {
+    display: none;
+  }
+
+  .topbar__profile {
+    padding-right: 0.6rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .topbar__action {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .topbar__actions {
+    justify-content: space-between;
+  }
 }
 
 @media (max-width: 720px) {
