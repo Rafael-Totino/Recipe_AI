@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence
+from uuid import uuid4
 
 from supabase import Client
 from uuid import UUID
@@ -88,17 +89,21 @@ def find_similar_chunks(
         return []
 
 
-def get_chat_history(user_id: str, supa: Client, limit: int = 50) -> List[Dict[str, Any]]:
+def get_chat_history(
+    user_id: str,
+    supa: Client,
+    limit: int = 50,
+    *,
+    chat_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
     """Busca o histórico de mensagens de um usuário no banco de dados."""
     try:
-        response = (
-            supa.table("chat_messages")
-            .select("*")
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
+        query = supa.table("chat_messages").select("*").eq("user_id", user_id)
+
+        if chat_id:
+            query = query.eq("chat_id", chat_id)
+
+        response = query.order("created_at", desc=True).limit(limit).execute()
 
         records: List[Dict[str, Any]] = response.data or []
         records.reverse()
@@ -132,6 +137,7 @@ def save_chat_message(
     *,
     recipe_id: Optional[str] = None,
     client_message_id: Optional[str] = None,
+    chat_id: Optional[str] = None,
     related_recipe_ids: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
     """Salva uma única mensagem de chat no banco de dados e retorna o registro salvo."""
@@ -141,6 +147,9 @@ def save_chat_message(
             "role": role,
             "content": content,
         }
+
+        normalized_chat_id = str(chat_id or uuid4())
+        message_data["chat_id"] = normalized_chat_id
 
         normalized_related: List[str] = []
         if recipe_id:
@@ -172,22 +181,31 @@ def save_chat_message(
             result = supa.table("chat_messages").insert(message_data).execute()
 
         data = result.data
+        def _ensure_chat_id(payload: Dict[str, Any]) -> Dict[str, Any]:
+            if "chat_id" not in payload:
+                payload["chat_id"] = normalized_chat_id
+            return payload
+
         if isinstance(data, list) and data:
-            return data[0]
+            return _ensure_chat_id(data[0])
         if isinstance(data, dict) and data:
-            return data
+            return _ensure_chat_id(data)
 
         # Se o Supabase não retornou a linha criada, buscamos a mensagem mais recente do usuário.
         history = (
             supa.table("chat_messages")
             .select("*")
             .eq("user_id", user_id)
+            .eq("chat_id", normalized_chat_id)
             .order("created_at", desc=True)
             .limit(1)
             .execute()
         )
         if history.data:
-            return history.data[0]
+            record = history.data[0]
+            if isinstance(record, dict) and "chat_id" not in record:
+                record["chat_id"] = normalized_chat_id
+            return record
 
         return {}
     except Exception as e:

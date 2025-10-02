@@ -21,7 +21,7 @@ def send_message(
     recipe_id: Optional[str] = None,
     client_message_id: Optional[str] = None,
     chat_id: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> Dict[str, Dict[str, Any]]:
     """
     Orquestra o processo de resposta do chat:
     1. Salva a mensagem do usuário.
@@ -33,7 +33,7 @@ def send_message(
     user_id = str(user.id)
 
     # 1. Salva a mensagem do usuário no banco de dados
-    persist_supabase.save_chat_message(
+    user_record = persist_supabase.save_chat_message(
         user_id,
         "user",
         message,
@@ -42,6 +42,17 @@ def send_message(
         client_message_id=client_message_id,
         chat_id=chat_id,
     )
+
+    normalized_chat_id: Optional[str] = None
+    if isinstance(user_record, dict):
+        chat_id_value = user_record.get("chat_id")
+        if chat_id_value:
+            normalized_chat_id = str(chat_id_value)
+
+    if not normalized_chat_id:
+        normalized_chat_id = str(chat_id or uuid4())
+        if isinstance(user_record, dict):
+            user_record["chat_id"] = normalized_chat_id
 
     # 2. Busca o contexto relevante (da receita específica ou por similaridade)
     context_text, context_recipe_ids = get_context(
@@ -56,7 +67,7 @@ def send_message(
         user_id,
         supa,
         limit=MAX_HISTORY_MESSAGES,
-        chat_id=chat_id,
+        chat_id=normalized_chat_id,
     )
     history_payload = _build_history_payload(full_history)
 
@@ -75,15 +86,32 @@ def send_message(
         assistant_text,
         supa,
         related_recipe_ids=context_recipe_ids or None,
-        chat_id=chat_id,
+        chat_id=normalized_chat_id,
     )
 
-    return _format_chat_message(assistant_record)
+    if isinstance(assistant_record, dict) and "chat_id" not in assistant_record:
+        assistant_record["chat_id"] = normalized_chat_id
+
+    formatted_user = _format_chat_message(user_record)
+    formatted_assistant = _format_chat_message(assistant_record)
+
+    return {"user": formatted_user, "assistant": formatted_assistant}
 
 
-def list_messages(user_id: str, supa: Client, *, chat_id: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+def list_messages(
+    user_id: str,
+    supa: Client,
+    limit: int = 50,
+    *,
+    chat_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
     """Retorna o histórico do chat no formato esperado pela API."""
-    records = persist_supabase.get_chat_history(user_id, supa, limit=limit, chat_id=chat_id)
+    records = persist_supabase.get_chat_history(
+        user_id,
+        supa,
+        limit=limit,
+        chat_id=chat_id,
+    )
     return [_format_chat_message(record) for record in records]
 
 
@@ -211,11 +239,13 @@ def _build_history_payload(records: Sequence[Dict[str, Any]]) -> List[Dict[str, 
 def _format_chat_message(record: Dict[str, Any]) -> Dict[str, Any]:
     """Normaliza o formato da mensagem para o contrato da API."""
     if not record:
+        fallback_chat_id = "legacy-chat"
         return {
             "id": str(uuid4()),
             "role": "assistant",
             "content": "",
             "createdAt": datetime.now(timezone.utc).isoformat(),
+            "chatId": fallback_chat_id,
         }
 
     message_id = (
@@ -224,6 +254,16 @@ def _format_chat_message(record: Dict[str, Any]) -> Dict[str, Any]:
         or record.get("uuid")
         or str(uuid4())
     )
+
+    chat_id_value = (
+        record.get("chat_id")
+        or record.get("thread_id")
+        or record.get("conversation_id")
+    )
+    if chat_id_value:
+        chat_id_str = str(chat_id_value)
+    else:
+        chat_id_str = "legacy-chat"
 
     created_at = record.get("created_at")
     if isinstance(created_at, datetime):
@@ -252,9 +292,10 @@ def _format_chat_message(record: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "id": str(message_id),
-        "role": record.get("role", "assistant"),
-        "content": record.get("content", ""),
+        "role": str(record.get("role") or "assistant"),
+        "content": str(record.get("content") or ""),
         "createdAt": created_at_iso,
+        "chatId": chat_id_str,
         "relatedRecipeIds": related_recipe_ids,
         "suggestions": suggestions,
     }

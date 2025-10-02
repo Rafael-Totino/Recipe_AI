@@ -11,7 +11,7 @@ class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: str
     createdAt: datetime
-    chatId: Optional[str] = None
+    chatId: str
     relatedRecipeIds: Optional[list[str]] = None
     suggestions: Optional[list[dict[str, str]]] = None
 
@@ -25,4 +25,5 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     message: ChatMessage
+    userMessage: ChatMessage
 

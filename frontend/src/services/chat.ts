@@ -10,6 +10,7 @@ export interface ChatRequestPayload {
 
 export interface ChatResponse {
   message: ChatMessage;
+  userMessage: ChatMessage;
   relatedRecipes?: string[];
   followUpPrompts?: Array<{ label: string; prompt: string }>;
 }
@@ -22,7 +23,7 @@ export const sendChatMessage = (token: string, payload: ChatRequestPayload) =>
   });
 
 export const fetchChatHistory = (token: string, chatId?: string) => {
-  const query = chatId ? `?chat_id=${encodeURIComponent(chatId)}` : '';
+  const query = chatId ? `?chatId=${encodeURIComponent(chatId)}` : '';
   return apiRequest<ChatMessage[]>(`/chat/history${query}`, {
     method: 'GET',
     authToken: token
