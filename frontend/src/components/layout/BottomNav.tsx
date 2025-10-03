@@ -35,7 +35,7 @@ const BottomNav = () => {
   const navItems: BottomNavItem[] = [
     {
       key: 'home',
-      label: 'Início',
+      label: 'Inicio',
       icon: (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path
@@ -182,7 +182,7 @@ const BottomNav = () => {
 
   return (
     <>
-      <nav className="bottom-nav" aria-label="Navegação principal">
+      <nav className="bottom-nav" aria-label="Navegacao principal">
         <div className="bottom-nav__inner">
           {navItems.map((item) => {
             const itemClasses = ['bottom-nav__item'];
@@ -199,6 +199,7 @@ const BottomNav = () => {
                 to={item.to}
                 className={itemClasses.join(' ')}
                 aria-current={item.isActive ? 'page' : undefined}
+                aria-label={item.label}
               >
                 <span className="bottom-nav__icon" aria-hidden="true">
                   {item.icon}
@@ -211,6 +212,8 @@ const BottomNav = () => {
                 onClick={item.onClick}
                 className={itemClasses.join(' ')}
                 type="button"
+                aria-label={item.label}
+                aria-current={item.isActive ? 'page' : undefined}
               >
                 <span className="bottom-nav__icon" aria-hidden="true">
                   {item.icon}
