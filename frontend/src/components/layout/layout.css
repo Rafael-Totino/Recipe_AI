@@ -546,7 +546,7 @@ body.chat-focus .app-shell {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 0 var(--space-2) 0 var(--space-3);
+  padding: 0 0.25rem 0 var(--space-3);
   min-height: 2.75rem;
   border-radius: 999px;
   background: var(--topbar-search-bg);
@@ -628,9 +628,9 @@ body.chat-focus .app-shell {
 }
 
 .topbar__search-button {
-  padding: 0.32rem clamp(0.75rem, 1.8vw, 1.05rem);
+  padding: 0.28rem clamp(0.65rem, 1.6vw, 0.95rem);
   border-radius: 999px;
-  font-size: 0.83rem;
+  font-size: 0.8rem;
   white-space: nowrap;
 }
 
@@ -775,7 +775,7 @@ body.chat-focus .app-shell {
   }
 
   .topbar__search {
-    padding: 0 var(--space-3);
+    padding: 0 0.35rem;
   }
 
   .topbar__search-icon {
@@ -795,7 +795,7 @@ body.chat-focus .app-shell {
   }
 
   .topbar__search-button {
-    padding: 0.38rem 0.75rem;
+    padding: 0.34rem 0.65rem;
   }
 }
 
@@ -854,7 +854,7 @@ body.chat-focus .app-shell {
   }
 
   .topbar__search {
-    padding: 0 var(--space-3);
+    padding: 0 0.35rem;
   }
 
   .topbar__search-actions {
@@ -862,7 +862,7 @@ body.chat-focus .app-shell {
   }
 
   .topbar__search-button {
-    padding: 0.36rem 0.7rem;
+    padding: 0.32rem 0.6rem;
     white-space: nowrap;
   }
 
