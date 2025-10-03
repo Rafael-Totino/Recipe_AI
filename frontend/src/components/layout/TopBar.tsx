@@ -1,13 +1,12 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChefHat, Moon, Search, Sun } from 'lucide-react';
+import { Bell, ChefHat, MessageCircle, Moon, Search, Sun } from 'lucide-react';
 
 import { SearchDropdown } from './SearchDropdown';
 import { useRecipes } from '../../context/RecipeContext';
 import type { Recipe } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { useChat } from '../../context/ChatContext';
 import { ChatModal } from '../chat/ChatModal';
 
 import './layout.css';
@@ -37,7 +36,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
   const { recipes, isLoading } = useRecipes();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { sendMessage } = useChat();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [query, setQuery] = useState(() => {
@@ -127,18 +125,87 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
         <div className="search-dropdown-backdrop" aria-hidden="true" />
       ) : null}
       <div className="topbar__glass">
-        <button type="button" className="topbar__brand" onClick={handleGoHome} aria-label="Ir para a pgina inicial">
-          <span className="topbar__brand-icon">
-            <ChefHat size={18} />
-          </span>
-          <span className="topbar__brand-text">
-            <span className="topbar__brand-eyebrow">Chef IA</span>
-            <span className="topbar__brand-title">Cozinha viva</span>
-          </span>
-        </button>
+        <div className="topbar__header">
+          <div className="topbar__identity">
+            <button
+              type="button"
+              className="topbar__brand"
+              onClick={handleGoHome}
+              aria-label="Ir para a pgina inicial"
+            >
+              <span className="topbar__brand-icon">
+                <ChefHat size={18} />
+              </span>
+              <span className="topbar__brand-text">
+                <span className="topbar__brand-eyebrow">Chef IA</span>
+                <span className="topbar__brand-title">Cozinha viva</span>
+              </span>
+            </button>
+            <span className="topbar__center-eyebrow">{subheadline}</span>
+          </div>
+
+          <div className="topbar__header-actions">
+            <div className="topbar__actions">
+              <button
+                type="button"
+                className="topbar__action topbar__action--highlight"
+                onClick={() => setShowChatModal(true)}
+                aria-label="Abrir o assistente Chef IA"
+              >
+                <MessageCircle size={18} />
+                <span>Chef IA</span>
+              </button>
+              <button
+                type="button"
+                className="topbar__action topbar__action--ghost"
+                onClick={toggleTheme}
+                aria-label={themeLabel}
+                title={themeLabel}
+              >
+                {themeIsDark ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <button
+                type="button"
+                className="topbar__action topbar__action--ghost"
+                aria-label="Notificaes em breve"
+                title="Notificaes em breve"
+                disabled
+              >
+                <Bell size={18} />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="topbar__profile"
+              onClick={handleProfile}
+              aria-label="Abrir perfil"
+            >
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="" className="topbar__avatar" />
+              ) : (
+                <span className="topbar__avatar">{userInitials}</span>
+              )}
+              <span className="topbar__profile-info">
+                <span className="topbar__profile-greeting">{greeting}</span>
+                <span className="topbar__profile-meta">Minha conta</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="topbar__profile-badge"
+              onClick={handleProfile}
+              aria-label="Abrir perfil"
+            >
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="" className="topbar__profile-badge-img" />
+              ) : (
+                <span aria-hidden="true">{userInitials}</span>
+              )}
+            </button>
+          </div>
+        </div>
 
         <div className="topbar__center" role="search" ref={searchAreaRef}>
-          <span className="topbar__center-eyebrow">{subheadline}</span>
           <form onSubmit={handleSearch} className="topbar__search">
             <Search size={20} className="topbar__search-icon" />
             <input
@@ -175,37 +242,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           ) : null}
         </div>
 
-        <div className="topbar__actions">
-          <button
-            type="button"
-            className="topbar__action topbar__action--ghost"
-            onClick={toggleTheme}
-            aria-label={themeLabel}
-            title={themeLabel}
-          >
-            {themeIsDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button
-            type="button"
-            className="topbar__action topbar__action--ghost"
-            aria-label="Notificaes em breve"
-            title="Notificaes em breve"
-            disabled
-          >
-            <Bell size={18} />
-          </button>
-          <button type="button" className="topbar__profile" onClick={handleProfile} aria-label="Abrir perfil">
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt="" className="topbar__avatar" />
-            ) : (
-              <span className="topbar__avatar">{userInitials}</span>
-            )}
-            <span className="topbar__profile-info">
-              <span className="topbar__profile-greeting">{greeting}</span>
-              <span className="topbar__profile-meta">Minha conta</span>
-            </span>
-          </button>
-        </div>
       </div>
       <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
     </header>
