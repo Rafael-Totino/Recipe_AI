@@ -6,7 +6,7 @@ import SocialLoginButton from '../components/auth/SocialLoginButton';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
-  const { loginWithEmail, loginWithProvider, signUpWithEmail, isLoading } = useAuth();
+  const { loginWithEmail, loginWithProvider, signUpWithEmail, isLoading: isAuthBusy } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: Location })?.from?.pathname ?? '/app';
@@ -17,6 +17,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
   const title = useMemo(
     () => (mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'),
@@ -26,17 +27,17 @@ const LoginPage = () => {
   const subtitle = useMemo(
     () =>
       mode === 'login'
-        ? 'Entre com seu e-mail ou use sua conta Google.'
-        : 'Cadastre-se para salvar e importar receitas com o Chef IA.',
+        ? 'Entre com seu e-mail ou use sua conta Google para retomar sua experiÃªncia culinÃ¡ria.'
+        : 'Cadastre-se para salvar e importar receitas com o Chef IA e crie seu atelier gastronÃ´mico.',
     [mode]
   );
 
+  const eyebrowLabel = mode === 'login' ? 'Entrada do atelier' : 'Nova assinatura';
   const submitLabel = mode === 'login' ? 'Entrar' : 'Criar conta';
-
-  const toggleLabel =
-    mode === 'login'
-      ? 'Ainda não tem conta? Cadastre-se'
-      : 'Já possui conta? Entre';
+  const togglePrompt = mode === 'login' ? 'Ainda nÃ£o tem conta?' : 'JÃ¡ possui conta?';
+  const toggleActionLabel = mode === 'login' ? 'Cadastre-se' : 'Entre';
+  const passwordAutocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  const isProcessing = isPending || isAuthBusy;
 
   const resetMessages = () => {
     setError(null);
@@ -46,6 +47,7 @@ const LoginPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     resetMessages();
+    setIsPending(true);
     try {
       if (mode === 'login') {
         await loginWithEmail(email, password);
@@ -65,108 +67,112 @@ const LoginPage = () => {
       console.error(err);
       setError(
         mode === 'login'
-          ? 'Não foi possível entrar. Verifique suas credenciais.'
-          : 'Não foi possível criar sua conta. Verifique os dados informados.'
+          ? 'NÃ£o foi possÃ­vel entrar. Verifique suas credenciais.'
+          : 'NÃ£o foi possÃ­vel criar sua conta. Verifique os dados informados.'
       );
+    } finally {
+      setIsPending(false);
     }
   };
 
   const handleSocialLogin = async () => {
     resetMessages();
+    setIsPending(true);
     try {
       await loginWithProvider('google');
       navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
-      setError('Falha na autenticação social.');
+      setError('Falha na autenticaÃ§Ã£o social.');
+    } finally {
+      setIsPending(false);
     }
   };
 
   return (
     <div className="auth-card">
-      <div>
-        <h2>{title}</h2>
-        <p style={{ margin: '0.25rem 0 0', color: 'var(--color-muted)' }}>{subtitle}</p>
+      <header className="auth-card__header">
+        <span className="eyebrow">{eyebrowLabel}</span>
+        <h2 className="auth-card__title font-playfair">{title}</h2>
+        <p className="auth-card__subtitle text-muted">{subtitle}</p>
+      </header>
+
+      <div className="auth-card__social">
+        <SocialLoginButton provider="google" onClick={handleSocialLogin} disabled={isProcessing} />
+        <p className="auth-card__hint text-muted">Conecte-se rapidamente com sua conta Google.</p>
       </div>
 
-      <div className="social-login-group">
-        <SocialLoginButton provider="google" onClick={handleSocialLogin} />
+      <div className="auth-card__divider" role="presentation">
+        <span>ou continue com e-mail</span>
       </div>
 
-      <div className="divider">ou continue com e-mail</div>
-
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
+      <form className="auth-card__form" onSubmit={handleSubmit} aria-busy={isProcessing}>
         {mode === 'signup' ? (
-          <label style={{ display: 'grid', gap: '0.25rem' }}>
-            <span style={{ fontWeight: 500 }}>Nome</span>
+          <label className="auth-field">
+            <span>Nome completo</span>
             <input
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Como podemos chamar você?"
+              placeholder="Como podemos te chamar?"
+              autoComplete="name"
             />
           </label>
         ) : null}
 
-        <label style={{ display: 'grid', gap: '0.25rem' }}>
-          <span style={{ fontWeight: 500 }}>E-mail</span>
+        <label className="auth-field">
+          <span>E-mail</span>
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="voce@exemplo.com"
+            placeholder="vocÃª@exemplo.com"
+            autoComplete="email"
             required
           />
         </label>
 
-        <label style={{ display: 'grid', gap: '0.25rem' }}>
-          <span style={{ fontWeight: 500 }}>Senha</span>
+        <label className="auth-field">
+          <span>Senha</span>
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="********"
+            autoComplete={passwordAutocomplete}
             required
           />
         </label>
 
-        {error ? <p style={{ color: '#d64545', margin: 0 }}>{error}</p> : null}
-        {info ? <p style={{ color: '#2f9e44', margin: 0 }}>{info}</p> : null}
+        <div className="auth-card__messages" aria-live="polite">
+          {error ? <p className="auth-card__message auth-card__message--error">{error}</p> : null}
+          {info ? <p className="auth-card__message auth-card__message--info">{info}</p> : null}
+        </div>
 
-        <button
-          type="submit"
-          style={{
-            borderRadius: '16px',
-            border: 'none',
-            padding: '0.85rem 1rem',
-            background: 'linear-gradient(135deg, #845ef7, #5c7cfa)',
-            color: '#fff',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? `${submitLabel}...` : submitLabel}
+        <button type="submit" className="button button--primary auth-card__submit" disabled={isProcessing}>
+          {isPending ? `${submitLabel}...` : submitLabel}
         </button>
       </form>
 
-      <button
-        type="button"
-        onClick={() => {
-          setMode((prev) => (prev === 'login' ? 'signup' : 'login'));
-          resetMessages();
-        }}
-        style={{
-          marginTop: '1rem',
-          border: 'none',
-          background: 'none',
-          color: 'var(--color-primary)',
-          cursor: 'pointer',
-          fontWeight: 500
-        }}
-      >
-        {toggleLabel}
-      </button>
+      <footer className="auth-card__footer">
+        <span>{togglePrompt}</span>
+        <button
+          type="button"
+          className="auth-card__toggle"
+          onClick={() => {
+            setMode((previousMode) => {
+              const nextMode = previousMode === 'login' ? 'signup' : 'login';
+              if (previousMode === 'signup') {
+                setName('');
+              }
+              return nextMode;
+            });
+            resetMessages();
+          }}
+        >
+          {toggleActionLabel}
+        </button>
+      </footer>
     </div>
   );
 };
