@@ -50,6 +50,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | undefined>(undefined);
   const [activeChatId, setActiveChatId] = useState<string | undefined>(undefined);
   const fetchSequenceRef = useRef(0);
+  const activeChatIdRef = useRef<string | undefined>(undefined);
 
   const resetState = useCallback(() => {
     fetchSequenceRef.current += 1;
@@ -57,7 +58,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setSessions([]);
     setActiveChatId(undefined);
     setError(undefined);
+    activeChatIdRef.current = undefined;
   }, []);
+
+  useEffect(() => {
+    activeChatIdRef.current = activeChatId;
+  }, [activeChatId]);
 
   const loadMessagesForChat = useCallback(
     async (chatId?: string, options: { showLoader?: boolean } = {}) => {
@@ -109,20 +115,19 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       const sessionList = await fetchChatSessions(token);
       setSessions(sessionList);
 
-      let resolvedChatId: string | undefined;
-      setActiveChatId((current) => {
-        if (current && sessionList.some((session) => session.id === current)) {
-          resolvedChatId = current;
-          return current;
-        }
-        resolvedChatId = sessionList[0]?.id;
-        return resolvedChatId;
-      });
+      const currentActive = activeChatIdRef.current;
+      const resolvedChatId = currentActive && sessionList.some((session) => session.id === currentActive)
+        ? currentActive
+        : sessionList[0]?.id;
 
       if (!resolvedChatId) {
         fetchSequenceRef.current += 1;
         setMessages([]);
+        setActiveChatId(undefined);
+        activeChatIdRef.current = undefined;
       } else {
+        activeChatIdRef.current = resolvedChatId;
+        setActiveChatId(resolvedChatId);
         await loadMessagesForChat(resolvedChatId, { showLoader: false });
       }
 
