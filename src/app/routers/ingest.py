@@ -5,12 +5,19 @@ import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.concurrency import run_in_threadpool
 from supabase import Client
 
 from src.app.deps import CurrentUser, get_current_user, get_supabase
-from src.app.schemas.ingest import IngestRequest, IngestResponse, RecipeMedia, RecipeResponse, RecipeSource
+from src.app.schemas.ingest import (
+    IngestRequest,
+    IngestResponse,
+    RecipeListResponse,
+    RecipeMedia,
+    RecipeResponse,
+    RecipeSource,
+)
 from src.services.ingest import ingest as run_ingest
 from src.services.persist_supabase import *
 from src.services.types import RawContent
@@ -327,20 +334,58 @@ def _build_recipe_response(
     recipe_response = RecipeResponse(**recipe_payload)
     return recipe_response, warnings
 
-@router.get("/", response_model=list[RecipeResponse])
+@router.get("/", response_model=RecipeListResponse)
 async def list_recipes(
     user: CurrentUser = Depends(get_current_user),
     supa: Client = Depends(get_supabase),
-) -> list[RecipeResponse]:
-    response = (
+    search: str | None = Query(
+        default=None,
+        min_length=2,
+        max_length=120,
+        alias="q",
+        description="Filtro textual aplicado sobre titulo, descricao, notas e tags.",
+    ),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> RecipeListResponse:
+    query = (
         supa.table("recipes")
-        .select("recipe_id,title,metadata,created_at,updated_at")
+        .select("recipe_id,title,metadata,created_at,updated_at", count="exact")
         .eq("owner_id", str(user.id))
         .order("created_at", desc=True)
-        .execute()
     )
+
+    if search:
+        term = search.strip()
+        if term:
+            safe_term = (
+                term.replace("%", "")
+                .replace(",", " ")
+                .replace(";", " ")
+                .replace("'", " ")
+            ).strip()
+            if not safe_term:
+                safe_term = term
+            pattern = f"%{safe_term}%"
+            or_filters = [
+                f"title.ilike.{pattern}",
+                f"metadata->ai_recipe->>title.ilike.{pattern}",
+                f"metadata->ai_recipe->>description.ilike.{pattern}",
+                f"metadata->ai_recipe->>notes.ilike.{pattern}",
+                f"metadata->ai_recipe->tags::text.ilike.{pattern}",
+            ]
+            query = query.or_(",".join(or_filters))
+
+    end = offset + limit - 1
+    response = query.range(offset, end).execute()
     records = response.data or []
-    return [_recipe_from_record(row) for row in records]
+    items = [_recipe_from_record(row) for row in records]
+
+    total = getattr(response, "count", None)
+    if total is None:
+        total = len(items)
+
+    return RecipeListResponse(items=items, total=total, limit=limit, offset=offset)
 
 @router.get("/{recipe_id}", response_model=RecipeResponse)
 async def get_recipe(

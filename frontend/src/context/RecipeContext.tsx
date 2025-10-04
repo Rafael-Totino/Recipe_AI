@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from 'react';
 
@@ -22,9 +23,17 @@ import { useAuth } from './AuthContext';
 
 interface RecipeContextValue {
   recipes: Recipe[];
+  searchResults: Recipe[];
+  searchTerm: string;
+  searchTotal: number;
   activeRecipe?: Recipe;
   isLoading: boolean;
+  isSearching: boolean;
+  hasMoreSearchResults: boolean;
   loadRecipes: () => Promise<void>;
+  searchRecipes: (term: string) => Promise<void>;
+  loadMoreSearchResults: () => Promise<void>;
+  resetSearch: () => void;
   selectRecipe: (recipeId: string) => Promise<void>;
   importRecipe: (url: string) => Promise<ImportResult | null>;
   createManualRecipe: (payload: Partial<Recipe> & { title: string }) => Promise<Recipe | null>;
@@ -36,10 +45,29 @@ interface RecipeContextValue {
 const RecipeContext = createContext<RecipeContextValue | undefined>(undefined);
 
 export const RecipeProvider = ({ children }: { children: ReactNode }) => {
+  const DEFAULT_COLLECTION_LIMIT = 50;
+  const SEARCH_PAGE_SIZE = 20;
+  const SEARCH_MIN_LENGTH = 2;
+
   const { session } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [activeRecipe, setActiveRecipe] = useState<Recipe | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<Recipe[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [searchOffset, setSearchOffset] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRequestRef = useRef(0);
+
+  const resetSearchState = useCallback(() => {
+    searchRequestRef.current += 1;
+    setSearchTerm('');
+    setSearchResults([]);
+    setSearchTotal(0);
+    setSearchOffset(0);
+    setIsSearching(false);
+  }, []);
 
   const loadRecipes = useCallback(async () => {
     if (!session?.access_token) {
@@ -48,18 +76,114 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
     }
     setIsLoading(true);
     try {
-      const items = await fetchRecipes(session.access_token);
-      setRecipes(Array.isArray(items) ? items : []);
+      const result = await fetchRecipes(session.access_token, {
+        limit: DEFAULT_COLLECTION_LIMIT,
+        offset: 0
+      });
+      setRecipes(Array.isArray(result?.items) ? result.items : []);
     } catch (error) {
       console.error('Unable to fetch recipes', error);
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token]);
+  }, [DEFAULT_COLLECTION_LIMIT, session?.access_token]);
 
   useEffect(() => {
     void loadRecipes();
   }, [loadRecipes]);
+
+  useEffect(() => {
+    if (!session?.access_token) {
+      resetSearchState();
+    }
+  }, [resetSearchState, session?.access_token]);
+
+  const executeSearch = useCallback(
+    async (term: string, append: boolean) => {
+      if (!session?.access_token) {
+        resetSearchState();
+        return;
+      }
+
+      const normalized = term.trim();
+      if (!append && normalized.length < SEARCH_MIN_LENGTH) {
+        resetSearchState();
+        return;
+      }
+
+      if (append) {
+        if (!searchTerm || normalized !== searchTerm || searchResults.length >= searchTotal) {
+          return;
+        }
+      }
+
+      const requestId = append ? searchRequestRef.current : searchRequestRef.current + 1;
+      if (!append) {
+        searchRequestRef.current = requestId;
+      }
+
+      setIsSearching(true);
+      const nextOffset = append ? searchOffset : 0;
+
+      try {
+        const result = await fetchRecipes(session.access_token, {
+          search: normalized,
+          limit: SEARCH_PAGE_SIZE,
+          offset: nextOffset
+        });
+
+        if (searchRequestRef.current !== requestId) {
+          return;
+        }
+
+        const items = Array.isArray(result?.items) ? result.items : [];
+        const total = typeof result?.total === 'number' ? result.total : items.length;
+
+        setSearchTerm(normalized);
+        setSearchTotal(total);
+        setSearchOffset(nextOffset + items.length);
+        setSearchResults((prev) => (append ? [...prev, ...items] : items));
+      } catch (error) {
+        if (!append) {
+          resetSearchState();
+        }
+        console.error('Unable to search recipes', error);
+      } finally {
+        if (searchRequestRef.current === requestId) {
+          setIsSearching(false);
+        }
+      }
+    },
+    [
+      SEARCH_MIN_LENGTH,
+      SEARCH_PAGE_SIZE,
+      resetSearchState,
+      searchOffset,
+      searchResults.length,
+      searchTerm,
+      searchTotal,
+      session?.access_token
+    ]
+  );
+
+  const searchRecipesHandler = useCallback(
+    async (term: string) => {
+      await executeSearch(term, false);
+    },
+    [executeSearch]
+  );
+
+  const loadMoreSearchResults = useCallback(async () => {
+    if (!searchTerm || searchResults.length >= searchTotal) {
+      return;
+    }
+    await executeSearch(searchTerm, true);
+  }, [executeSearch, searchResults.length, searchTerm, searchTotal]);
+
+  const hasMoreSearchResults = useMemo(
+    () => searchResults.length < searchTotal,
+    [searchResults.length, searchTotal]
+  );
 
   const selectRecipe = useCallback(
     async (recipeId: string) => {
@@ -168,9 +292,17 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(
     () => ({
       recipes,
+      searchResults,
+      searchTerm,
+      searchTotal,
       activeRecipe,
       isLoading,
+      isSearching,
+      hasMoreSearchResults,
       loadRecipes,
+      searchRecipes: searchRecipesHandler,
+      loadMoreSearchResults,
+      resetSearch: resetSearchState,
       selectRecipe,
       importRecipe: importRecipeHandler,
       createManualRecipe: createManualRecipeHandler,
@@ -181,9 +313,17 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
     [
       activeRecipe,
       createManualRecipeHandler,
+      hasMoreSearchResults,
       importRecipeHandler,
+      isSearching,
       isLoading,
+      loadMoreSearchResults,
       loadRecipes,
+      resetSearchState,
+      searchRecipesHandler,
+      searchResults,
+      searchTerm,
+      searchTotal,
       recipes,
       removeRecipeHandler,
       selectRecipe,

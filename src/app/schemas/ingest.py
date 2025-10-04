@@ -50,6 +50,13 @@ class RecipeResponse(BaseModel):
     updatedAt: Optional[str] = None
 
 
+class RecipeListResponse(BaseModel):
+    items: list[RecipeResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 class IngestResponse(BaseModel):
     recipe: RecipeResponse
     warnings: Optional[list[str]] = None
