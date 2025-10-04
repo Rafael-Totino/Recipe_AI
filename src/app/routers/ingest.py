@@ -372,7 +372,7 @@ async def list_recipes(
                 f"metadata->ai_recipe->>title.ilike.{pattern}",
                 f"metadata->ai_recipe->>description.ilike.{pattern}",
                 f"metadata->ai_recipe->>notes.ilike.{pattern}",
-                f"metadata->ai_recipe->tags.ilike.{pattern}",
+                f"metadata->ai_recipe->>tags.ilike.{pattern}",
             ]
             query = query.or_(",".join(or_filters))
 
