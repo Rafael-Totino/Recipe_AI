@@ -894,6 +894,7 @@ body.chat-focus .app-shell {
   align-items: end;
   min-height: 3.5rem;
   width: 100%;
+  max-width: 34rem;
   margin: 0 auto;
   padding: 0.4rem var(--space-4);
   border-radius: var(--radius-lg);
@@ -1052,6 +1053,7 @@ body.chat-focus .app-shell {
 
   .bottom-nav__inner {
     width: 100%;
+    max-width: 38rem;
     padding: 0.5rem var(--space-6);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-soft);
