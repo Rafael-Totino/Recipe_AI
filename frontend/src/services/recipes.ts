@@ -1,15 +1,37 @@
 import { apiRequest } from './api';
-import type { ImportResult, Recipe } from '../types';
+import type { ImportResult, Recipe, RecipeListResponse } from '../types';
 
 export interface RecipePayload extends Partial<Recipe> {
   title: string;
 }
 
-export const fetchRecipes = (token: string) =>
-  apiRequest<Recipe[]>('/recipes', {
+export interface FetchRecipesOptions {
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export const fetchRecipes = (token: string, options: FetchRecipesOptions = {}) => {
+  const params = new URLSearchParams();
+  const searchTerm = options.search?.trim();
+  if (searchTerm) {
+    params.set('q', searchTerm);
+  }
+  if (typeof options.limit === 'number') {
+    params.set('limit', String(options.limit));
+  }
+  if (typeof options.offset === 'number') {
+    params.set('offset', String(options.offset));
+  }
+
+  const queryString = params.toString();
+  const path = queryString ? `/recipes?${queryString}` : '/recipes';
+
+  return apiRequest<RecipeListResponse>(path, {
     method: 'GET',
     authToken: token
   });
+};
 
 export const fetchRecipe = (token: string, recipeId: string) =>
   apiRequest<Recipe>(`/recipes/${recipeId}`, {

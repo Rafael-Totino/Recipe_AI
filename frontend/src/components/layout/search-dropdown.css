@@ -188,6 +188,28 @@
   padding-top: 0.4rem;
 }
 
+.search-dropdown__load-more {
+  margin-top: 0.35rem;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.search-dropdown__load-more:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.search-dropdown__load-more:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .search-dropdown__section--recipes .search-dropdown__heading {
   color: var(--color-primary);
 }

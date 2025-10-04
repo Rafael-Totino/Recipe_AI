@@ -33,7 +33,16 @@ const getInitials = (value?: string | null) => {
 const TopBar = ({ forceCondensed }: TopBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { recipes, isLoading } = useRecipes();
+  const {
+    searchResults,
+    searchTerm,
+    searchTotal,
+    isSearching,
+    hasMoreSearchResults,
+    loadMoreSearchResults,
+    searchRecipes: requestSearch,
+    resetSearch
+  } = useRecipes();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -50,29 +59,58 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
     setQuery((current) => (current === nextQuery ? current : nextQuery));
   }, [location.search]);
 
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      if (searchTerm || searchResults.length) {
+        resetSearch();
+      }
+      return;
+    }
+
+    if (trimmed === searchTerm) {
+      return;
+    }
+
+    const handle = window.setTimeout(() => {
+      void requestSearch(trimmed);
+    }, 350);
+
+    return () => window.clearTimeout(handle);
+  }, [query, requestSearch, resetSearch, searchResults.length, searchTerm]);
+
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const params = new URLSearchParams(location.search);
-    if (query) {
-      params.set('q', query);
+    const trimmedQuery = query.trim();
+    if (trimmedQuery) {
+      params.set('q', trimmedQuery);
     } else {
       params.delete('q');
     }
     navigate({ pathname: location.pathname, search: params.toString() });
+    if (trimmedQuery.length >= 2) {
+      void requestSearch(trimmedQuery);
+    } else {
+      resetSearch();
+    }
   };
 
-  const clearSearch = () => {
+  const handleClearSearch = () => {
     setQuery('');
     const params = new URLSearchParams(location.search);
     params.delete('q');
     navigate({ pathname: location.pathname, search: params.toString() });
+    resetSearch();
   };
 
   const topbarClassName = `topbar${forceCondensed ? ' topbar--condensed' : ''}`;
 
-  const filteredRecipes = recipes.filter((recipe) =>
-    recipe.title.toLowerCase().includes(query.toLowerCase())
-  );
+  const trimmedQuery = query.trim();
+  const canSearch = trimmedQuery.length >= 2;
+  const displayedRecipes = canSearch ? searchResults : [];
+  const totalResults = canSearch ? searchTotal : 0;
+  const dropdownLoading = canSearch ? isSearching : false;
 
   const handleRecipeSelect = (recipe: Recipe) => {
     setShowDropdown(false);
@@ -82,6 +120,10 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
   const handleAskAI = async (question: string) => {
     setShowDropdown(false);
     navigate('/app/chat', { state: { prompt: question } });
+  };
+
+  const handleLoadMoreResults = () => {
+    void loadMoreSearchResults();
   };
 
   const userInitials = useMemo(() => getInitials(user?.name ?? user?.email), [user?.name, user?.email]);
@@ -117,7 +159,8 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
 
   const themeIsDark = theme === 'dark';
   const themeLabel = themeIsDark ? 'Ativar tema claro' : 'Ativar tema escuro';
-  const isDropdownVisible = showDropdown && Boolean(query);
+  const hasQuery = trimmedQuery.length > 0;
+  const isDropdownVisible = showDropdown && hasQuery;
 
   return (
     <header className={topbarClassName}>
@@ -222,7 +265,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
             />
             <div className="topbar__search-actions">
               {query ? (
-                <button type="button" className="topbar__clear" onClick={clearSearch}>
+                <button type="button" className="topbar__clear" onClick={handleClearSearch}>
                   Limpar
                 </button>
               ) : null}
@@ -234,8 +277,12 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
           {isDropdownVisible ? (
             <SearchDropdown
               query={query}
-              recipes={filteredRecipes}
-              isLoading={isLoading}
+              recipes={displayedRecipes}
+              total={totalResults}
+              canSearch={canSearch}
+              isLoading={dropdownLoading}
+              hasMore={canSearch && hasMoreSearchResults}
+              onLoadMore={canSearch && hasMoreSearchResults ? handleLoadMoreResults : undefined}
               onSelectRecipe={handleRecipeSelect}
               onAskAI={handleAskAI}
             />

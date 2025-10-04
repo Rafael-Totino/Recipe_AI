@@ -57,6 +57,13 @@ export interface Recipe {
   updatedAt?: string;
 }
 
+export interface RecipeListResponse {
+  items: Recipe[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
