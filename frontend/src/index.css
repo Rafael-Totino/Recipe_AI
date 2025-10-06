@@ -68,7 +68,7 @@
   --chat-textarea-text: var(--color-text);
   --chat-textarea-placeholder: rgba(31, 37, 40, 0.5);
   --chat-send-button-bg: var(--gradient-brand);
-  --chat-send-button-shadow: 0 26px 50px -32px rgba(176, 30, 0, 0.58);
+  --chat-send-button-shadow: 0 26px 50px -32px rgba(232, 93, 4, 0.55);
   --chat-send-button-disabled-opacity: 0.6;
   --radius-xl: 32px;
   --radius-lg: 24px;
@@ -148,7 +148,7 @@
   --bottom-nav-active-border: rgba(124, 144, 255, 0.4);
   --bottom-nav-active-color: #ffffff;
   --bottom-nav-icon-bg: rgba(255, 183, 3, 0.14);
-  --gradient-brand: linear-gradient(135deg, #ffd166 0%, #ff8c1a 45%, #d00000 100%);
+  --gradient-brand: linear-gradient(135deg, #e85d04 0%, #ff9f1c 100%);
   --chat-history-bg: linear-gradient(145deg, rgba(32, 42, 60, 0.82), rgba(26, 34, 52, 0.88));
   --chat-input-bg: linear-gradient(145deg, rgba(28, 36, 54, 0.92), rgba(24, 30, 46, 0.9));
   --chat-input-border: rgba(236, 240, 247, 0.16);
@@ -159,7 +159,7 @@
   --chat-textarea-text: #f0f4f8;
   --chat-textarea-placeholder: rgba(236, 240, 247, 0.6);
   --chat-send-button-bg: var(--gradient-brand);
-  --chat-send-button-shadow: 0 28px 54px -28px rgba(140, 18, 0, 0.62);
+  --chat-send-button-shadow: 0 28px 54px -28px rgba(232, 93, 4, 0.58);
   --chat-send-button-disabled-opacity: 0.5;
   --cooking-body-bg: radial-gradient(circle at 18% 14%, rgba(232, 93, 4, 0.22), transparent 60%),
     radial-gradient(circle at 78% 18%, rgba(155, 89, 182, 0.26), transparent 58%),
@@ -528,7 +528,7 @@ select:focus {
   width: 64px;
   height: 64px;
   border-radius: 24px;
-  background: linear-gradient(135deg, #4c6ef5, #364fc7);
+  background: var(--gradient-brand);
   color: #fff;
   display: grid;
   place-items: center;
