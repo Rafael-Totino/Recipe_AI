@@ -35,9 +35,9 @@ const ChatPage = () => {
     <div className="chat-page">
       <header className="chat-page__header">
         <span className="chat-page__eyebrow">Chef IA</span>
-        <h1 className="chat-page__title">Planeje, ajuste e aprenda em tempo real</h1>
+        <h1 className="chat-page__title">Converse com a Chef IA sempre que precisar</h1>
         <p className="chat-page__subtitle">
-          O chat acompanha cada receita e traz técnicas, substituições e ideias comerciais para o seu livro digital.
+          Tire dúvidas rápidas, ajuste receitas em segundos e mantenha o fluxo da cozinha em um só lugar.
         </p>
       </header>
       <div className="chat-page__body">
