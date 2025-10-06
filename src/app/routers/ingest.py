@@ -469,3 +469,24 @@ async def import_recipe(
         dt = time.time() - t0
         log.exception("ingest.fail url=%s dt=%.2fs", body.url, dt)
         raise HTTPException(status_code=500, detail="Falha na ingestao")
+
+@router.post("/Favorite", response_model=IngestResponse)
+async def favorite_recipe(
+    recipe_id: str,
+    isFavorite: bool,
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> FavoriteRequest:
+    
+    try:
+        await run_in_threadpool(
+            mark_recipe_as_favorite,
+            supa,
+            str(user.id),
+            recipe_id,
+        )
+        return FavoriteRequest(recipeId=recipe_id, isFavorite=True)
+    except Exception as exc:
+        log.exception("favorite.fail recipe=%s user=%s error=%s", recipe_id, user.id, str(exc))
+        raise HTTPException(status_code=500, detail="Falha ao marcar receita como favorita") from exc
+    

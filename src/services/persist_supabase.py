@@ -523,3 +523,28 @@ def get_recipe_by_id(recipe_id: str, supa):
         .execute()
     )
     return "recipe"
+
+def mark_recipe_as_favorite(recipe_id: str, user_id: str, supa: Client, isFavorite: bool):
+    try:
+        if isFavorite: # Marcar isFavorite como False
+            update_response = (
+            supa.table("recipes")
+            .update({"metadata": current_metadata})
+            .eq("recipe_id", recipe_id)
+            .select("recipe_id,title,metadata,created_at,updated_at") # Retornar o registro completo
+            .execute()
+        )
+        else: # Marcar isFavorite como True
+            current_metadata = recipe_record.get("metadata") or {}
+            current_metadata["isFavorite"] = True
+            update_response = (
+            supa.table("recipes")
+            .update({"metadata": current_metadata})
+            .eq("recipe_id", recipe_id)
+            .select("recipe_id,title,metadata,created_at,updated_at") # Retornar o registro completo
+            .execute()
+        )
+    
+    except Exception as e:
+        print(f"Erro ao atualizar isFavorite da receita {recipe_id}: {e}")
+        return None
