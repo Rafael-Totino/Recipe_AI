@@ -133,7 +133,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
       return 'Chef IA';
     }
     const firstName = user.name.trim().split(/\s+/)[0];
-    return `Ol, ${firstName}`;
+    return `Chef ${firstName}`;
   }, [user?.name]);
 
   const subheadline = forceCondensed ? 'Modo cozinha ativo' : 'Sua cozinha inteligente';

@@ -533,15 +533,26 @@ def mark_recipe_as_favorite(
     """Atualiza o status de favorito da receita e retorna o registro atualizado."""
 
     try:
-        response = (
+        update_response = (
             supa.table("recipes")
             .update({"isFavorite": is_favorite})
             .eq("owner_id", owner_id)
             .eq("recipe_id", recipe_id)
+            .execute()
+        )
+        
+        if not update_response.data:
+            raise ValueError("Receita nao encontrada ou acesso negado")
+        
+        response = (
+            supa.table("recipes")
             .select("recipe_id,title,metadata,created_at,updated_at,isFavorite")
+            .eq("owner_id", owner_id)
+            .eq("recipe_id", recipe_id)
             .limit(1)
             .execute()
         )
+        
     except Exception as exc:
         raise RuntimeError(
             f"Erro ao atualizar isFavorite da receita {recipe_id}: {exc}"
