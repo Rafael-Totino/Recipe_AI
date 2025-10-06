@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
@@ -15,14 +15,14 @@ const buildMeta = (recipe: Recipe) => {
     return `${recipe.durationMinutes} min`;
   }
   if (recipe.tags?.length) {
-    return recipe.tags.slice(0, 2).join(' � ');
+    return recipe.tags.slice(0, 2).join(' • ');
   }
   return recipe.source?.importedFrom ? `Origem: ${recipe.source.importedFrom}` : 'Receita do atelier';
 };
 
 const HomePage = () => {
   const { user } = useAuth();
-  const { recipes, toggleFavorite, isLoading } = useRecipes();
+  const { recipes, toggleFavorite, isLoading, importRecipe } = useRecipes();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const query = searchParams.get('q')?.toLowerCase().trim() ?? '';
@@ -85,6 +85,42 @@ const HomePage = () => {
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
   })();
+
+  const [importUrl, setImportUrl] = useState('');
+  const [importStatus, setImportStatus] = useState<
+    | { type: 'idle'; message: string }
+    | { type: 'success'; message: string }
+    | { type: 'error'; message: string }
+    | null
+  >(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleQuickImport = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedUrl = importUrl.trim();
+
+    if (!trimmedUrl) {
+      setImportStatus({ type: 'error', message: 'Informe um link válido para importar.' });
+      return;
+    }
+
+    setIsImporting(true);
+    setImportStatus({ type: 'idle', message: 'Importando sua receita...' });
+
+    const result = await importRecipe(trimmedUrl);
+
+    if (result?.recipe) {
+      setImportStatus({ type: 'success', message: 'Receita importada! Abrindo detalhes...' });
+      setImportUrl('');
+      window.setTimeout(() => {
+        navigate(`/app/recipes/${result.recipe.id}`);
+      }, 350);
+    } else {
+      setImportStatus({ type: 'error', message: 'Não foi possível importar a receita. Tente outro link.' });
+    }
+
+    setIsImporting(false);
+  };
 
   const feedTitle = useMemo(() => {
     if (query) {
@@ -171,7 +207,15 @@ const HomePage = () => {
                       recipe.isFavorite ? 'Remover receita dos favoritos' : 'Adicionar receita aos favoritos'
                     }
                   >
-                    <span aria-hidden="true">?</span>
+                    <span aria-hidden="true" className="timeline__carousel-favorite-icon">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path
+                          d="M12 5a3.5 3.5 0 0 0-3.5 3.5V10H7a5 5 0 0 0-5 5v1.5A1.5 1.5 0 0 0 3.5 18H20.5A1.5 1.5 0 0 0 22 16.5V15a5 5 0 0 0-5-5h-1.5V8.5A3.5 3.5 0 0 0 12 5Zm0 2a1.5 1.5 0 0 1 1.5 1.5V10h-3V8.5A1.5 1.5 0 0 1 12 7Zm9 10H3v1a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1Z"
+                          fill="currentColor"
+                          stroke="none"
+                        />
+                      </svg>
+                    </span>
                   </button>
                 ) : null}
               </li>
@@ -195,33 +239,54 @@ const HomePage = () => {
 
   return (
     <div className="timeline">
-      <section className="timeline__hero">
-        <div className="timeline__hero-inner">
-          <span className="timeline__hero-eyebrow">{timeOfDay}, {firstName}</span>
-          <h1 className="timeline__hero-title">Timeline das suas receitas</h1>
-          <p className="timeline__hero-subtitle">
-            Uma jornada cronologica para sua culinaria autoral ganhar novas releituras e inspiracoes.
+      <section className="timeline__import" aria-labelledby="timeline-import-title">
+        <div className="timeline__import-header">
+          <span className="timeline__import-eyebrow">{timeOfDay}, {firstName}</span>
+          <h1 id="timeline-import-title">Importe uma receita por link</h1>
+          <p>
+            Cole URLs de blogs, vídeos ou redes sociais para trazer receitas diretamente para o seu atelier digital.
           </p>
           {feedBadge ? <span className="timeline__badge">{feedBadge}</span> : null}
         </div>
+        <form className="timeline__import-form" onSubmit={handleQuickImport} aria-busy={isImporting}>
+          <div className="timeline__import-field">
+            <input
+              type="url"
+              value={importUrl}
+              onChange={(event) => setImportUrl(event.target.value)}
+              placeholder="https://exemplo.com/minha-receita"
+              aria-label="Link da receita para importar"
+              required
+              disabled={isImporting}
+            />
+            <button type="submit" disabled={isImporting}>
+              {isImporting ? 'Importando...' : 'Importar receita'}
+            </button>
+          </div>
+          {importStatus ? (
+            <p className={`timeline__import-status timeline__import-status--${importStatus.type}`}>
+              {importStatus.message}
+            </p>
+          ) : null}
+        </form>
       </section>
 
       {renderCarousel(
-        'Receitas salvas',
-        'Suas criacoes recentes organizadas em capsulas rapidas.',
+        'Receitas salvas recentemente',
+        'Suas criacoes mais novas organizadas em cápsulas rápidas.',
         savedCarousel,
         { ariaLabel: 'Receitas salvas recentemente', showFavoriteToggle: true }
       )}
 
       {renderCarousel(
-        'Favoritas do atelier',
+        'Receitas favoritas',
         'Os pratos que receberam estrela ficam reunidos aqui.',
         favoritesCarousel,
         { ariaLabel: 'Receitas favoritas', showFavoriteToggle: true }
       )}
 
       {renderCarousel(
-        'Em alta',
+        'Receitas em alta',
         'Sugestoes do Chef IA com mais atividade recente.',
         trendingCarousel,
         { ariaLabel: 'Receitas em alta' }
