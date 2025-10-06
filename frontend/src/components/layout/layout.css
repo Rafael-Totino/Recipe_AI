@@ -11,9 +11,9 @@
   --surface-elev: rgba(255, 255, 255, 0.9);
   --bottom-nav-bg: rgba(24, 28, 45, 0.85);
   --bottom-nav-border: rgba(255, 255, 255, 0.14);
-  --bottom-nav-active-color: #e85d04;
-  --bottom-nav-active-border: rgba(232, 93, 4, 0.35);
-  --brand: #e85d04;
+  --bottom-nav-active-color: #3d5af1;
+  --bottom-nav-active-border: rgba(61, 90, 241, 0.35);
+  --brand: #3d5af1;
   --accent: #9b59b6;
   --shadow-soft: 0 12px 32px -18px rgba(12, 18, 28, 0.4);
   --shadow-elevated: 0 24px 48px -26px rgba(12, 18, 28, 0.52);
