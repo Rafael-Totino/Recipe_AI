@@ -524,27 +524,31 @@ def get_recipe_by_id(recipe_id: str, supa):
     )
     return "recipe"
 
-def mark_recipe_as_favorite(recipe_id: str, user_id: str, supa: Client, isFavorite: bool):
+def mark_recipe_as_favorite(
+    supa: Client,
+    owner_id: str,
+    recipe_id: str,
+    is_favorite: bool,
+) -> Dict[str, Any]:
+    """Atualiza o status de favorito da receita e retorna o registro atualizado."""
+
     try:
-        if isFavorite: # Marcar isFavorite como False
-            update_response = (
+        response = (
             supa.table("recipes")
-            .update({"metadata": current_metadata})
+            .update({"isFavorite": is_favorite})
+            .eq("owner_id", owner_id)
             .eq("recipe_id", recipe_id)
-            .select("recipe_id,title,metadata,created_at,updated_at") # Retornar o registro completo
+            .select("recipe_id,title,metadata,created_at,updated_at,isFavorite")
+            .limit(1)
             .execute()
         )
-        else: # Marcar isFavorite como True
-            current_metadata = recipe_record.get("metadata") or {}
-            current_metadata["isFavorite"] = True
-            update_response = (
-            supa.table("recipes")
-            .update({"metadata": current_metadata})
-            .eq("recipe_id", recipe_id)
-            .select("recipe_id,title,metadata,created_at,updated_at") # Retornar o registro completo
-            .execute()
-        )
-    
-    except Exception as e:
-        print(f"Erro ao atualizar isFavorite da receita {recipe_id}: {e}")
-        return None
+    except Exception as exc:
+        raise RuntimeError(
+            f"Erro ao atualizar isFavorite da receita {recipe_id}: {exc}"
+        ) from exc
+
+    records = response.data or []
+    if not records:
+        raise ValueError("Receita nao encontrada")
+
+    return records[0]
