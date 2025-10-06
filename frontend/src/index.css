@@ -6,7 +6,11 @@
   line-height: 1.6;
   font-weight: 400;
   background: var(--color-canvas);
-  --color-canvas: linear-gradient(140deg, rgba(23, 28, 45, 0.96), rgba(18, 24, 42, 0.94));
+  --color-canvas: linear-gradient(
+      140deg,
+      rgba(255, 246, 236, 0.96),
+      rgba(255, 253, 246, 0.94)
+    );
   --color-surface: rgba(255, 255, 255, 0.88);
   --color-surface-strong: rgba(255, 255, 255, 0.94);
   --color-surface-muted: rgba(255, 255, 255, 0.82);
@@ -281,9 +285,9 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 18% 18%, rgba(232, 93, 4, 0.32), transparent 62%),
-    radial-gradient(circle at 82% 16%, rgba(155, 89, 182, 0.28), transparent 68%),
-    radial-gradient(circle at 26% 78%, rgba(232, 93, 4, 0.2), transparent 55%),
+    radial-gradient(circle at 18% 18%, rgba(232, 93, 4, 0.28), transparent 60%),
+    radial-gradient(circle at 80% 14%, rgba(155, 89, 182, 0.22), transparent 66%),
+    radial-gradient(circle at 26% 78%, rgba(232, 93, 4, 0.16), transparent 55%),
     var(--color-canvas);
   color: var(--color-text);
   transition: background 0.3s ease, color 0.3s ease;
@@ -295,10 +299,10 @@ body::before {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 64% 70%, rgba(255, 255, 255, 0.16), transparent 70%),
-    linear-gradient(135deg, rgba(17, 23, 39, 0.35), rgba(18, 24, 42, 0.25));
-  mix-blend-mode: screen;
-  opacity: 0.6;
+    radial-gradient(circle at 64% 70%, rgba(255, 255, 255, 0.32), transparent 72%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.16));
+  mix-blend-mode: normal;
+  opacity: 0.55;
   z-index: -1;
 }
 
