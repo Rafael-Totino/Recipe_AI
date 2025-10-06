@@ -64,7 +64,3 @@ class IngestResponse(BaseModel):
 
 class IngestRequest(BaseModel):
     url: str
-
-class FavoriteRequest(BaseModel):
-    recipe_id: str
-    isFavorite: bool

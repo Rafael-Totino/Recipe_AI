@@ -153,6 +153,8 @@ def _recipe_from_record(record: Dict[str, Any]) -> RecipeResponse:
     duration = _to_int(ai_data.get("durationMinutes"))
     servings = _to_int(ai_data.get("servings"))
 
+    is_favorite = bool(record.get("isFavorite"))
+
     difficulty_candidate = _clean_str(ai_data.get("difficulty"))
     difficulty = (
         difficulty_candidate.lower()
@@ -215,7 +217,7 @@ def _recipe_from_record(record: Dict[str, Any]) -> RecipeResponse:
         id=str(record.get("recipe_id")),
         title=title,
         description=description,
-        isFavorite=bool(ai_data.get("isFavorite")),
+        isFavorite=is_favorite,
         durationMinutes=duration,
         servings=servings,
         difficulty=difficulty,  # type: ignore[arg-type]
@@ -350,7 +352,7 @@ async def list_recipes(
 ) -> RecipeListResponse:
     query = (
         supa.table("recipes")
-        .select("recipe_id,title,metadata,created_at,updated_at", count="exact")
+        .select("recipe_id,title,metadata,created_at,updated_at,isFavorite", count="exact")
         .eq("owner_id", str(user.id))
         .order("created_at", desc=True)
     )
@@ -395,7 +397,7 @@ async def get_recipe(
 ) -> RecipeResponse:
     response = (
         supa.table("recipes")
-        .select("recipe_id,title,metadata,created_at,updated_at")
+        .select("recipe_id,title,metadata,created_at,updated_at,isFavorite")
         .eq("owner_id", str(user.id))
         .eq("recipe_id", recipe_id)
         .limit(1)
@@ -470,23 +472,47 @@ async def import_recipe(
         log.exception("ingest.fail url=%s dt=%.2fs", body.url, dt)
         raise HTTPException(status_code=500, detail="Falha na ingestao")
 
-@router.post("/Favorite", response_model=IngestResponse)
-async def favorite_recipe(
+async def _update_favorite_status(
+    supa: Client,
+    user: CurrentUser,
     recipe_id: str,
-    isFavorite: bool,
-    user: CurrentUser = Depends(get_current_user),
-    supa: Client = Depends(get_supabase),
-) -> FavoriteRequest:
-    
+    is_favorite: bool,
+) -> RecipeResponse:
     try:
-        await run_in_threadpool(
+        record = await run_in_threadpool(
             mark_recipe_as_favorite,
             supa,
             str(user.id),
             recipe_id,
+            is_favorite,
         )
-        return FavoriteRequest(recipeId=recipe_id, isFavorite=True)
+        return _recipe_from_record(record)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Receita nao encontrada") from exc
     except Exception as exc:
-        log.exception("favorite.fail recipe=%s user=%s error=%s", recipe_id, user.id, str(exc))
-        raise HTTPException(status_code=500, detail="Falha ao marcar receita como favorita") from exc
+        log.exception(
+            "favorite.update_fail recipe=%s user=%s error=%s",
+            recipe_id,
+            user.id,
+            str(exc),
+        )
+        raise HTTPException(status_code=500, detail="Falha ao atualizar favorito") from exc
+
+
+@router.post("/{recipe_id}/favorite", response_model=RecipeResponse)
+async def favorite_recipe(
+    recipe_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> RecipeResponse:
+    return await _update_favorite_status(supa, user, recipe_id, True)
+
+
+@router.delete("/{recipe_id}/favorite", response_model=RecipeResponse)
+async def unfavorite_recipe(
+    recipe_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> RecipeResponse:
+    return await _update_favorite_status(supa, user, recipe_id, False)
     
