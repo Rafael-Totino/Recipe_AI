@@ -129,7 +129,7 @@
 
 .timeline__import-field button:not(:disabled):hover {
   transform: translateY(-2px);
-  box-shadow: 0 24px 48px -26px rgba(232, 93, 4, 0.55);
+  box-shadow: 0 24px 48px -26px rgba(61, 90, 241, 0.55);
 }
 
 .timeline__import-status {
