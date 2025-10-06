@@ -1,25 +1,130 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import Loader from '../components/shared/Loader';
 import RecipeGrid from '../components/recipes/RecipeGrid';
 import { useAuth } from '../context/AuthContext';
 import { useRecipes } from '../context/RecipeContext';
 import type { Recipe } from '../types';
 import './home.css';
 
-const FALLBACK_COVER = 'linear-gradient(135deg, rgba(155, 89, 182, 0.32), rgba(232, 93, 4, 0.32)), url(https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=60)';
+const FALLBACK_COVER_URL =
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=60';
 
-const buildMeta = (recipe: Recipe) => {
-  if (recipe.durationMinutes) {
-    return `${recipe.durationMinutes} min`;
+const RESPONSIVE_WIDTHS = [320, 480, 768, 1024, 1440] as const;
+
+type ImportedFromSource = Recipe['source'] extends { importedFrom?: infer K } ? K : undefined;
+
+const formatImportSource = (source?: ImportedFromSource) => {
+  if (!source) {
+    return 'Atelier IA';
   }
-  if (recipe.tags?.length) {
-    return recipe.tags.slice(0, 2).join(' � ');
-  }
-  return recipe.source?.importedFrom ? `Origem: ${recipe.source.importedFrom}` : 'Receita do atelier';
+
+  const mapping: Record<string, string> = {
+    youtube: 'YouTube',
+    instagram: 'Instagram',
+    tiktok: 'TikTok',
+    blog: 'Blog',
+    manual: 'Manual'
+  };
+
+  return mapping[source as string] ?? 'Atelier IA';
 };
 
+const buildMeta = (recipe: Recipe) => {
+  let domain = 'atelier.recipes';
+
+  if (recipe.source?.link) {
+    try {
+      const parsed = new URL(recipe.source.link);
+      domain = parsed.hostname.replace(/^www\./, '');
+    } catch (error) {
+      domain = recipe.source.link;
+    }
+  } else if (recipe.tags?.length) {
+    domain = recipe.tags[0];
+  }
+
+  const author = formatImportSource(recipe.source?.importedFrom);
+
+  return `${domain} · ${author}`;
+};
+
+const buildImageUrl = (url: string, width: number, format?: 'avif' | 'webp') => {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set('w', String(width));
+
+    if (format) {
+      parsed.searchParams.set('fm', format);
+    }
+
+    if (!parsed.searchParams.has('auto')) {
+      parsed.searchParams.set('auto', 'format');
+    }
+
+    return parsed.toString();
+  } catch (error) {
+    const params = new URLSearchParams();
+    params.set('w', String(width));
+
+    if (format) {
+      params.set('fm', format);
+    }
+
+    params.set('auto', 'format');
+
+    const joiner = url.includes('?') ? '&' : '?';
+    return `${url}${joiner}${params.toString()}`;
+  }
+};
+
+const createSrcSet = (url: string, format?: 'avif' | 'webp') =>
+  RESPONSIVE_WIDTHS.map((width) => `${buildImageUrl(url, width, format)} ${width}w`).join(', ');
+
+const createFallbackSrc = (url: string) => buildImageUrl(url, 768);
+
+const IMAGE_SIZES = '(min-width: 1280px) 320px, (min-width: 768px) 280px, 220px';
+
+const formatDuration = (minutes?: number) => {
+  if (!minutes || minutes <= 0) {
+    return 'Tempo livre';
+  }
+
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+
+  if (!remainder) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${remainder}min`;
+};
+
+const getObjectPosition = (recipe: Recipe) => {
+  const tags = recipe.tags?.map((tag) => tag.toLowerCase()) ?? [];
+
+  if (tags.some((tag) => ['drink', 'drinks', 'cocktail', 'bebida', 'smoothie'].includes(tag))) {
+    return 'center top';
+  }
+
+  if (tags.some((tag) => ['sopa', 'soup', 'caldo'].includes(tag))) {
+    return 'center 40%';
+  }
+
+  if (tags.some((tag) => ['bolo', 'cake', 'torta', 'pie', 'dessert', 'sobremesa'].includes(tag))) {
+    return 'center 45%';
+  }
+
+  if (recipe.coverImage?.toLowerCase().includes('portrait')) {
+    return 'center top';
+  }
+
+  return 'center';
+};
 const HomePage = () => {
   const { user } = useAuth();
   const { recipes, toggleFavorite, isLoading } = useRecipes();
@@ -131,7 +236,9 @@ const HomePage = () => {
     items: Recipe[],
     options: { ariaLabel?: string; showFavoriteToggle?: boolean } = {}
   ) => {
-    if (!items.length) {
+    const shouldShowSkeletons = isLoading && !items.length;
+
+    if (!items.length && !shouldShowSkeletons) {
       return null;
     }
 
@@ -144,54 +251,98 @@ const HomePage = () => {
           {subtitle ? <p className="text-muted">{subtitle}</p> : null}
         </header>
         <ul className="timeline__carousel-track">
-          {items.map((recipe) => {
-            const coverStyle = recipe.coverImage
-              ? { backgroundImage: `url(${recipe.coverImage})` }
-              : { backgroundImage: FALLBACK_COVER };
+          {shouldShowSkeletons
+            ? Array.from({ length: 4 }, (_, index) => (
+                <li key={`skeleton-${index}`} className="timeline__carousel-item">
+                  <div className="timeline__carousel-card is-loading" aria-hidden="true">
+                    <span className="timeline__carousel-card-media" />
+                    <span className="timeline__carousel-card-overlay" />
+                    <span className="timeline__carousel-card-body">
+                      <span className="timeline__carousel-card-line short" />
+                      <span className="timeline__carousel-card-line" />
+                    </span>
+                  </div>
+                </li>
+              ))
+            : items.map((recipe) => {
+                const imageUrl = recipe.coverImage ?? FALLBACK_COVER_URL;
+                const avifSrcSet = createSrcSet(imageUrl, 'avif');
+                const webpSrcSet = createSrcSet(imageUrl, 'webp');
+                const fallbackSrcSet = createSrcSet(imageUrl);
+                const fallbackSrc = createFallbackSrc(imageUrl);
+                const objectPosition = getObjectPosition(recipe);
+                const durationLabel = formatDuration(recipe.durationMinutes);
+                const cardClassNames = ['timeline__carousel-card'];
 
-            return (
-              <li key={recipe.id} className="timeline__carousel-item">
-                <button
-                  type="button"
-                  className="timeline__carousel-card"
-                  style={coverStyle}
-                  onClick={() => navigate(`/app/recipes/${recipe.id}`)}
-                >
-                  <span className="timeline__carousel-card-overlay" aria-hidden="true" />
-                  <span className="timeline__carousel-card-title">{recipe.title}</span>
-                  <span className="timeline__carousel-card-meta">{buildMeta(recipe)}</span>
-                </button>
-                {options.showFavoriteToggle ? (
-                  <button
-                    type="button"
-                    className={`timeline__carousel-favorite${recipe.isFavorite ? ' is-active' : ''}`}
-                    onClick={() => toggleFavorite(recipe.id)}
-                    aria-pressed={recipe.isFavorite}
-                    aria-label={
-                      recipe.isFavorite ? 'Remover receita dos favoritos' : 'Adicionar receita aos favoritos'
-                    }
-                  >
-                    <span aria-hidden="true">?</span>
-                  </button>
-                ) : null}
-              </li>
-            );
-          })}
+                if (!recipe.coverImage) {
+                  cardClassNames.push('is-placeholder');
+                }
+
+                const cardClassName = cardClassNames.join(' ');
+
+                return (
+                  <li key={recipe.id} className="timeline__carousel-item">
+                    <button
+                      type="button"
+                      className={cardClassName}
+                      onClick={() => navigate(`/app/recipes/${recipe.id}`)}
+                    >
+                      <span className="timeline__carousel-card-media" aria-hidden="true">
+                        <picture>
+                          <source type="image/avif" srcSet={avifSrcSet} sizes={IMAGE_SIZES} />
+                          <source type="image/webp" srcSet={webpSrcSet} sizes={IMAGE_SIZES} />
+                          <img
+                            src={fallbackSrc}
+                            srcSet={fallbackSrcSet}
+                            sizes={IMAGE_SIZES}
+                            alt={recipe.title}
+                            loading="lazy"
+                            decoding="async"
+                            className="timeline__carousel-card-image"
+                            style={{ objectPosition }}
+                            onError={(event) => {
+                              const target = event.currentTarget;
+                              target.onerror = null;
+                              target.src = createFallbackSrc(FALLBACK_COVER_URL);
+                              target.srcset = createSrcSet(FALLBACK_COVER_URL);
+                            }}
+                          />
+                        </picture>
+                      </span>
+                      <span className="timeline__carousel-card-overlay" aria-hidden="true" />
+                      <span className="timeline__carousel-card-body">
+                        <span className="timeline__carousel-card-chip">{durationLabel}</span>
+                        <span className="timeline__carousel-card-title">{recipe.title}</span>
+                        <span className="timeline__carousel-card-meta">{buildMeta(recipe)}</span>
+                      </span>
+                    </button>
+                    {options.showFavoriteToggle ? (
+                      <button
+                        type="button"
+                        className={`timeline__carousel-favorite${recipe.isFavorite ? ' is-active' : ''}`}
+                        onClick={() => toggleFavorite(recipe.id)}
+                        aria-pressed={recipe.isFavorite}
+                        aria-label={
+                          recipe.isFavorite
+                            ? 'Remover receita dos favoritos'
+                            : 'Adicionar receita aos favoritos'
+                        }
+                        title={
+                          recipe.isFavorite
+                            ? 'Remover dos favoritos'
+                            : 'Adicionar aos favoritos'
+                        }
+                      >
+                        <span aria-hidden="true">★</span>
+                      </button>
+                    ) : null}
+                  </li>
+                );
+              })}
         </ul>
       </section>
     );
   };
-
-  if (isLoading && recipes.length === 0) {
-    return (
-      <div className="timeline" role="status">
-        <section className="surface-card timeline__loader">
-          <Loader />
-          <p>Organizando seu atelier...</p>
-        </section>
-      </div>
-    );
-  }
 
   return (
     <div className="timeline">
