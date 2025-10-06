@@ -46,7 +46,15 @@ const RecipeCard = ({ recipe, onOpen, onToggleFavorite }: RecipeCardProps) => {
         aria-pressed={recipe.isFavorite}
         aria-label={recipe.isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       >
-        <span aria-hidden="true">★</span>
+        <span aria-hidden="true" className="recipe-card__favorite-icon">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path
+              d="M12 5a3.5 3.5 0 0 0-3.5 3.5V10H7a5 5 0 0 0-5 5v1.5A1.5 1.5 0 0 0 3.5 18H20.5A1.5 1.5 0 0 0 22 16.5V15a5 5 0 0 0-5-5h-1.5V8.5A3.5 3.5 0 0 0 12 5Zm0 2a1.5 1.5 0 0 1 1.5 1.5V10h-3V8.5A1.5 1.5 0 0 1 12 7Zm9 10H3v1a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1Z"
+              fill="currentColor"
+              stroke="none"
+            />
+          </svg>
+        </span>
       </button>
 
       <div className="recipe-card__body">
