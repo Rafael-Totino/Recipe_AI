@@ -17,11 +17,11 @@
   --color-muted: rgba(31, 37, 40, 0.78);
   --color-muted-strong: rgba(31, 37, 40, 0.88);
   --color-heading: #13191b;
-  --color-primary: #3d5af1;
-  --color-primary-strong: #2737a6;
-  --color-secondary: #8c7ae6;
-  --color-secondary-soft: rgba(140, 122, 230, 0.2);
-  --gradient-brand: linear-gradient(135deg, #3d5af1 0%, #2737a6 100%);
+  --color-primary: #e85d04;
+  --color-primary-strong: #d9480f;
+  --color-secondary: #9b59b6;
+  --color-secondary-soft: rgba(155, 89, 182, 0.2);
+  --gradient-brand: linear-gradient(135deg, #ffd166 0%, #ff8c1a 45%, #d00000 100%);
   --color-chip-bg: rgba(45, 52, 54, 0.08);
   --color-search-bg: rgba(255, 255, 255, 0.92);
   --color-search-glow: rgba(255, 255, 255, 0.38);
@@ -67,8 +67,8 @@
   --chat-textarea-border: rgba(16, 22, 41, 0.12);
   --chat-textarea-text: var(--color-text);
   --chat-textarea-placeholder: rgba(31, 37, 40, 0.5);
-  --chat-send-button-bg: linear-gradient(135deg, #3d5af1 0%, #2737a6 100%);
-  --chat-send-button-shadow: 0 24px 44px -30px rgba(61, 90, 241, 0.55);
+  --chat-send-button-bg: var(--gradient-brand);
+  --chat-send-button-shadow: 0 26px 50px -32px rgba(176, 30, 0, 0.58);
   --chat-send-button-disabled-opacity: 0.6;
   --radius-xl: 32px;
   --radius-lg: 24px;
@@ -147,8 +147,8 @@
   --bottom-nav-active-bg: rgba(124, 144, 255, 0.28);
   --bottom-nav-active-border: rgba(124, 144, 255, 0.4);
   --bottom-nav-active-color: #ffffff;
-  --bottom-nav-icon-bg: rgba(124, 144, 255, 0.18);
-  --gradient-brand: linear-gradient(135deg, #4c6ef5 0%, #364fc7 100%);
+  --bottom-nav-icon-bg: rgba(255, 183, 3, 0.14);
+  --gradient-brand: linear-gradient(135deg, #ffd166 0%, #ff8c1a 45%, #d00000 100%);
   --chat-history-bg: linear-gradient(145deg, rgba(32, 42, 60, 0.82), rgba(26, 34, 52, 0.88));
   --chat-input-bg: linear-gradient(145deg, rgba(28, 36, 54, 0.92), rgba(24, 30, 46, 0.9));
   --chat-input-border: rgba(236, 240, 247, 0.16);
@@ -158,8 +158,8 @@
   --chat-textarea-border: rgba(236, 240, 247, 0.18);
   --chat-textarea-text: #f0f4f8;
   --chat-textarea-placeholder: rgba(236, 240, 247, 0.6);
-  --chat-send-button-bg: linear-gradient(135deg, #748ffc 0%, #5c7cfa 50%, #364fc7 100%);
-  --chat-send-button-shadow: 0 28px 48px -26px rgba(76, 110, 245, 0.6);
+  --chat-send-button-bg: var(--gradient-brand);
+  --chat-send-button-shadow: 0 28px 54px -28px rgba(140, 18, 0, 0.62);
   --chat-send-button-disabled-opacity: 0.5;
   --cooking-body-bg: radial-gradient(circle at 18% 14%, rgba(232, 93, 4, 0.22), transparent 60%),
     radial-gradient(circle at 78% 18%, rgba(155, 89, 182, 0.26), transparent 58%),
@@ -234,8 +234,8 @@
     --bottom-nav-active-bg: rgba(124, 144, 255, 0.28);
     --bottom-nav-active-border: rgba(124, 144, 255, 0.4);
     --bottom-nav-active-color: #ffffff;
-    --bottom-nav-icon-bg: rgba(124, 144, 255, 0.18);
-    --gradient-brand: linear-gradient(135deg, #4c6ef5 0%, #364fc7 100%);
+    --bottom-nav-icon-bg: rgba(255, 183, 3, 0.14);
+    --gradient-brand: linear-gradient(135deg, #ffd166 0%, #ff8c1a 45%, #d00000 100%);
     --chat-history-bg: linear-gradient(145deg, rgba(32, 42, 60, 0.82), rgba(26, 34, 52, 0.88));
     --chat-input-bg: linear-gradient(145deg, rgba(28, 36, 54, 0.92), rgba(24, 30, 46, 0.9));
     --chat-input-border: rgba(236, 240, 247, 0.16);
@@ -245,8 +245,8 @@
     --chat-textarea-border: rgba(236, 240, 247, 0.18);
     --chat-textarea-text: #f0f4f8;
     --chat-textarea-placeholder: rgba(236, 240, 247, 0.6);
-    --chat-send-button-bg: linear-gradient(135deg, #748ffc 0%, #5c7cfa 50%, #364fc7 100%);
-    --chat-send-button-shadow: 0 28px 48px -26px rgba(76, 110, 245, 0.6);
+    --chat-send-button-bg: var(--gradient-brand);
+    --chat-send-button-shadow: 0 28px 54px -28px rgba(140, 18, 0, 0.62);
     --chat-send-button-disabled-opacity: 0.5;
     --cooking-body-bg: radial-gradient(circle at 18% 14%, rgba(232, 93, 4, 0.22), transparent 60%),
       radial-gradient(circle at 78% 18%, rgba(155, 89, 182, 0.26), transparent 58%),
@@ -441,30 +441,32 @@ select:focus {
   border-radius: 999px;
   padding: 0.85rem 1.6rem;
   font-weight: 600;
-  border: 1px solid var(--color-button-border);
+  border: none;
   cursor: pointer;
   transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.2s ease;
   position: relative;
   overflow: hidden;
-  background: var(--color-button-bg);
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: 0 22px 48px -30px rgba(208, 0, 0, 0.55);
 }
 
 .button::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 70%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 70%);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
 
 .button:hover {
   transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 18px 40px -28px rgba(32, 40, 42, 0.35);
+  box-shadow: 0 26px 54px -30px rgba(176, 30, 0, 0.6);
 }
 
 :root[data-theme='dark'] .button:hover {
-  box-shadow: 0 18px 40px -28px rgba(8, 12, 18, 0.6);
+  box-shadow: 0 26px 54px -30px rgba(124, 16, 0, 0.65);
 }
 
 .button:hover::after {
@@ -480,25 +482,23 @@ select:focus {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 .button--primary {
-  background: linear-gradient(135deg, #3d5af1 0%, #2737a6 100%);
+  background: var(--gradient-brand);
   color: #fff;
-  box-shadow: 0 32px 52px -32px rgba(61, 90, 241, 0.65);
-  border: none;
+  box-shadow: 0 32px 60px -34px rgba(176, 30, 0, 0.65);
 }
 
 .button--secondary {
-  background: var(--color-secondary-soft);
-  color: var(--color-secondary);
-  border-color: rgba(155, 89, 182, 0.3);
+  background: var(--gradient-brand);
+  color: #fff;
 }
 
 .button--ghost {
-  background: var(--color-button-bg);
-  color: var(--color-text);
-  border-color: var(--color-button-border);
+  background: var(--gradient-brand);
+  color: #fff;
 }
 
 .badge {
