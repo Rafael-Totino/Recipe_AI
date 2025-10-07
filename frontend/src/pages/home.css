@@ -3,6 +3,10 @@
   gap: clamp(2rem, 4vw, 3rem);
 }
 
+.timeline--favorites {
+  display: block;
+}
+
 .timeline__import {
   position: relative;
   display: grid;

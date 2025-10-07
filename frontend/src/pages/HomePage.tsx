@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
 import RecipeGrid from '../components/recipes/RecipeGrid';
+import SavedCollectionsView from '../components/saved/SavedCollectionsView';
 import { useAuth } from '../context/AuthContext';
 import { useRecipes } from '../context/RecipeContext';
 import type { Recipe } from '../types';
@@ -233,6 +234,18 @@ const HomePage = () => {
           <Loader />
           <p>Organizando seu atelier...</p>
         </section>
+      </div>
+    );
+  }
+
+  if (view === 'favorites') {
+    return (
+      <div className="timeline timeline--favorites">
+        <SavedCollectionsView
+          favorites={favoritesCarousel}
+          onOpenRecipe={(id) => navigate(`/app/recipes/${id}`)}
+          onToggleFavorite={toggleFavorite}
+        />
       </div>
     );
   }
