@@ -33,7 +33,7 @@
   display: flex;
   flex-direction: column; /* Base é coluna */
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .playlists-page__eyebrow {
@@ -46,7 +46,7 @@
 
 .playlists-page__header h1 {
   font-size: 2.1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
 }
 
 .playlists-page__subtitle {
@@ -58,8 +58,8 @@
 
 .playlists-page__stats {
   display: flex;
-  gap: 1rem;
-  padding: 0.85rem 1.1rem;
+  gap: 0.1rem;
+  padding: 0.15rem 3.5rem;
   border-radius: 1.1rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.06);
@@ -453,7 +453,7 @@
   }
 
   .playlists-page__header {
-    gap: 2rem;
+    gap: 1rem;
   }
 
   .playlists-page__header h1 {

@@ -776,7 +776,7 @@ body.chat-focus .app-shell {
 
 .bottom-nav__item--import {
   margin-top: -3.15rem;
-  gap: 0.55rem;
+  gap: 0.1rem;
   font-weight: 700;
 }
 
@@ -787,7 +787,7 @@ body.chat-focus .app-shell {
   background: var(--gradient-brand);
   color: #fff;
   box-shadow: var(--shadow-elevated);
-  border: 4px solid var(--surface-elev);
+  border: 3px solid var(--surface-elev);
   transform: translateY(-0.6rem);
 }
 
@@ -809,14 +809,14 @@ body.chat-focus .app-shell {
   --shell-padding-y: clamp(1.05rem, 3.6vw, 1.55rem);
   --topbar-fixed-height: clamp(5.45rem, 18vw, 6.6rem);
   --topbar-fixed-gap: clamp(0.55rem, 3.6vw, 0.95rem);
-  gap: clamp(1.35rem, 4vw, 2.1rem);
+  gap: clamp(0.15rem, 1vw, 2.1rem);
   padding: calc(env(safe-area-inset-top) + var(--space-2)) var(--space-4)
     calc(env(safe-area-inset-bottom) + var(--space-6));
   max-width: 100%;
 }
 
 .header-area {
-  padding: var(--space-2) 0;
+  padding: 0.2rem 0;
 }
 
 .topbar {
@@ -912,7 +912,7 @@ body.chat-focus .app-shell {
 
 .main-area {
   max-width: 100%;
-  padding-top: clamp(0.2rem, 4vw, 0.2rem);
+  padding-top: clamp(0.1rem, 1vw, 0.1rem);
   padding-bottom: clamp(4.75rem, 12vw, 6.25rem);
 }
 
