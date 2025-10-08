@@ -45,8 +45,7 @@ const PlaylistsPage = () => {
     <div className="playlists-page">
       <header className="playlists-page__header">
         <div>
-          <p className="playlists-page__eyebrow">Coleção</p>
-          <h1>Salvos</h1>
+          <h1>Livros de Receita</h1>
           <p className="playlists-page__subtitle">
             Organize suas receitas favoritas em playlists temáticas e acesse tudo em um só lugar.
           </p>
@@ -119,7 +118,6 @@ const PlaylistCard = ({ playlist, onClick }: { playlist: PlaylistSummary; onClic
       <div className="playlists-card__content">
         <p className="playlists-card__name">{playlist.name}</p>
         <p className="playlists-card__meta">{formatCount(playlist.recipeCount)}</p>
-        {playlist.type === 'system' ? <span className="playlists-card__badge">Playlist padrão</span> : null}
       </div>
     </button>
   );
