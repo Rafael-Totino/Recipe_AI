@@ -588,8 +588,13 @@ body.chat-focus .app-shell {
   box-shadow: 0 0 0 2px rgba(232, 93, 4, 0.25);
 }
 
+<<<<<<< HEAD
 .topbar__search-button {
   padding: 0.28rem clamp(0.45rem, 1vw, 0.75rem);
+=======
+.button.topbar__search-button {
+  padding: 0.28rem clamp(0.45rem, 1.2vw, 0.7rem);
+>>>>>>> 22d3bce5b2ab56cbc0a1276f5cbdc946391efd9d
   border-radius: 999px;
   font-size: 0.8rem;
   white-space: nowrap;
@@ -920,6 +925,8 @@ body.chat-focus .app-shell {
   padding: 0.3rem 0.45rem;
 }
 
+.button.topbar__search-button {
+  padding: 0.3rem 0.55rem;
 }
 
 .main-area {
@@ -981,6 +988,7 @@ body.chat-focus .app-shell {
     padding: 0.3rem 0.6rem;
   }
 
+  .button.topbar__search-button {
     padding: 0.28rem clamp(0.65rem, 1.6vw, 0.95rem);
   }
 
