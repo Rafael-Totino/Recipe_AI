@@ -516,3 +516,4 @@ async def unfavorite_recipe(
 ) -> RecipeResponse:
     return await _update_favorite_status(supa, user, recipe_id, False)
     
+    

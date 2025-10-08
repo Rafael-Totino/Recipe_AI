@@ -563,3 +563,5 @@ def mark_recipe_as_favorite(
         raise ValueError("Receita nao encontrada")
 
     return records[0]
+
+

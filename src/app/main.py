@@ -9,6 +9,7 @@ from src.app.config import settings
 from src.app.routers.ingest import router as ingest_router
 from src.app.routers.auth import router as auth_router
 from src.app.routers.chat import router as chat_router
+from src.app.routers.playlists import router as playlists_router
 
 # Logging simples no stdout (bom para dev e containers)
 logging.basicConfig(
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(ingest_router)
 app.include_router(auth_router)
 app.include_router(chat_router)
+app.include_router(playlists_router)
 
 
 @app.get("/health")
