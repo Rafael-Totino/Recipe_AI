@@ -88,9 +88,15 @@ const PlaylistDetailPage = () => {
     <div className="playlist-detail">
       <header className="playlist-detail__hero" style={{ backgroundImage: coverImage }}>
         <div className="playlist-detail__hero-overlay" aria-hidden="true" />
-        <button type="button" className="playlist-detail__back" onClick={() => navigate(-1)}>
-          Voltar
-        </button>
+        <div className="playlist-detail__hero-top">
+          <button type="button" className="playlist-detail__back" onClick={() => navigate(-1)}>
+            Voltar
+          </button>
+          <nav className="playlist-detail__breadcrumbs" aria-label="Você está em">
+            <Link to="/app/playlists">Salvos</Link>
+            {detail ? <span aria-current="page">{detail.name}</span> : null}
+          </nav>
+        </div>
         <div className="playlist-detail__hero-content">
           <p className="playlist-detail__eyebrow">Coleção</p>
           <h1>{detail?.name ?? 'Playlist'}</h1>
@@ -106,11 +112,6 @@ const PlaylistDetailPage = () => {
       </header>
 
       <div className="playlist-detail__body">
-        <nav className="playlist-detail__breadcrumbs" aria-label="Você está em">
-          <Link to="/app/playlists">Salvos</Link>
-          {detail ? <span aria-current="page">{detail.name}</span> : null}
-        </nav>
-
         {isLoading ? (
           <section className="playlist-detail__loading" role="status">
             <Loader />
