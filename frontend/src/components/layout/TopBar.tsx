@@ -260,7 +260,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
-              placeholder="Buscar receitas ou falar com o Chef IA..."
+              placeholder="Buscar receitas ou falar com Chef IA..."
               aria-label="Buscar receitas ou fazer perguntas"
             />
             <div className="topbar__search-actions">

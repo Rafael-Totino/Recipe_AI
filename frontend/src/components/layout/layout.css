@@ -537,7 +537,7 @@ body.chat-focus .app-shell {
   border: none;
   border-radius: 2rem;
   background: transparent;
-  font-size: 1rem;
+  font-size: 0.7rem;
   color: var(--color-text);
   min-width: 0;
 }
@@ -588,15 +588,9 @@ body.chat-focus .app-shell {
   box-shadow: 0 0 0 2px rgba(232, 93, 4, 0.25);
 }
 
-<<<<<<< HEAD
-.topbar__search-button {
-  padding: 0.28rem clamp(0.45rem, 1vw, 0.75rem);
-=======
 .button.topbar__search-button {
   padding: 0.28rem clamp(0.45rem, 1.2vw, 0.7rem);
->>>>>>> 22d3bce5b2ab56cbc0a1276f5cbdc946391efd9d
   border-radius: 999px;
-  font-size: 0.8rem;
   white-space: nowrap;
 }
 
@@ -649,19 +643,6 @@ body.chat-focus .app-shell {
   display: none;
 }
 
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
 
 .bottom-nav {
   position: fixed;
@@ -913,7 +894,7 @@ body.chat-focus .app-shell {
 
 .topbar__search input {
   padding-left: 0;
-  padding: 0.2rem 0.1rem 0.2rem 0.7rem;
+  padding: 0.2rem 0.1rem 0.2rem 0.6rem;
   width: 100%;
 }
 
@@ -926,7 +907,8 @@ body.chat-focus .app-shell {
 }
 
 .button.topbar__search-button {
-  padding: 0.3rem 0.55rem;
+  padding: 0.45rem 0.35rem;
+  font-size: 0.8rem; /* Reduzido de 0.8rem */
 }
 
 .main-area {
