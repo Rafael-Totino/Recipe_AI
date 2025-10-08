@@ -1,6 +1,6 @@
 .cooking-mode {
   position: relative;
-  width: min(1180px, 100%);
+  width: min(100%, 960px);
   margin: 0 auto;
   min-height: calc(100vh - var(--cooking-header-height, 72px) - var(--cooking-top-gap, 24px));
   min-height: calc(100dvh - var(--cooking-header-height, 72px) - var(--cooking-top-gap, 24px));
@@ -8,9 +8,9 @@
   color: var(--cooking-text);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  padding: clamp(1.6rem, 3.6vw, 2.8rem) clamp(1.2rem, 4vw, 2.8rem);
+  padding: clamp(1.2rem, 5vw, 1.8rem);
   gap: clamp(1.5rem, 3vw, 2.6rem);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--cooking-border);
   box-shadow: 0 48px 96px -68px rgba(18, 22, 27, 0.4);
   backdrop-filter: blur(26px);
@@ -69,6 +69,8 @@
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
+  width: 100%;
+  justify-content: center;
 }
 
 .cooking-mode__progress {
@@ -88,8 +90,8 @@
 }
 
 .cooking-mode__voice {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--cooking-voice-bg);
   border: 1px solid var(--cooking-voice-border);
@@ -123,18 +125,18 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: clamp(1rem, 4vw, 2.5rem);
+  gap: clamp(0.75rem, 5vw, 1.6rem);
   width: 100%;
 }
 
 .cooking-mode__stage {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.2rem;
   align-content: center;
   justify-items: center;
   text-align: center;
   color: inherit;
-  padding: 0 clamp(1.6rem, 5vw, 3rem);
+  padding: 0 clamp(1.1rem, 12vw, 1.8rem);
   max-width: min(760px, 100%);
   justify-self: center;
 }
@@ -148,7 +150,7 @@
 
 .cooking-mode__step-text {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(2rem, 5.5vw, 3.2rem);
+  font-size: clamp(1.8rem, 8vw, 3rem);
   line-height: 1.25;
   color: var(--cooking-text);
   max-width: min(640px, 82vw);
@@ -238,6 +240,8 @@
   font-weight: 600;
   font-size: 0.95rem;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  width: 100%;
+  text-align: center;
 }
 
 .cooking-mode__ingredients:hover {
@@ -246,13 +250,13 @@
 }
 
 .cooking-mode__nav-arrow {
-  width: clamp(44px, 6vw, 58px);
-  height: clamp(44px, 6vw, 58px);
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   border: 1px solid var(--cooking-control-border);
   background: var(--cooking-control-bg);
   color: var(--cooking-control-text);
-  font-size: clamp(1.6rem, 4vw, 2rem);
+  font-size: 1.4rem;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -289,8 +293,9 @@
 .cooking-mode__ingredients-panel {
   position: fixed;
   top: calc(var(--cooking-header-height, 72px) + clamp(1rem, 3vw, 1.6rem));
-  right: clamp(1.5rem, 3vw, 2.5rem);
-  width: min(320px, 70vw);
+  left: 50%;
+  right: auto;
+  width: min(420px, 90vw);
   max-height: min(70vh, 70dvh);
   overflow-y: auto;
   background: var(--cooking-ingredients-bg);
@@ -300,7 +305,7 @@
   border: 1px solid var(--cooking-ingredients-border);
   box-shadow: var(--cooking-ingredients-shadow);
   opacity: 0;
-  transform: translateY(-16px);
+  transform: translate(-50%, -16px);
   pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s ease;
   color: var(--cooking-text);
@@ -309,7 +314,7 @@
 
 .cooking-mode__ingredients-panel.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
   pointer-events: auto;
 }
 
@@ -341,66 +346,68 @@
   color: var(--cooking-muted);
 }
 
-@media (max-width: 1024px) {
-  .cooking-mode {
-    width: min(100%, 960px);
-  }
-}
-
-@media (max-width: 768px) {
-  .cooking-mode {
-    border-radius: var(--radius-lg);
-    padding: clamp(1.2rem, 5vw, 1.8rem);
-  }
-
-  .cooking-mode__actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .cooking-mode__stage-shell {
-    gap: clamp(0.75rem, 5vw, 1.6rem);
-  }
-
+@media (min-width: 481px) {
   .cooking-mode__stage {
     padding: 0 clamp(1.4rem, 8vw, 2.4rem);
-    gap: 1.2rem;
-  }
-
-  .cooking-mode__step-text {
-    font-size: clamp(1.8rem, 8vw, 3rem);
-  }
-
-  .cooking-mode__ingredients-panel {
-    left: 50%;
-    right: auto;
-    transform: translate(-50%, -16px);
-    width: min(420px, 90vw);
-  }
-
-  .cooking-mode__ingredients-panel.is-visible {
-    transform: translate(-50%, 0);
-  }
-}
-
-@media (max-width: 480px) {
-  .cooking-mode__voice {
-    width: 40px;
-    height: 40px;
-  }
-
-  .cooking-mode__nav-arrow {
-    width: 38px;
-    height: 38px;
-    font-size: 1.4rem;
-  }
-
-  .cooking-mode__stage {
-    padding: 0 clamp(1.1rem, 12vw, 1.8rem);
   }
 
   .cooking-mode__ingredients {
-    width: 100%;
-    text-align: center;
+    width: auto;
+    text-align: inherit;
+  }
+
+  .cooking-mode__voice {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cooking-mode__nav-arrow {
+    width: clamp(44px, 6vw, 58px);
+    height: clamp(44px, 6vw, 58px);
+    font-size: clamp(1.6rem, 4vw, 2rem);
   }
 }
+
+@media (min-width: 769px) {
+  .cooking-mode {
+    padding: clamp(1.6rem, 3.6vw, 2.8rem) clamp(1.2rem, 4vw, 2.8rem);
+    border-radius: var(--radius-xl);
+  }
+
+  .cooking-mode__actions {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .cooking-mode__stage-shell {
+    gap: clamp(1rem, 4vw, 2.5rem);
+  }
+
+  .cooking-mode__stage {
+    padding: 0 clamp(1.6rem, 5vw, 3rem);
+    gap: 1.5rem;
+  }
+
+  .cooking-mode__step-text {
+    font-size: clamp(2rem, 5.5vw, 3.2rem);
+  }
+
+  .cooking-mode__ingredients-panel {
+    right: clamp(1.5rem, 3vw, 2.5rem);
+    left: auto;
+    width: min(320px, 70vw);
+    transform: translateY(-16px);
+  }
+
+  .cooking-mode__ingredients-panel.is-visible {
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1025px) {
+  .cooking-mode {
+    width: min(1180px, 100%);
+  }
+}
+
+ 

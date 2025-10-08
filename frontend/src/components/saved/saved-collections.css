@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  padding: 1.5rem 1.25rem 5rem;
+  padding: 1.5rem 1.25rem 7rem;
 }
 
 .saved-collections--empty {
@@ -69,7 +69,7 @@
 
 .saved-collections__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
 }
 
@@ -276,6 +276,16 @@
   border: none;
 }
 
+@media (min-width: 481px) {
+  .saved-collections {
+    padding-bottom: 5rem;
+  }
+
+  .saved-collections__grid {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  }
+}
+
 @media (min-width: 768px) {
   .saved-collections {
     padding: 2rem 2.5rem 6rem;
@@ -287,15 +297,5 @@
 
   .saved-collections__card-name {
     font-size: 1.1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .saved-collections {
-    padding-bottom: 7rem;
-  }
-
-  .saved-collections__grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
