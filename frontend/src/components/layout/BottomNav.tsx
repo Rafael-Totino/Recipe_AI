@@ -142,8 +142,8 @@ const BottomNav = () => {
           />
         </svg>
       ),
-      to: { pathname: '/app', search: buildSearch('favorites') },
-      isActive: location.pathname === '/app' && view === 'favorites'
+      to: '/app/playlists',
+      isActive: location.pathname.startsWith('/app/playlists')
     },
     {
       key: 'profile',
