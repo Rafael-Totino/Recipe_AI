@@ -3,21 +3,20 @@ import { useNavigate } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
 import { usePlaylists } from '../context/PlaylistContext';
+import type { PlaylistSummary } from '../types';
+import { getGradientFromSeed } from '../utils/gradients';
 
 import './playlists.css';
 
-const FALLBACK_GRADIENTS = [
-  'linear-gradient(135deg, rgba(255, 99, 132, 0.65), rgba(53, 162, 235, 0.65))',
-  'linear-gradient(135deg, rgba(255, 159, 64, 0.65), rgba(75, 192, 192, 0.65))',
-  'linear-gradient(135deg, rgba(153, 102, 255, 0.65), rgba(255, 205, 86, 0.65))'
-];
-
-const getFallbackBackground = (seed: string) => {
-  if (!seed) {
-    return FALLBACK_GRADIENTS[0];
+const buildPreviewCells = (covers: string[], seed: string) => {
+  const normalized = covers.slice(0, 4);
+  while (normalized.length < 4) {
+    normalized.push('');
   }
-  const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return FALLBACK_GRADIENTS[hash % FALLBACK_GRADIENTS.length];
+  return normalized.map((cover, index) => ({
+    id: `${seed}-${index}`,
+    style: cover ? { backgroundImage: `url(${cover})` } : { backgroundImage: getGradientFromSeed(`${seed}-${index}`, index) }
+  }));
 };
 
 const formatCount = (count: number) => {
@@ -80,31 +79,49 @@ const PlaylistsPage = () => {
 
       <div className="playlists-page__grid" role="list">
         {playlists.map((playlist) => (
-          <button
-            key={playlist.id}
-            type="button"
-            role="listitem"
-            className="playlists-card"
-            onClick={() => navigate(`/app/playlists/${playlist.id}`)}
-          >
-            <div
-              className="playlists-card__cover"
-              style={{ backgroundImage: getFallbackBackground(playlist.id) }}
-              aria-hidden="true"
-            >
-              <span className="playlists-card__initials">{playlist.name.charAt(0).toUpperCase()}</span>
-            </div>
-            <div className="playlists-card__content">
-              <p className="playlists-card__name">{playlist.name}</p>
-              <p className="playlists-card__meta">{formatCount(playlist.recipeCount)}</p>
-              {playlist.type === 'system' ? (
-                <span className="playlists-card__badge">Playlist padrão</span>
-              ) : null}
-            </div>
-          </button>
+          <PlaylistCard key={playlist.id} playlist={playlist} onClick={() => navigate(`/app/playlists/${playlist.id}`)} />
         ))}
       </div>
     </div>
+  );
+};
+
+const PlaylistCard = ({ playlist, onClick }: { playlist: PlaylistSummary; onClick: () => void }) => {
+  const { playlistPreviews, getPlaylistPreview } = usePlaylists();
+
+  useEffect(() => {
+    if (!playlistPreviews[playlist.id]) {
+      void getPlaylistPreview(playlist.id);
+    }
+  }, [getPlaylistPreview, playlist.id, playlistPreviews]);
+
+  const covers = playlistPreviews[playlist.id] ?? [];
+  const hasAtLeastOneCover = covers.some((cover) => Boolean(cover));
+  const previewCells = buildPreviewCells(covers, playlist.id);
+
+  return (
+    <button type="button" role="listitem" className="playlists-card" onClick={onClick}>
+      <div
+        className={`playlists-card__cover${hasAtLeastOneCover ? ' has-preview' : ''}`}
+        style={hasAtLeastOneCover ? undefined : { backgroundImage: getGradientFromSeed(playlist.id) }}
+        aria-hidden="true"
+      >
+        {hasAtLeastOneCover ? (
+          <div className="playlists-card__cover-grid">
+            {previewCells.map((cell) => (
+              <span key={cell.id} className="playlists-card__cover-cell" style={cell.style} />
+            ))}
+          </div>
+        ) : (
+          <span className="playlists-card__initials">{playlist.name.charAt(0).toUpperCase()}</span>
+        )}
+      </div>
+      <div className="playlists-card__content">
+        <p className="playlists-card__name">{playlist.name}</p>
+        <p className="playlists-card__meta">{formatCount(playlist.recipeCount)}</p>
+        {playlist.type === 'system' ? <span className="playlists-card__badge">Playlist padrão</span> : null}
+      </div>
+    </button>
   );
 };
 

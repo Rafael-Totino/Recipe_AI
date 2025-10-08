@@ -15,7 +15,7 @@ import {
   listPlaylists as listPlaylistsRequest,
   updatePlaylist as updatePlaylistRequest
 } from '../services/playlists';
-import type { PlaylistDetail, PlaylistSummary } from '../types';
+import type { PlaylistDetail, PlaylistItem, PlaylistSummary } from '../types';
 import { ApiError } from '../services/api';
 import { useAuth } from './AuthContext';
 
@@ -30,6 +30,8 @@ interface PlaylistContextValue {
   ) => Promise<PlaylistSummary | null>;
   deletePlaylist: (playlistId: string) => Promise<void>;
   fetchPlaylistDetail: (playlistId: string) => Promise<PlaylistDetail | null>;
+  playlistPreviews: Record<string, string[]>;
+  getPlaylistPreview: (playlistId: string) => Promise<string[]>;
 }
 
 const PlaylistContext = createContext<PlaylistContextValue | undefined>(undefined);
@@ -38,10 +40,12 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
   const { session } = useAuth();
   const [playlists, setPlaylists] = useState<PlaylistSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [playlistPreviews, setPlaylistPreviews] = useState<Record<string, string[]>>({});
 
   const loadPlaylists = useCallback(async () => {
     if (!session?.access_token) {
       setPlaylists([]);
+      setPlaylistPreviews({});
       return;
     }
     setIsLoading(true);
@@ -52,6 +56,12 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
       console.error('Unable to load playlists', error);
     } finally {
       setIsLoading(false);
+    }
+  }, [session?.access_token]);
+
+  useEffect(() => {
+    if (!session?.access_token) {
+      setPlaylistPreviews({});
     }
   }, [session?.access_token]);
 
@@ -101,6 +111,13 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
       try {
         await deletePlaylistRequest(session.access_token, playlistId);
         setPlaylists((prev) => prev.filter((item) => item.id !== playlistId));
+        setPlaylistPreviews((prev) => {
+          if (!prev[playlistId]) {
+            return prev;
+          }
+          const { [playlistId]: _removed, ...rest } = prev;
+          return rest;
+        });
       } catch (error) {
         console.error('Unable to delete playlist', error);
       }
@@ -125,9 +142,69 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     [session?.access_token]
   );
 
+  const getPlaylistPreview = useCallback(
+    async (playlistId: string) => {
+      if (playlistPreviews[playlistId]) {
+        return playlistPreviews[playlistId];
+      }
+      if (!session?.access_token) {
+        return [];
+      }
+      try {
+        const detail = await fetchPlaylistDetailRequest(session.access_token, playlistId);
+        const sortedItems = [...(detail?.items ?? [])].sort((a: PlaylistItem, b: PlaylistItem) => {
+          const dateA = a.addedAt ? new Date(a.addedAt).getTime() : 0;
+          const dateB = b.addedAt ? new Date(b.addedAt).getTime() : 0;
+          if (dateA !== dateB) {
+            return dateB - dateA;
+          }
+          const positionA = typeof a.position === 'number' ? a.position : Number.MAX_SAFE_INTEGER;
+          const positionB = typeof b.position === 'number' ? b.position : Number.MAX_SAFE_INTEGER;
+          return positionA - positionB;
+        });
+        const latestCovers = sortedItems.slice(0, 4).map((item) => {
+          const mediaImage = item.recipe.media?.find((media) => media.type === 'image');
+          return (
+            item.recipe.coverImage ||
+            mediaImage?.thumbnailUrl ||
+            mediaImage?.url ||
+            ''
+          );
+        });
+        setPlaylistPreviews((prev) => ({ ...prev, [playlistId]: latestCovers }));
+        return latestCovers;
+      } catch (error) {
+        console.error('Unable to load playlist preview', error);
+        setPlaylistPreviews((prev) => ({ ...prev, [playlistId]: [] }));
+        return [];
+      }
+    },
+    [playlistPreviews, session?.access_token]
+  );
+
   const value = useMemo(
-    () => ({ playlists, isLoading, loadPlaylists, createPlaylist, updatePlaylist, deletePlaylist, fetchPlaylistDetail }),
-    [createPlaylist, deletePlaylist, fetchPlaylistDetail, isLoading, loadPlaylists, playlists, updatePlaylist]
+    () => ({
+      playlists,
+      isLoading,
+      loadPlaylists,
+      createPlaylist,
+      updatePlaylist,
+      deletePlaylist,
+      fetchPlaylistDetail,
+      playlistPreviews,
+      getPlaylistPreview
+    }),
+    [
+      createPlaylist,
+      deletePlaylist,
+      fetchPlaylistDetail,
+      getPlaylistPreview,
+      isLoading,
+      loadPlaylists,
+      playlistPreviews,
+      playlists,
+      updatePlaylist
+    ]
   );
 
   return <PlaylistContext.Provider value={value}>{children}</PlaylistContext.Provider>;

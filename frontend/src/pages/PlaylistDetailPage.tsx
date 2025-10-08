@@ -1,22 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import RecipeGrid from '../components/recipes/RecipeGrid';
 import Loader from '../components/shared/Loader';
 import { usePlaylists } from '../context/PlaylistContext';
-import { useRecipes } from '../context/RecipeContext';
-import type { PlaylistDetail } from '../types';
+import type { PlaylistDetail, Recipe } from '../types';
+import { getGradientFromSeed } from '../utils/gradients';
 
 import './playlists.css';
 
 const FALLBACK_COVER =
-  'linear-gradient(135deg, rgba(20, 20, 20, 0.9), rgba(54, 54, 54, 0.9)), url(https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=60)';
+  'linear-gradient(160deg, rgba(58, 44, 104, 0.82), rgba(24, 76, 119, 0.82)), url(https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=60)';
 
 const PlaylistDetailPage = () => {
   const { playlistId } = useParams();
   const navigate = useNavigate();
   const { fetchPlaylistDetail, playlists, loadPlaylists } = usePlaylists();
-  const { toggleFavorite } = useRecipes();
   const [detail, setDetail] = useState<PlaylistDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,35 +52,36 @@ const PlaylistDetailPage = () => {
     void loadDetail();
   }, [fetchPlaylistDetail, playlistId]);
 
-  const recipes = useMemo(() => detail?.items.map((item) => item.recipe) ?? [], [detail?.items]);
-
   const coverImage = useMemo(() => {
     if (!detail?.items.length) {
       return FALLBACK_COVER;
     }
     const firstWithCover = detail.items.find((item) => item.recipe.coverImage);
     if (firstWithCover?.recipe.coverImage) {
-      return `linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), url(${firstWithCover.recipe.coverImage})`;
+      return `linear-gradient(180deg, rgba(55, 40, 105, 0.58), rgba(20, 31, 63, 0.9)), url(${firstWithCover.recipe.coverImage})`;
     }
     return FALLBACK_COVER;
   }, [detail?.items]);
 
-  const handleToggleFavorite = async (recipeId: string) => {
-    await toggleFavorite(recipeId);
-    setDetail((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      return {
-        ...prev,
-        items: prev.items.map((item) =>
-          item.recipe.id === recipeId
-            ? { ...item, recipe: { ...item.recipe, isFavorite: !item.recipe.isFavorite } }
-            : item
-        )
-      };
-    });
-    void loadPlaylists();
+  const recipeCards = useMemo(() => {
+    if (!detail?.items.length) {
+      return [];
+    }
+    return detail.items.map((item) => item.recipe);
+  }, [detail?.items]);
+
+  const getRecipeBackground = (recipe: Recipe, index: number) => {
+    if (recipe.coverImage) {
+      return { backgroundImage: `url(${recipe.coverImage})` };
+    }
+    const mediaImage = recipe.media?.find((media) => media.type === 'image');
+    if (mediaImage?.thumbnailUrl) {
+      return { backgroundImage: `url(${mediaImage.thumbnailUrl})` };
+    }
+    if (mediaImage?.url) {
+      return { backgroundImage: `url(${mediaImage.url})` };
+    }
+    return { backgroundImage: getGradientFromSeed(`${recipe.id}-${index}`) };
   };
 
   return (
@@ -127,12 +126,25 @@ const PlaylistDetailPage = () => {
         ) : null}
 
         {!isLoading && !error ? (
-          <RecipeGrid
-            recipes={recipes}
-            onOpenRecipe={(id) => navigate(`/app/recipes/${id}`)}
-            onToggleFavorite={handleToggleFavorite}
-            emptyMessage="Esta playlist ainda não possui receitas."
-          />
+          recipeCards.length ? (
+            <div className="playlist-detail__recipes" role="list">
+              {recipeCards.map((recipe, index) => (
+                <button
+                  key={recipe.id}
+                  type="button"
+                  role="listitem"
+                  className="playlist-detail__recipe-card"
+                  onClick={() => navigate(`/app/recipes/${recipe.id}`)}
+                >
+                  <span className="sr-only">Abrir receita {recipe.title}</span>
+                  <span className="playlist-detail__recipe-thumb" style={getRecipeBackground(recipe, index)} />
+                  <span className="playlist-detail__recipe-overlay" aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="playlist-detail__empty">Esta playlist ainda não possui receitas.</p>
+          )
         ) : null}
       </div>
     </div>
