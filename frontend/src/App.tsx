@@ -11,6 +11,8 @@ import CookingModePage from './pages/CookingModePage';
 import RecipeDetailPage from './pages/RecipeDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import ChatPage from './pages/ChatPage';
+import PlaylistsPage from './pages/PlaylistsPage';
+import PlaylistDetailPage from './pages/PlaylistDetailPage';
 
 const App = () => {
   return (
@@ -34,6 +36,8 @@ const App = () => {
         <Route path="recipes/:recipeId/cook" element={<CookingModePage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="chat" element={<ChatPage />} />
+        <Route path="playlists" element={<PlaylistsPage />} />
+        <Route path="playlists/:playlistId" element={<PlaylistDetailPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

@@ -6,6 +6,7 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import { RecipeProvider } from './context/RecipeContext';
+import { PlaylistProvider } from './context/PlaylistContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 import './index.css';
@@ -16,9 +17,11 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <ThemeProvider>
         <AuthProvider>
           <RecipeProvider>
-            <ChatProvider>
-              <App />
-            </ChatProvider>
+            <PlaylistProvider>
+              <ChatProvider>
+                <App />
+              </ChatProvider>
+            </PlaylistProvider>
           </RecipeProvider>
         </AuthProvider>
       </ThemeProvider>
