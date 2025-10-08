@@ -64,6 +64,30 @@ export interface RecipeListResponse {
   offset: number;
 }
 
+export type PlaylistType = 'system' | 'custom';
+
+export interface PlaylistSummary {
+  id: string;
+  name: string;
+  slug: string;
+  type: PlaylistType;
+  description?: string | null;
+  recipeCount: number;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface PlaylistItem {
+  recipeId: string;
+  addedAt?: string | null;
+  position?: number | null;
+  recipe: Recipe;
+}
+
+export interface PlaylistDetail extends PlaylistSummary {
+  items: PlaylistItem[];
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
