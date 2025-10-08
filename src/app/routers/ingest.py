@@ -153,7 +153,7 @@ def _recipe_from_record(record: Dict[str, Any]) -> RecipeResponse:
     duration = _to_int(ai_data.get("durationMinutes"))
     servings = _to_int(ai_data.get("servings"))
 
-    is_favorite = bool(record.get("isFavorite"))
+    is_favorite = bool(record.get("is_favorite"))
 
     difficulty_candidate = _clean_str(ai_data.get("difficulty"))
     difficulty = (
@@ -352,7 +352,7 @@ async def list_recipes(
 ) -> RecipeListResponse:
     query = (
         supa.table("recipes")
-        .select("recipe_id,title,metadata,created_at,updated_at,isFavorite", count="exact")
+        .select("recipe_id,title,metadata,created_at,updated_at,is_favorite", count="exact")
         .eq("owner_id", str(user.id))
         .order("created_at", desc=True)
     )
@@ -397,7 +397,7 @@ async def get_recipe(
 ) -> RecipeResponse:
     response = (
         supa.table("recipes")
-        .select("recipe_id,title,metadata,created_at,updated_at,isFavorite")
+        .select("recipe_id,title,metadata,created_at,updated_at,is_favorite")
         .eq("owner_id", str(user.id))
         .eq("recipe_id", recipe_id)
         .limit(1)
