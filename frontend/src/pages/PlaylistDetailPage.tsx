@@ -139,6 +139,9 @@ const PlaylistDetailPage = () => {
                   <span className="sr-only">Abrir receita {recipe.title}</span>
                   <span className="playlist-detail__recipe-thumb" style={getRecipeBackground(recipe, index)} />
                   <span className="playlist-detail__recipe-overlay" aria-hidden="true" />
+                  <span className="playlist-detail__recipe-info" aria-hidden="true">
+                    <span className="playlist-detail__recipe-name">{recipe.title}</span>
+                  </span>
                 </button>
               ))}
             </div>
