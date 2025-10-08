@@ -920,8 +920,6 @@ body.chat-focus .app-shell {
   padding: 0.3rem 0.45rem;
 }
 
-.topbar__search-button {
-  padding: 0.32rem 0.6rem;
 }
 
 .main-area {
@@ -983,7 +981,6 @@ body.chat-focus .app-shell {
     padding: 0.3rem 0.6rem;
   }
 
-  .topbar__search-button {
     padding: 0.28rem clamp(0.65rem, 1.6vw, 0.95rem);
   }
 
