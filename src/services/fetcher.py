@@ -79,6 +79,7 @@ def fetch_instagram(url: str) -> RawContent:
     try:
         ydl_opts = {
             "quiet": True,
+            'writethumbnail': True,
             "noprogress": True,
             "skip_download": True,
             "check_formats": False,

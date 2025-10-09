@@ -821,7 +821,7 @@ body.chat-focus .app-shell {
 }
 
 .topbar {
-  padding: var(--space-1) var(--space-3) 0;
+  padding: 0.2rem 0rem 1.8rem 0rem;
   width: 100%;
   max-width: none;
 }

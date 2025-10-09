@@ -98,7 +98,7 @@ const PlaylistDetailPage = () => {
           </nav>
         </div>
         <div className="playlist-detail__hero-content">
-          <p className="playlist-detail__eyebrow">Coleção</p>
+          <p className="playlist-detail__eyebrow">Playlist</p>
           <h1>{detail?.name ?? 'Playlist'}</h1>
           {detail ? (
             <p className="playlist-detail__meta">
