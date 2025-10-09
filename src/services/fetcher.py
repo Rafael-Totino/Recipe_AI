@@ -20,6 +20,50 @@ from .errors import (
 from .types import RawContent
 
 
+def _extract_thumbnail(info: dict | None) -> Optional[str]:
+    """Retorna a melhor URL de thumbnail disponivel no metadata."""
+
+    def _clean(value: object) -> Optional[str]:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return None
+
+    if not isinstance(info, dict):
+        return None
+
+    direct = _clean(info.get("thumbnail")) or _clean(info.get("thumbnail_url"))
+    if direct:
+        return direct
+
+    thumbnails = info.get("thumbnails")
+    if isinstance(thumbnails, list):
+        sortable_entries = []
+        for entry in thumbnails:
+            if not isinstance(entry, dict):
+                continue
+            url = _clean(entry.get("url"))
+            if not url:
+                continue
+            preference = entry.get("preference")
+            width = entry.get("width")
+            height = entry.get("height")
+            sortable_entries.append(
+                (
+                    (preference if isinstance(preference, (int, float)) else 0),
+                    (width if isinstance(width, (int, float)) else 0),
+                    (height if isinstance(height, (int, float)) else 0),
+                    url,
+                )
+            )
+
+        if sortable_entries:
+            sortable_entries.sort(reverse=True)
+            return sortable_entries[0][3]
+
+    return None
+
+
 def fetch_youtube(url: str) -> RawContent:
     if "youtube.com" not in url and "youtu.be" not in url:
         raise InvalidURLError(f"URL nao e do YouTube: {url}")
@@ -62,7 +106,7 @@ def fetch_youtube(url: str) -> RawContent:
             subtitles=subtitles_text,
             transcript_source=None,
             audio_path=audio_path,
-            thumbnail_url=info.get("thumbnail"),
+            thumbnail_url=_extract_thumbnail(info),
             author=info.get("uploader"),
         )
 
@@ -111,7 +155,7 @@ def fetch_instagram(url: str) -> RawContent:
             subtitles=None,
             transcript_source=None,
             audio_path=audio_path,
-            thumbnail_url=info.get("thumbnail"),
+            thumbnail_url=_extract_thumbnail(info),
             author=info.get("uploader") or info.get("channel") or "Desconhecido",
         )
 
