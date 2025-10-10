@@ -1,6 +1,6 @@
 .timeline {
   display: grid;
-  gap: clamp(1.6rem, 6vw, 2.4rem);
+  gap: clamp(0.8rem, 4vw, 2.4rem);
 }
 
 .timeline--favorites {
@@ -11,8 +11,8 @@
 .timeline__import {
   position: relative;
   display: grid;
-  gap: clamp(1rem, 3vw, 1.4rem);
-  padding: clamp(1rem, 4vw, 1.6rem);
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  padding: clamp(0.7rem, 2vw, 1.6rem);
   border-radius: clamp(1rem, 4vw, 1.8rem);
   max-width: min(520px, 100%);
   background:
@@ -72,10 +72,10 @@
 
 .timeline__import-field {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: stretch;
-  gap: 0.55rem;
-  padding: 0.45rem 0.55rem;
+  gap: 0.15rem;
+  padding: 0.25rem 0.25rem;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(91, 122, 255, 0.24);
@@ -94,9 +94,9 @@
   flex: 1;
   border: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--color-heading);
-  padding: 0.35rem 0.6rem;
+  padding: 0.1rem 0.4rem;
 }
 
 :root[data-theme='dark'] .timeline__import-field input {
@@ -110,15 +110,15 @@
 .timeline__import-field button {
   border: none;
   border-radius: var(--radius-sm);
-  padding: 0.55rem 1rem;
-  font-weight: 700;
-  font-size: 0.9rem;
+  padding: 0.35rem 0.6rem;
+  font-weight: 750;
+  font-size: 1.2rem;
   color: #fff;
   background: var(--gradient-brand);
   box-shadow: 0 18px 40px -26px rgba(232, 93, 4, 0.5);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  width: 100%;
+  width: 12%;
   justify-content: center;
 }
 
@@ -180,12 +180,12 @@
 
 .timeline__carousel {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-3);
 }
 
 .timeline__carousel-header {
   display: grid;
-  gap: var(--space-2);
+  gap: 0.15rem;
 }
 
 .timeline__carousel-header h2 {

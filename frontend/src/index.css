@@ -428,6 +428,7 @@ select:focus {
 
 .text-muted {
   color: var(--color-muted);
+  margin: 0;
 }
 
 .eyebrow {
