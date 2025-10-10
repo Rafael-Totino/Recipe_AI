@@ -164,8 +164,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(91, 62, 234, 0.28);
-  background: linear-gradient(135deg, rgba(91, 62, 234, 0.18), rgba(232, 93, 4, 0.22));
+  border: 1px solid rgba(91, 62, 234, 0.32);
+  background: linear-gradient(135deg, rgba(91, 62, 234, 0.22), rgba(232, 93, 4, 0.26));
   color: var(--color-text);
   font-size: 1.6rem;
   line-height: 1;
@@ -174,12 +174,12 @@
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 26px 48px -30px rgba(32, 18, 58, 0.6);
 }
 
 .chat-dock__new-chat:hover {
   transform: translateY(-1px) scale(1.04);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 30px 58px -32px rgba(91, 62, 234, 0.55);
 }
 
 .chat-dock__new-chat:active {
@@ -299,13 +299,14 @@
   padding: 1rem 1.35rem;
   background: var(--chat-send-button-bg);
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.6rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  box-shadow: var(--chat-send-button-shadow);
+  box-shadow: 0 28px 56px -30px rgba(232, 93, 4, 0.55);
 }
 
 .chat-input-form button:disabled {
@@ -316,12 +317,12 @@
 }
 
 .chat-input-form button:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: 0 32px 62px -30px rgba(232, 93, 4, 0.5);
 }
 
 .chat-input-form button:active {
-  transform: translateY(1px);
+  transform: translateY(0);
   filter: brightness(0.96);
 }
 
