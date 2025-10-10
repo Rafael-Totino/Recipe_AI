@@ -5,6 +5,7 @@ import Loader from '../components/shared/Loader';
 import { useAuth } from '../context/AuthContext';
 import { useRecipes } from '../context/RecipeContext';
 import type { Recipe } from '../types';
+import favoriteHeartIcon from '../assets/favorite-heart.svg';
 import './home.css';
 
 const FALLBACK_COVER = 'linear-gradient(135deg, rgba(155, 89, 182, 0.32), rgba(232, 93, 4, 0.32)), url(https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=60)';
@@ -150,12 +151,7 @@ const HomePage = () => {
                     }
                   >
                     <span aria-hidden="true" className="timeline__carousel-favorite-icon">
-                      <svg viewBox="0 0 24 24" focusable="false">
-                        <path
-                          d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54Z"
-                          fill="currentColor"
-                        />
-                      </svg>
+                      <img src={favoriteHeartIcon} alt="" />
                     </span>
                   </button>
                 ) : null}
