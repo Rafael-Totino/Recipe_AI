@@ -94,9 +94,9 @@
   background: transparent;
   color: var(--color-muted);
   cursor: pointer;
-  min-width: 140px;
-  padding: 0.45rem 0.75rem;
-  border-radius: 18px 18px 0 0;
+  min-width: 160px;
+  padding: 0.6rem 0.95rem;
+  border-radius: 20px 20px 0 0;
   overflow: hidden;
   transition: color 0.2s ease;
 }
@@ -147,7 +147,7 @@
 
 .chat-dock__tab-title {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -161,13 +161,13 @@
 
 .chat-dock__new-chat {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid rgba(91, 62, 234, 0.28);
   background: linear-gradient(135deg, rgba(91, 62, 234, 0.18), rgba(232, 93, 4, 0.22));
   color: var(--color-text);
-  font-size: 1.45rem;
+  font-size: 1.6rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -264,21 +264,23 @@
 
 .chat-input-form {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .chat-input-form textarea {
   flex: 1;
   resize: none;
-  min-height: 56px;
-  max-height: 140px;
+  min-height: 64px;
+  max-height: 160px;
   border-radius: var(--radius-md);
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.15rem;
   background: var(--chat-textarea-bg);
   border: 1px solid var(--chat-textarea-border);
   color: var(--chat-textarea-text);
   box-shadow: inset 0 0 0 1px transparent;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
 .chat-input-form textarea::placeholder {
@@ -294,14 +296,14 @@
 .chat-input-form button {
   border: none;
   border-radius: var(--radius-md);
-  padding: 0.85rem 1.1rem;
+  padding: 1rem 1.35rem;
   background: var(--chat-send-button-bg);
   color: #fff;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.6rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
   box-shadow: var(--chat-send-button-shadow);
 }
@@ -338,8 +340,8 @@
   }
 
   .chat-dock__tab {
-    min-width: clamp(160px, 18vw, 220px);
-    padding: 0.35rem 0.85rem 0.6rem;
+    min-width: clamp(180px, 18vw, 240px);
+    padding: 0.55rem 1.05rem 0.75rem;
   }
 
   .chat-dock__history {
