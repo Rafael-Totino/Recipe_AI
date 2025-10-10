@@ -2,7 +2,6 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
-import RecipeGrid from '../components/recipes/RecipeGrid';
 import { useAuth } from '../context/AuthContext';
 import { useRecipes } from '../context/RecipeContext';
 import type { Recipe } from '../types';
@@ -38,31 +37,6 @@ const HomePage = () => {
     [recipes]
   );
 
-  const filteredRecipes = useMemo(() => {
-    let scoped = sortedRecipes;
-
-    if (view === 'favorites') {
-      scoped = scoped.filter((recipe) => recipe.isFavorite);
-    }
-
-    if (!query) {
-      return scoped;
-    }
-
-    return scoped.filter((recipe) => {
-      const haystack = [
-        recipe.title,
-        recipe.description,
-        recipe.tags?.join(' '),
-        recipe.ingredients?.map((ingredient) => ingredient.name).join(' ')
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [query, sortedRecipes, view]);
-
   const savedCarousel = useMemo(
     () => sortedRecipes.slice(0, Math.min(sortedRecipes.length, 10)),
     [sortedRecipes]
@@ -79,12 +53,6 @@ const HomePage = () => {
   }, [sortedRecipes]);
 
   const firstName = user?.name?.split(' ')[0] ?? 'Chef';
-  const timeOfDay = (() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Bom dia';
-    if (hour < 18) return 'Boa tarde';
-    return 'Boa noite';
-  })();
 
   const [importUrl, setImportUrl] = useState('');
   const [importStatus, setImportStatus] = useState<
@@ -122,41 +90,15 @@ const HomePage = () => {
     setIsImporting(false);
   };
 
-  const feedTitle = useMemo(() => {
-    if (query) {
-      return `Resultados para "${query}"`;
-    }
-    if (view === 'favorites') {
-      return 'Suas receitas favoritas';
-    }
-    if (view === 'explore') {
-      return 'Explorar novas criacoes do atelier';
-    }
-    return 'Linha do tempo das suas receitas';
-  }, [query, view]);
-
-  const feedSubtitle = useMemo(() => {
-    if (query) {
-      return 'Buscamos entre suas criacoes para encontrar o que combina com o seu pedido.';
-    }
-    if (view === 'favorites') {
-      return 'Somente as receitas marcadas com estrela aparecem por aqui.';
-    }
-    if (view === 'explore') {
-      return 'Descubra sugestoes recentes e combinacoes da IA.';
-    }
-    return 'Uma selecao cronologica entre o calor da cozinha e a precisao da IA.';
-  }, [query, view]);
-
   const feedBadge = useMemo(() => {
     if (query) {
-      return `Filtrando por "${query}"`;
+      return `Filtro: "${query}"`;
     }
     if (view === 'favorites') {
-      return 'Exibindo favoritas';
+      return 'Somente favoritas';
     }
     if (view === 'explore') {
-      return 'Explorando sugestoes do atelier';
+      return 'Sugestoes da IA';
     }
     return '';
   }, [query, view]);
@@ -210,9 +152,8 @@ const HomePage = () => {
                     <span aria-hidden="true" className="timeline__carousel-favorite-icon">
                       <svg viewBox="0 0 24 24" focusable="false">
                         <path
-                          d="M12 5a3.5 3.5 0 0 0-3.5 3.5V10H7a5 5 0 0 0-5 5v1.5A1.5 1.5 0 0 0 3.5 18H20.5A1.5 1.5 0 0 0 22 16.5V15a5 5 0 0 0-5-5h-1.5V8.5A3.5 3.5 0 0 0 12 5Zm0 2a1.5 1.5 0 0 1 1.5 1.5V10h-3V8.5A1.5 1.5 0 0 1 12 7Zm9 10H3v1a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1Z"
+                          d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54Z"
                           fill="currentColor"
-                          stroke="none"
                         />
                       </svg>
                     </span>
@@ -245,11 +186,8 @@ const HomePage = () => {
     <div className="timeline">
       <section className="timeline__import" aria-labelledby="timeline-import-title">
         <div className="timeline__import-header">
-          <span className="timeline__import-eyebrow">{timeOfDay}, {firstName}</span>
-          <h1 id="timeline-import-title">Importe uma receita por link</h1>
-          <p>
-            Cole URLs de blogs, vídeos ou redes sociais para trazer receitas diretamente para o seu atelier digital.
-          </p>
+          <h1 id="timeline-import-title">Importe por link em segundos</h1>
+          <p>Cole a URL da receita e nós organizamos o resto para você, {firstName}.</p>
           {feedBadge ? <span className="timeline__badge">{feedBadge}</span> : null}
         </div>
         <form className="timeline__import-form" onSubmit={handleQuickImport} aria-busy={isImporting}>
@@ -277,44 +215,24 @@ const HomePage = () => {
 
       {renderCarousel(
         'Receitas salvas recentemente',
-        'Suas criacoes mais novas organizadas em cápsulas rápidas.',
+        'Suas criacoes mais novas em destaque.',
         savedCarousel,
         { ariaLabel: 'Receitas salvas recentemente', showFavoriteToggle: true }
       )}
 
       {renderCarousel(
         'Receitas favoritas',
-        'Os pratos que receberam estrela ficam reunidos aqui.',
+        'Pratos que voce marcou com carinho.',
         favoritesCarousel,
         { ariaLabel: 'Receitas favoritas', showFavoriteToggle: true }
       )}
 
       {renderCarousel(
         'Receitas em alta',
-        'Sugestoes do Chef IA com mais atividade recente.',
+        'Sugestoes do Chef IA em evidência.',
         trendingCarousel,
         { ariaLabel: 'Receitas em alta' }
       )}
-
-      <section className="timeline__feed" aria-live="polite">
-        <header className="timeline__feed-header">
-          <h2>{feedTitle}</h2>
-          <p className="text-muted">{feedSubtitle}</p>
-        </header>
-
-        <RecipeGrid
-          recipes={filteredRecipes}
-          onOpenRecipe={(id) => navigate(`/app/recipes/${id}`)}
-          onToggleFavorite={toggleFavorite}
-          emptyMessage={
-            query
-              ? 'Sem correspondencias para este filtro. Tente outro pedido na busca.'
-              : view === 'favorites'
-              ? 'Voce ainda nao favoritou nenhuma receita. Marque suas preferidas para ve-las aqui.'
-              : 'Importe sua primeira receita para ativar o atelier.'
-          }
-        />
-      </section>
     </div>
   );
 };
