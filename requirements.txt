@@ -6,7 +6,8 @@ pydantic-settings>=2.2.0,<3.0.0
 python-dotenv>=1.0.1,<2.0.0
 google-generativeai>=0.6.0,<0.7.0
 google-genai>=0.3.0,<0.4.0
-faster-whisper>=1.0.0,<1.1.0
+# Dependência opcional instalada apenas em ambientes com FFmpeg disponível:
+# faster-whisper
 yt-dlp>=2024.8.6
 youtube-transcript-api>=0.6.2,<0.7.0
 httpx>=0.27.0,<0.28.0
