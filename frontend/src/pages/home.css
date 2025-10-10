@@ -316,9 +316,16 @@
   box-shadow: 0 32px 64px -28px rgba(232, 93, 4, 0.55);
 }
 
+.timeline__carousel-favorite-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline__carousel-favorite-icon img,
 .timeline__carousel-favorite-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 .timeline__feed {
