@@ -595,11 +595,17 @@ body.chat-focus .app-shell {
 }
 
 .button.topbar__search-button {
-  padding: 0.55rem clamp(0.9rem, 2.4vw, 1.3rem);
+  padding: 0.55rem;
   border-radius: 999px;
-  white-space: nowrap;
-  font-size: 0.95rem;
-  font-weight: 700;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+
+.topbar__search-button-icon {
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .topbar--condensed .topbar__glass {
