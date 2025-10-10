@@ -286,9 +286,9 @@
   width: 46px;
   height: 46px;
   border-radius: 16px;
-  border: 1px solid rgba(91, 122, 255, 0.24);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(235, 242, 255, 0.72));
-  color: rgba(80, 100, 180, 0.9);
+  border: 1px solid rgba(232, 93, 4, 0.28);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 226, 200, 0.62));
+  color: var(--color-primary-strong);
   display: grid;
   place-items: center;
   cursor: pointer;
