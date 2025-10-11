@@ -124,6 +124,7 @@
   --color-eyebrow: rgba(226, 232, 240, 0.78);
   --shadow-xs: 0 30px 48px -36px rgba(18, 16, 28, 0.65);
   --shadow-sm: 0 80px 110px -60px rgba(18, 16, 28, 0.72);
+
   --topbar-glass-bg: linear-gradient(135deg, rgba(42, 52, 78, 0.78), rgba(20, 28, 46, 0.68));
   --topbar-glass-border: rgba(236, 240, 247, 0.24);
   --topbar-glass-shadow: 0 40px 70px -36px rgba(2, 8, 20, 0.78);
@@ -427,6 +428,7 @@ select:focus {
 
 .text-muted {
   color: var(--color-muted);
+  margin: 0;
 }
 
 .eyebrow {

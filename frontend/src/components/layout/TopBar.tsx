@@ -270,7 +270,8 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
                 </button>
               ) : null}
               <button type="submit" className="button button--primary topbar__search-button">
-                Pesquisar
+                <Search aria-hidden="true" className="topbar__search-button-icon" size={18} />
+                <span className="sr-only">Pesquisar</span>
               </button>
             </div>
           </form>

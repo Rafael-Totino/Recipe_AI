@@ -2,11 +2,11 @@ import { FormEvent, useCallback, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
-import RecipeGrid from '../components/recipes/RecipeGrid';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylists } from '../context/PlaylistContext';
 import { useRecipes } from '../context/RecipeContext';
 import type { Recipe } from '../types';
+import favoriteHeartIcon from '../assets/favorite-heart.svg';
 import './home.css';
 
 const FALLBACK_COVER = 'linear-gradient(135deg, rgba(155, 89, 182, 0.32), rgba(232, 93, 4, 0.32)), url(https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=60)';
@@ -40,31 +40,6 @@ const HomePage = () => {
     [recipes]
   );
 
-  const filteredRecipes = useMemo(() => {
-    let scoped = sortedRecipes;
-
-    if (view === 'favorites') {
-      scoped = scoped.filter((recipe) => recipe.isFavorite);
-    }
-
-    if (!query) {
-      return scoped;
-    }
-
-    return scoped.filter((recipe) => {
-      const haystack = [
-        recipe.title,
-        recipe.description,
-        recipe.tags?.join(' '),
-        recipe.ingredients?.map((ingredient) => ingredient.name).join(' ')
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [query, sortedRecipes, view]);
-
   const savedCarousel = useMemo(
     () => sortedRecipes.slice(0, Math.min(sortedRecipes.length, 10)),
     [sortedRecipes]
@@ -81,12 +56,6 @@ const HomePage = () => {
   }, [sortedRecipes]);
 
   const firstName = user?.name?.split(' ')[0] ?? 'Chef';
-  const timeOfDay = (() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Bom dia';
-    if (hour < 18) return 'Boa tarde';
-    return 'Boa noite';
-  })();
 
   const [importUrl, setImportUrl] = useState('');
   const [importStatus, setImportStatus] = useState<
@@ -124,41 +93,15 @@ const HomePage = () => {
     setIsImporting(false);
   };
 
-  const feedTitle = useMemo(() => {
-    if (query) {
-      return `Resultados para "${query}"`;
-    }
-    if (view === 'favorites') {
-      return 'Suas receitas favoritas';
-    }
-    if (view === 'explore') {
-      return 'Explorar novas criacoes do atelier';
-    }
-    return 'Linha do tempo das suas receitas';
-  }, [query, view]);
-
-  const feedSubtitle = useMemo(() => {
-    if (query) {
-      return 'Buscamos entre suas criacoes para encontrar o que combina com o seu pedido.';
-    }
-    if (view === 'favorites') {
-      return 'Somente as receitas marcadas com estrela aparecem por aqui.';
-    }
-    if (view === 'explore') {
-      return 'Descubra sugestoes recentes e combinacoes da IA.';
-    }
-    return 'Uma selecao cronologica entre o calor da cozinha e a precisao da IA.';
-  }, [query, view]);
-
   const feedBadge = useMemo(() => {
     if (query) {
-      return `Filtrando por "${query}"`;
+      return `Filtro: "${query}"`;
     }
     if (view === 'favorites') {
-      return 'Exibindo favoritas';
+      return 'Somente favoritas';
     }
     if (view === 'explore') {
-      return 'Explorando sugestoes do atelier';
+      return 'Sugestoes da IA';
     }
     return '';
   }, [query, view]);
@@ -254,11 +197,8 @@ const HomePage = () => {
     <div className="timeline">
       <section className="timeline__import" aria-labelledby="timeline-import-title">
         <div className="timeline__import-header">
-          <span className="timeline__import-eyebrow">{timeOfDay}, {firstName}</span>
-          <h1 id="timeline-import-title">Importe uma receita por link</h1>
-          <p>
-            Cole URLs de blogs, vídeos ou redes sociais para trazer receitas diretamente para o seu atelier digital.
-          </p>
+          <h1 id="timeline-import-title">Importe por link em segundos</h1>
+          <p>Cole a URL da receita e nós organizamos o resto para você, {firstName}.</p>
           {feedBadge ? <span className="timeline__badge">{feedBadge}</span> : null}
         </div>
         <form className="timeline__import-form" onSubmit={handleQuickImport} aria-busy={isImporting}>
@@ -273,7 +213,7 @@ const HomePage = () => {
               disabled={isImporting}
             />
             <button type="submit" disabled={isImporting}>
-              {isImporting ? 'Importando...' : 'Importar receita'}
+              {isImporting ? 'Importando...' : '+'}
             </button>
           </div>
           {importStatus ? (
@@ -286,21 +226,21 @@ const HomePage = () => {
 
       {renderCarousel(
         'Receitas salvas recentemente',
-        'Suas criacoes mais novas organizadas em cápsulas rápidas.',
+        'Suas criacoes mais novas em destaque.',
         savedCarousel,
         { ariaLabel: 'Receitas salvas recentemente', showFavoriteToggle: true }
       )}
 
       {renderCarousel(
         'Receitas favoritas',
-        'Os pratos que receberam estrela ficam reunidos aqui.',
+        'Pratos que voce marcou com carinho.',
         favoritesCarousel,
         { ariaLabel: 'Receitas favoritas', showFavoriteToggle: true }
       )}
 
       {renderCarousel(
         'Receitas em alta',
-        'Sugestoes do Chef IA com mais atividade recente.',
+        'Sugestoes do Chef IA em evidência.',
         trendingCarousel,
         { ariaLabel: 'Receitas em alta' }
       )}
