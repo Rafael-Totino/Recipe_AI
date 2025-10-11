@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import RecipePlayer from '../components/recipes/RecipePlayer';
 import Loader from '../components/shared/Loader';
-import { usePlaylists } from '../context/PlaylistContext';
 import { useRecipes } from '../context/RecipeContext';
 import './recipe-detail.css';
 
@@ -13,7 +12,6 @@ const fallbackCover =
 const RecipeDetailPage = () => {
   const { recipeId } = useParams();
   const { activeRecipe, selectRecipe, updateNotes, toggleFavorite, removeRecipe } = useRecipes();
-  const { loadPlaylists } = usePlaylists();
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState(0);
@@ -101,14 +99,6 @@ const RecipeDetailPage = () => {
     });
   };
 
-  const handleToggleFavorite = useCallback(async () => {
-    if (!activeRecipe) {
-      return;
-    }
-    await toggleFavorite(activeRecipe.id);
-    void loadPlaylists();
-  }, [activeRecipe, loadPlaylists, toggleFavorite]);
-
   const metadata = [
     activeRecipe.durationMinutes ? { label: 'Tempo', value: `${activeRecipe.durationMinutes} min`, icon: '⏱️' } : null,
     activeRecipe.servings ? { label: 'Porções', value: `${activeRecipe.servings}`, icon: '🍽️' } : null,
@@ -136,7 +126,11 @@ const RecipeDetailPage = () => {
             >
               Modo Cozinha 🍳
             </button>
-            <button type="button" className="button button--ghost" onClick={handleToggleFavorite}>
+            <button
+              type="button"
+              className="button button--ghost"
+              onClick={() => toggleFavorite(activeRecipe.id)}
+            >
               {activeRecipe.isFavorite ? 'Remover dos favoritos' : 'Guardar como favorita'}
             </button>
             <button type="button" className="button button--ghost" onClick={handleShare}>
