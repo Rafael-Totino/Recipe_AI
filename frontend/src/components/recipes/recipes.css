@@ -66,10 +66,7 @@
 }
 
 .recipe-card__favorite.is-favorite {
-  background: linear-gradient(145deg, rgba(232, 93, 4, 0.18), rgba(255, 183, 3, 0.28));
-  border-color: rgba(232, 93, 4, 0.55);
-  color: #fff;
-  box-shadow: 0 34px 70px -30px rgba(232, 93, 4, 0.58);
+  color: var(--color-primary-strong);
 }
 
 .recipe-card__favorite-icon {
@@ -80,6 +77,15 @@
 .recipe-card__favorite-icon svg {
   width: 22px;
   height: 22px;
+}
+
+.recipe-card__favorite-heart-fill {
+  fill: transparent;
+  transition: fill 0.25s ease;
+}
+
+.recipe-card__favorite.is-favorite .recipe-card__favorite-heart-fill {
+  fill: currentColor;
 }
 
 .recipe-card__body {
