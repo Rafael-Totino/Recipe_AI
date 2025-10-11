@@ -44,12 +44,10 @@ const PlaylistsPage = () => {
     }
   }, [loadPlaylists, playlists.length]);
 
-  const favoriteRecipes = useMemo(() => recipes.filter((recipe) => recipe.isFavorite), [recipes]);
-
-  const totalRecipes = useMemo(
-    () => playlists.reduce((acc, playlist) => acc + (playlist.recipeCount ?? 0), 0),
-    [playlists]
-  );
+  const totalRecipes = useMemo(() => {
+    const savedPlaylist = playlists.find((playlist) => playlist.id === 'system:all-saved');
+    return savedPlaylist?.recipeCount ?? 0;
+  }, [playlists]);
 
   const openCreateModal = useCallback(() => {
     setPlaylistName('');

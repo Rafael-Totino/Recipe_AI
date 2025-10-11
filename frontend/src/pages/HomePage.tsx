@@ -1,8 +1,9 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
 import { useAuth } from '../context/AuthContext';
+import { usePlaylists } from '../context/PlaylistContext';
 import { useRecipes } from '../context/RecipeContext';
 import type { Recipe } from '../types';
 import favoriteHeartIcon from '../assets/favorite-heart.svg';
@@ -23,6 +24,7 @@ const buildMeta = (recipe: Recipe) => {
 const HomePage = () => {
   const { user } = useAuth();
   const { recipes, toggleFavorite, isLoading, importRecipe } = useRecipes();
+  const { loadPlaylists } = usePlaylists();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const query = searchParams.get('q')?.toLowerCase().trim() ?? '';
@@ -104,6 +106,14 @@ const HomePage = () => {
     return '';
   }, [query, view]);
 
+  const handleToggleFavorite = useCallback(
+    async (recipeId: string) => {
+      await toggleFavorite(recipeId);
+      void loadPlaylists();
+    },
+    [loadPlaylists, toggleFavorite]
+  );
+
   const renderCarousel = (
     title: string,
     subtitle: string,
@@ -144,14 +154,19 @@ const HomePage = () => {
                   <button
                     type="button"
                     className={`timeline__carousel-favorite${recipe.isFavorite ? ' is-active' : ''}`}
-                    onClick={() => toggleFavorite(recipe.id)}
+                    onClick={() => handleToggleFavorite(recipe.id)}
                     aria-pressed={recipe.isFavorite}
                     aria-label={
                       recipe.isFavorite ? 'Remover receita dos favoritos' : 'Adicionar receita aos favoritos'
                     }
                   >
                     <span aria-hidden="true" className="timeline__carousel-favorite-icon">
-                      <img src={favoriteHeartIcon} alt="" />
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path
+                          d="M11.646 20.91c-.12-.082-.236-.161-.348-.238a25.006 25.006 0 0 1-3.746-3.102C5.517 15.445 2.75 12.44 2.75 8.75c0-2.9 2.23-5.25 5-5.25 1.701 0 3.217.91 4.25 2.182C13.033 4.41 14.55 3.5 16.25 3.5c2.77 0 5 2.35 5 5.25 0 3.69-2.767 6.695-4.802 8.82a25.006 25.006 0 0 1-3.746 3.102c-.112.077-.228.156-.348.238a.75.75 0 0 1-.908 0Z"
+                          fill="currentColor"
+                        />
+                      </svg>
                     </span>
                   </button>
                 ) : null}
@@ -229,6 +244,26 @@ const HomePage = () => {
         trendingCarousel,
         { ariaLabel: 'Receitas em alta' }
       )}
+
+      <section className="timeline__feed" aria-live="polite">
+        <header className="timeline__feed-header">
+          <h2>{feedTitle}</h2>
+          <p className="text-muted">{feedSubtitle}</p>
+        </header>
+
+        <RecipeGrid
+          recipes={filteredRecipes}
+          onOpenRecipe={(id) => navigate(`/app/recipes/${id}`)}
+          onToggleFavorite={handleToggleFavorite}
+          emptyMessage={
+            query
+              ? 'Sem correspondencias para este filtro. Tente outro pedido na busca.'
+              : view === 'favorites'
+              ? 'Voce ainda nao favoritou nenhuma receita. Marque suas preferidas para ve-las aqui.'
+              : 'Importe sua primeira receita para ativar o atelier.'
+          }
+        />
+      </section>
     </div>
   );
 };
