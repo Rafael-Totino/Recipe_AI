@@ -13,6 +13,7 @@ import {
   deletePlaylist as deletePlaylistRequest,
   fetchPlaylistDetail as fetchPlaylistDetailRequest,
   listPlaylists as listPlaylistsRequest,
+  addRecipeToPlaylist as addRecipeToPlaylistRequest,
   updatePlaylist as updatePlaylistRequest
 } from '../services/playlists';
 import type { PlaylistDetail, PlaylistItem, PlaylistSummary } from '../types';
@@ -32,6 +33,7 @@ interface PlaylistContextValue {
   fetchPlaylistDetail: (playlistId: string) => Promise<PlaylistDetail | null>;
   playlistPreviews: Record<string, string[]>;
   getPlaylistPreview: (playlistId: string) => Promise<string[]>;
+  addRecipeToPlaylist: (playlistId: string, recipeId: string) => Promise<void>;
 }
 
 const PlaylistContext = createContext<PlaylistContextValue | undefined>(undefined);
@@ -182,6 +184,37 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     [playlistPreviews, session?.access_token]
   );
 
+  const addRecipeToPlaylist = useCallback(
+    async (playlistId: string, recipeId: string) => {
+      if (!session?.access_token) {
+        return;
+      }
+      try {
+        await addRecipeToPlaylistRequest(session.access_token, playlistId, recipeId);
+        setPlaylists((prev) =>
+          prev.map((playlist) =>
+            playlist.id === playlistId
+              ? {
+                  ...playlist,
+                  recipeCount: (playlist.recipeCount ?? 0) + 1
+                }
+              : playlist
+          )
+        );
+        setPlaylistPreviews((prev) => {
+          if (!prev[playlistId]) {
+            return prev;
+          }
+          const { [playlistId]: _removed, ...rest } = prev;
+          return rest;
+        });
+      } catch (error) {
+        console.error('Unable to add recipe to playlist', error);
+      }
+    },
+    [session?.access_token]
+  );
+
   const value = useMemo(
     () => ({
       playlists,
@@ -192,12 +225,14 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
       deletePlaylist,
       fetchPlaylistDetail,
       playlistPreviews,
-      getPlaylistPreview
+      getPlaylistPreview,
+      addRecipeToPlaylist
     }),
     [
       createPlaylist,
       deletePlaylist,
       fetchPlaylistDetail,
+      addRecipeToPlaylist,
       getPlaylistPreview,
       isLoading,
       loadPlaylists,
