@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
 import { usePlaylists } from '../context/PlaylistContext';
+import { useRecipes } from '../context/RecipeContext';
 import type { PlaylistSummary } from '../types';
 import { getGradientFromSeed } from '../utils/gradients';
 
@@ -28,7 +29,14 @@ const formatCount = (count: number) => {
 
 const PlaylistsPage = () => {
   const navigate = useNavigate();
-  const { playlists, isLoading, loadPlaylists } = usePlaylists();
+  const { playlists, isLoading, loadPlaylists, createPlaylist, addRecipeToPlaylist } = usePlaylists();
+  const { recipes } = useRecipes();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [playlistName, setPlaylistName] = useState('');
+  const [playlistNotes, setPlaylistNotes] = useState('');
+  const [selectedRecipes, setSelectedRecipes] = useState<Record<string, boolean>>({});
+  const [creationError, setCreationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!playlists.length) {
@@ -36,9 +44,111 @@ const PlaylistsPage = () => {
     }
   }, [loadPlaylists, playlists.length]);
 
+  const favoriteRecipes = useMemo(() => recipes.filter((recipe) => recipe.isFavorite), [recipes]);
+
   const totalRecipes = useMemo(
     () => playlists.reduce((acc, playlist) => acc + (playlist.recipeCount ?? 0), 0),
     [playlists]
+  );
+
+  const openCreateModal = useCallback(() => {
+    setPlaylistName('');
+    setPlaylistNotes('');
+    setCreationError(null);
+    setSelectedRecipes(
+      favoriteRecipes.reduce<Record<string, boolean>>((acc, recipe) => {
+        acc[recipe.id] = true;
+        return acc;
+      }, {})
+    );
+    setIsCreateModalOpen(true);
+  }, [favoriteRecipes]);
+
+  useEffect(() => {
+    if (!isCreateModalOpen) {
+      return;
+    }
+    setSelectedRecipes((prev) =>
+      favoriteRecipes.reduce<Record<string, boolean>>((acc, recipe) => {
+        acc[recipe.id] = prev[recipe.id] ?? true;
+        return acc;
+      }, {})
+    );
+  }, [favoriteRecipes, isCreateModalOpen]);
+
+  const closeCreateModal = useCallback(() => {
+    if (isSubmitting) {
+      return;
+    }
+    setIsCreateModalOpen(false);
+  }, [isSubmitting]);
+
+  const toggleRecipeSelection = useCallback((recipeId: string) => {
+    setSelectedRecipes((prev) => ({
+      ...prev,
+      [recipeId]: !prev[recipeId]
+    }));
+    setCreationError(null);
+  }, []);
+
+  const handleCreatePlaylist = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (isSubmitting) {
+        return;
+      }
+
+      const trimmedName = playlistName.trim();
+      const trimmedNotes = playlistNotes.trim();
+      if (!trimmedName) {
+        setCreationError('Informe um nome para a playlist.');
+        return;
+      }
+
+      const recipeIds = favoriteRecipes
+        .filter((recipe) => selectedRecipes[recipe.id])
+        .map((recipe) => recipe.id);
+
+      if (!recipeIds.length) {
+        setCreationError('Selecione ao menos uma receita salva.');
+        return;
+      }
+
+      setIsSubmitting(true);
+      setCreationError(null);
+
+      try {
+        const created = await createPlaylist({
+          name: trimmedName,
+          description: trimmedNotes || undefined
+        });
+
+        if (!created) {
+          setCreationError('Não foi possível criar a playlist. Tente novamente.');
+          return;
+        }
+
+        for (const recipeId of recipeIds) {
+          await addRecipeToPlaylist(created.id, recipeId);
+        }
+
+        setIsCreateModalOpen(false);
+      } catch (error) {
+        console.error('Unable to create playlist with recipes', error);
+        setCreationError('Ocorreu um erro ao criar a playlist. Tente novamente.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      addRecipeToPlaylist,
+      createPlaylist,
+      favoriteRecipes,
+      isSubmitting,
+      playlistName,
+      playlistNotes,
+      selectedRecipes
+    ]
   );
 
   return (
@@ -50,15 +160,25 @@ const PlaylistsPage = () => {
             Organize suas receitas favoritas em playlists temáticas e acesse tudo em um só lugar.
           </p>
         </div>
-        <div className="playlists-page__stats" aria-label="Resumo das playlists">
-          <span>
-            {playlists.length}
-            <small>playlists</small>
-          </span>
-          <span>
-            {totalRecipes}
-            <small>receitas</small>
-          </span>
+        <div className="playlists-page__meta">
+          <div className="playlists-page__stats" aria-label="Resumo das playlists">
+            <span>
+              {playlists.length}
+              <small>playlists</small>
+            </span>
+            <span>
+              {totalRecipes}
+              <small>receitas</small>
+            </span>
+          </div>
+          <button
+            type="button"
+            className="playlists-page__add"
+            onClick={openCreateModal}
+            aria-label="Criar nova playlist"
+          >
+            <span aria-hidden="true">＋</span>
+          </button>
         </div>
       </header>
 
@@ -81,6 +201,101 @@ const PlaylistsPage = () => {
           <PlaylistCard key={playlist.id} playlist={playlist} onClick={() => navigate(`/app/playlists/${playlist.id}`)} />
         ))}
       </div>
+
+      {isCreateModalOpen ? (
+        <div
+          className="playlists-create-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="playlists-create-title"
+        >
+          <div className="playlists-create-modal__panel">
+            <header className="playlists-create-modal__header">
+              <h2 id="playlists-create-title">Nova playlist</h2>
+              <button
+                type="button"
+                className="playlists-create-modal__close"
+                onClick={closeCreateModal}
+                aria-label="Fechar"
+                disabled={isSubmitting}
+              >
+                ×
+              </button>
+            </header>
+            <form className="playlists-create-modal__form" onSubmit={handleCreatePlaylist}>
+              <label className="playlists-create-modal__field">
+                <span>Nome da playlist</span>
+                <input
+                  type="text"
+                  value={playlistName}
+                  onChange={(event) => {
+                    setPlaylistName(event.target.value);
+                    setCreationError(null);
+                  }}
+                  placeholder="Ex: Segundas sem carne"
+                  required
+                  autoFocus
+                />
+              </label>
+
+              <label className="playlists-create-modal__field">
+                <span>Observações (opcional)</span>
+                <textarea
+                  value={playlistNotes}
+                  onChange={(event) => {
+                    setPlaylistNotes(event.target.value);
+                    setCreationError(null);
+                  }}
+                  placeholder="Inclua dicas, substituições ou harmonizações."
+                  rows={3}
+                />
+              </label>
+
+              <fieldset className="playlists-create-modal__field">
+                <legend>Selecione as receitas salvas</legend>
+                {favoriteRecipes.length ? (
+                  <div className="playlists-create-modal__recipes">
+                    {favoriteRecipes.map((recipe) => (
+                      <label key={recipe.id} className="playlists-create-modal__recipe">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedRecipes[recipe.id])}
+                          onChange={() => toggleRecipeSelection(recipe.id)}
+                        />
+                        <span>{recipe.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="playlists-create-modal__empty">Você ainda não salvou receitas favoritas.</p>
+                )}
+              </fieldset>
+
+              {creationError ? (
+                <p className="playlists-create-modal__error">{creationError}</p>
+              ) : null}
+
+              <footer className="playlists-create-modal__actions">
+                <button
+                  type="button"
+                  className="playlists-create-modal__button playlists-create-modal__button--secondary"
+                  onClick={closeCreateModal}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="playlists-create-modal__button"
+                  disabled={isSubmitting || favoriteRecipes.length === 0}
+                >
+                  {isSubmitting ? 'Criando...' : 'Criar playlist'}
+                </button>
+              </footer>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
