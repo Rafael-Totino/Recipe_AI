@@ -198,7 +198,7 @@ const HomePage = () => {
               disabled={isImporting}
             />
             <button type="submit" disabled={isImporting}>
-              {isImporting ? 'Importando...' : 'Importar receita'}
+              {isImporting ? 'Importando...' : '+'}
             </button>
           </div>
           {importStatus ? (

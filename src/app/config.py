@@ -12,8 +12,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    GEMINI_API_KEY: SecretStr
     SUPABASE_URL: AnyUrl
-    SUPABASE_SERVICE_ROLE_KEY: str
+    SUPABASE_SERVICE_ROLE_KEY: SecretStr
     APP_ENV: str = "local"
     FRONTEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: ["http://192.168.15.2:5173", "http://localhost:5173", "https://recipe-ai-tawny.vercel.app"],

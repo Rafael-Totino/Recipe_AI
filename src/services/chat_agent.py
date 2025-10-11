@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable, Mapping, Optional
 
-from src.services.Prompt import get_api_key
+from src.app.config import settings
 from src.services.gemini_client import GeminiClient
 
 CHAT_SYSTEM_PROMPT = Path("data/Prompt/CHAT_SYSTEM_PROMPT.txt")
@@ -15,7 +15,7 @@ def run_chat_agent(
     user_message: str,
     context: Optional[str] = None,
 ) -> str:
-    client = GeminiClient(api_key=get_api_key("GEMINI_API_KEY"), model_name=_MODEL_NAME)
+    client = GeminiClient(api_key=settings.GEMINI_API_KEY, model_name=_MODEL_NAME)
 
     prompt_sections: list[str] = []
 
