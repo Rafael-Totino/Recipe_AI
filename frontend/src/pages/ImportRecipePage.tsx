@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
 import { useRecipes } from '../context/RecipeContext';
+import './home.css';
 import './import.css';
 
 type StatusState = { type: 'success' | 'error'; message: string } | null;
@@ -124,46 +125,46 @@ const ImportRecipePage = () => {
 
   return (
     <div className={`import-page${isBusy ? ' import-page--busy' : ''}`}>
-      <section className="import-hero">
-        <div className="import-hero__aurora" aria-hidden="true" />
-        <div className="import-hero__card glass-panel">
-          <header className="import-hero__header">
-            <span className="eyebrow">O Laboratório</span>
-            <h2 className="font-playfair">Importe uma receita e deixe a IA lapidar os detalhes</h2>
-            <p className="text-muted">
-              Cole o link de um vídeo ou artigo culinário. A assistente analisa, organiza e entrega os
-              ingredientes, passos e áudios prontos para o modo cozinha.
-            </p>
-          </header>
-
-          <form className="import-hero__form" onSubmit={handleImport} aria-busy={isImporting}>
-            <div className={`import-hero__input${favicon ? ' has-favicon' : ''}`}>
-              {favicon ? <img src={favicon} alt="Favicon do site" /> : null}
-              <input
-                className="import-card__input"
-                type="url"
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                placeholder="https://..."
-                minLength={8}
-                required
-                disabled={isBusy}
-              />
-              <button
-                type="submit"
-                className="button button--primary"
-                disabled={isBusy}
-                data-loading={isImporting}
-              >
-                {isImporting ? 'Processando...' : 'Criar receita'}
-              </button>
-            </div>
-            <small className="import-hero__hint">YouTube, Instagram, TikTok, blogs e muito mais.</small>
-          </form>
-          {status ? (
-            <p className={`import-status import-status--${status.type}`}>{status.message}</p>
-          ) : null}
+      <section className="timeline__import" aria-labelledby="import-page-title">
+        <div className="timeline__import-header">
+          <span className="eyebrow">O Laboratório</span>
+          <h1 id="import-page-title" className="font-playfair">
+            Importe uma receita e deixe a IA lapidar os detalhes
+          </h1>
+          <p>
+            Cole o link de um vídeo ou artigo culinário. A assistente analisa, organiza e entrega os
+            ingredientes, passos e áudios prontos para o modo cozinha.
+          </p>
         </div>
+
+        <form className="timeline__import-form import-page__import-form" onSubmit={handleImport} aria-busy={isImporting}>
+          <div
+            className={`timeline__import-field${favicon ? ' timeline__import-field--favicon' : ''}`}
+          >
+            {favicon ? (
+              <img src={favicon} alt="Favicon do site" className="timeline__import-favicon" />
+            ) : null}
+            <input
+              type="url"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              placeholder="https://exemplo.com/minha-receita"
+              aria-label="Link da receita para importar"
+              minLength={8}
+              required
+              disabled={isBusy}
+            />
+            <button type="submit" disabled={isBusy} data-loading={isImporting}>
+              {isImporting ? 'Processando...' : 'Criar receita'}
+            </button>
+          </div>
+          <small className="import-page__hint">YouTube, Instagram, TikTok, blogs e muito mais.</small>
+          {status ? (
+            <p className={`timeline__import-status timeline__import-status--${status.type}`}>
+              {status.message}
+            </p>
+          ) : null}
+        </form>
       </section>
 
       <section className="surface-card import-manual" tabIndex={0}>
