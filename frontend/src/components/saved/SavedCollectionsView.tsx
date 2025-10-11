@@ -13,6 +13,7 @@ type SavedCollection = {
   recipeIds: string[];
   createdAt: string;
   type: SavedCollectionType;
+  notes?: string;
 };
 
 const STORAGE_KEY = 'recipe-ai:saved-collections';
@@ -28,6 +29,7 @@ type SavedCollectionsViewProps = {
 type CreateCollectionState = {
   isOpen: boolean;
   name: string;
+  notes: string;
   selectedRecipes: Record<string, boolean>;
   error?: string;
 };
@@ -57,11 +59,15 @@ const SavedCollectionsView = ({ favorites, onOpenRecipe, onToggleFavorite }: Sav
       }
 
       return parsed.filter((collection): collection is SavedCollection => {
+        const hasValidNotes =
+          typeof collection?.notes === 'undefined' || typeof collection?.notes === 'string';
+
         return (
           typeof collection?.id === 'string' &&
           typeof collection?.name === 'string' &&
           Array.isArray(collection?.recipeIds) &&
-          typeof collection?.createdAt === 'string'
+          typeof collection?.createdAt === 'string' &&
+          hasValidNotes
         );
       });
     } catch (error) {
@@ -73,6 +79,7 @@ const SavedCollectionsView = ({ favorites, onOpenRecipe, onToggleFavorite }: Sav
   const [creationState, setCreationState] = useState<CreateCollectionState>({
     isOpen: false,
     name: '',
+    notes: '',
     selectedRecipes: {}
   });
 
@@ -167,6 +174,7 @@ const SavedCollectionsView = ({ favorites, onOpenRecipe, onToggleFavorite }: Sav
     setCreationState({
       isOpen: true,
       name: '',
+      notes: '',
       selectedRecipes: favorites.reduce<Record<string, boolean>>((acc, recipe) => {
         acc[recipe.id] = true;
         return acc;
@@ -188,6 +196,7 @@ const SavedCollectionsView = ({ favorites, onOpenRecipe, onToggleFavorite }: Sav
     event.preventDefault();
 
     const trimmedName = creationState.name.trim();
+    const trimmedNotes = creationState.notes.trim();
     if (!trimmedName) {
       setCreationState((prev) => ({ ...prev, error: 'Informe um nome para a playlist.' }));
       return;
@@ -212,16 +221,17 @@ const SavedCollectionsView = ({ favorites, onOpenRecipe, onToggleFavorite }: Sav
       name: trimmedName,
       recipeIds,
       createdAt: new Date().toISOString(),
-      type: 'custom'
+      type: 'custom',
+      notes: trimmedNotes || undefined
     };
 
     setCustomCollections((prev) => [newCollection, ...prev]);
-    setCreationState({ isOpen: false, name: '', selectedRecipes: {} });
+    setCreationState({ isOpen: false, name: '', notes: '', selectedRecipes: {} });
     setSelectedCollectionId(newCollection.id);
   };
 
   const handleCloseCreation = () => {
-    setCreationState({ isOpen: false, name: '', selectedRecipes: {} });
+    setCreationState({ isOpen: false, name: '', notes: '', selectedRecipes: {} });
   };
 
   const handleRemoveCustomCollection = (collectionId: string) => {
@@ -300,6 +310,9 @@ const SavedCollectionsView = ({ favorites, onOpenRecipe, onToggleFavorite }: Sav
                 {selectedCollection.recipeIds.length}{' '}
                 {selectedCollection.recipeIds.length === 1 ? 'receita' : 'receitas'} nesta playlist
               </p>
+              {selectedCollection.notes ? (
+                <p className="saved-collections__detail-notes">{selectedCollection.notes}</p>
+              ) : null}
             </div>
             {selectedCollection.type === 'custom' ? (
               <button
@@ -342,6 +355,18 @@ const SavedCollectionsView = ({ favorites, onOpenRecipe, onToggleFavorite }: Sav
                   placeholder="Ex: Receitas rápidas"
                   autoFocus
                   required
+                />
+              </label>
+
+              <label className="saved-collections__modal-field">
+                <span>Observações (opcional)</span>
+                <textarea
+                  value={creationState.notes}
+                  onChange={(event) =>
+                    setCreationState((prev) => ({ ...prev, notes: event.target.value, error: undefined }))
+                  }
+                  placeholder="Anote detalhes como substituições, harmonizações ou dicas."
+                  rows={3}
                 />
               </label>
 
