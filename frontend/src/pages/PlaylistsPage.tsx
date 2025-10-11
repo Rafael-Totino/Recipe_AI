@@ -46,10 +46,25 @@ const PlaylistsPage = () => {
 
   const favoriteRecipes = useMemo(() => recipes.filter((recipe) => recipe.isFavorite), [recipes]);
 
-  const totalRecipes = useMemo(
-    () => playlists.reduce((acc, playlist) => acc + (playlist.recipeCount ?? 0), 0),
-    [playlists]
-  );
+  const savedRecipesCount = recipes.length;
+  const favoriteRecipesCount = favoriteRecipes.length;
+
+  const recipeCountsByPlaylist = useMemo(() => {
+    return playlists.reduce<Record<string, number>>((acc, playlist) => {
+      if (playlist.slug === 'all-favorites') {
+        acc[playlist.id] = favoriteRecipesCount;
+        return acc;
+      }
+      if (playlist.slug === 'all-saved') {
+        acc[playlist.id] = savedRecipesCount;
+        return acc;
+      }
+      acc[playlist.id] = playlist.recipeCount ?? 0;
+      return acc;
+    }, {});
+  }, [favoriteRecipesCount, playlists, savedRecipesCount]);
+
+  const totalRecipes = savedRecipesCount;
 
   const openCreateModal = useCallback(() => {
     setPlaylistName('');
@@ -198,7 +213,12 @@ const PlaylistsPage = () => {
 
       <div className="playlists-page__grid" role="list">
         {playlists.map((playlist) => (
-          <PlaylistCard key={playlist.id} playlist={playlist} onClick={() => navigate(`/app/playlists/${playlist.id}`)} />
+          <PlaylistCard
+            key={playlist.id}
+            playlist={playlist}
+            recipeCount={recipeCountsByPlaylist[playlist.id] ?? playlist.recipeCount ?? 0}
+            onClick={() => navigate(`/app/playlists/${playlist.id}`)}
+          />
         ))}
       </div>
 
@@ -300,7 +320,15 @@ const PlaylistsPage = () => {
   );
 };
 
-const PlaylistCard = ({ playlist, onClick }: { playlist: PlaylistSummary; onClick: () => void }) => {
+const PlaylistCard = ({
+  playlist,
+  recipeCount,
+  onClick
+}: {
+  playlist: PlaylistSummary;
+  recipeCount: number;
+  onClick: () => void;
+}) => {
   const { playlistPreviews, getPlaylistPreview } = usePlaylists();
 
   useEffect(() => {
@@ -332,7 +360,7 @@ const PlaylistCard = ({ playlist, onClick }: { playlist: PlaylistSummary; onClic
       </div>
       <div className="playlists-card__content">
         <p className="playlists-card__name">{playlist.name}</p>
-        <p className="playlists-card__meta">{formatCount(playlist.recipeCount)}</p>
+        <p className="playlists-card__meta">{formatCount(recipeCount)}</p>
       </div>
     </button>
   );
