@@ -150,6 +150,14 @@
   gap: 1rem;
 }
 
+.saved-collections__detail-notes {
+  margin-top: 0.75rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.7));
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
 .saved-collections__delete {
   background: rgba(255, 59, 59, 0.15);
   color: #ff7b7b;
@@ -214,12 +222,19 @@
   font-weight: 600;
 }
 
-.saved-collections__modal-field input[type='text'] {
+.saved-collections__modal-field input[type='text'],
+.saved-collections__modal-field textarea {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 0.75rem 1rem;
   color: inherit;
+}
+
+.saved-collections__modal-field textarea {
+  resize: vertical;
+  min-height: 6rem;
+  line-height: 1.4;
 }
 
 .saved-collections__modal-recipes {
