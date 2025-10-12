@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import Loader from '../components/shared/Loader';
 import { usePlaylists } from '../context/PlaylistContext';
@@ -14,10 +14,12 @@ const FALLBACK_COVER =
 const PlaylistDetailPage = () => {
   const { playlistId } = useParams();
   const navigate = useNavigate();
-  const { fetchPlaylistDetail, playlists, loadPlaylists } = usePlaylists();
+  const { fetchPlaylistDetail, playlists, loadPlaylists, deletePlaylist, updatePlaylist } = usePlaylists();
   const [detail, setDetail] = useState<PlaylistDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const actionsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!playlists.length) {
@@ -52,6 +54,28 @@ const PlaylistDetailPage = () => {
     void loadDetail();
   }, [fetchPlaylistDetail, playlistId]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
   const coverImage = useMemo(() => {
     if (!detail?.items.length) {
       return FALLBACK_COVER;
@@ -84,6 +108,83 @@ const PlaylistDetailPage = () => {
     return { backgroundImage: getGradientFromSeed(`${recipe.id}-${index}`) };
   };
 
+  const recipeCount = detail?.recipeCount ?? detail?.items.length ?? 0;
+
+  const handleToggleMenu = () => {
+    setIsMenuOpen((prev) => !prev);
+  };
+
+  const handleDeletePlaylist = async () => {
+    if (!detail) {
+      return;
+    }
+    const confirmation = window.confirm('Tem certeza que deseja excluir esta playlist? Esta ação não pode ser desfeita.');
+    if (!confirmation) {
+      return;
+    }
+    await deletePlaylist(detail.id);
+    navigate('/app/playlists');
+    setIsMenuOpen(false);
+  };
+
+  const handleEditPlaylist = async () => {
+    if (!detail) {
+      return;
+    }
+
+    const newName = window.prompt('Editar nome da playlist', detail.name)?.trim();
+    if (!newName) {
+      return;
+    }
+
+    const newDescription = window.prompt('Editar descrição da playlist (opcional)', detail.description ?? '')?.trim();
+
+    const updated = await updatePlaylist(detail.id, {
+      name: newName,
+      description: newDescription === '' ? null : newDescription
+    });
+
+    if (updated) {
+      setDetail((prev) => (prev ? { ...prev, ...updated } : prev));
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleSharePlaylist = async (access: 'read' | 'edit') => {
+    if (!detail) {
+      return;
+    }
+
+    const modeLabel = access === 'edit' ? 'edição' : 'leitura';
+    const shareUrl = `${window.location.origin}/app/playlists/${detail.id}?permissao=${access}`;
+    const shareData = {
+      title: `Playlist ${detail.name}`,
+      text: `Confira minha playlist culinária com acesso de ${modeLabel}.`,
+      url: shareUrl
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+        alert('Link de compartilhamento copiado para a área de transferência!');
+      }
+    } catch (shareError) {
+      console.error('Unable to share playlist', shareError);
+      alert('Não foi possível compartilhar a playlist. Tente novamente.');
+    } finally {
+      setIsMenuOpen(false);
+    }
+  };
+
+  const handleAddRecipe = () => {
+    if (!detail) {
+      return;
+    }
+    navigate(`/app?adicionar-a-playlist=${detail.id}`);
+  };
+
   return (
     <div className="playlist-detail">
       <header className="playlist-detail__hero" style={{ backgroundImage: coverImage }}>
@@ -92,22 +193,60 @@ const PlaylistDetailPage = () => {
           <button type="button" className="playlist-detail__back" onClick={() => navigate(-1)}>
             Voltar
           </button>
-          <nav className="playlist-detail__breadcrumbs" aria-label="Você está em">
-            <Link to="/app/playlists">Salvos</Link>
-            {detail ? <span aria-current="page">{detail.name}</span> : null}
-          </nav>
+          <div className="playlist-detail__actions" ref={actionsRef}>
+            <button
+              type="button"
+              className="playlist-detail__actions-trigger"
+              aria-haspopup="true"
+              aria-expanded={isMenuOpen}
+              onClick={handleToggleMenu}
+            >
+              <span className="sr-only">Abrir ações da playlist</span>
+              <span aria-hidden="true">⋯</span>
+            </button>
+            {isMenuOpen ? (
+              <div className="playlist-detail__menu" role="menu">
+                <button type="button" role="menuitem" onClick={handleEditPlaylist}>
+                  Editar informações
+                </button>
+                <div className="playlist-detail__menu-group" role="group" aria-label="Compartilhar playlist">
+                  <span>Compartilhar playlist</span>
+                  <button type="button" onClick={() => handleSharePlaylist('read')}>
+                    Enviar link de leitura
+                  </button>
+                  <button type="button" onClick={() => handleSharePlaylist('edit')}>
+                    Enviar link com edição
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="playlist-detail__menu-delete"
+                  onClick={handleDeletePlaylist}
+                >
+                  Excluir playlist
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="playlist-detail__hero-content">
           <p className="playlist-detail__eyebrow">Playlist</p>
-          <h1>{detail?.name ?? 'Playlist'}</h1>
+          <h1 className="playlist-detail__title">
+            <span>{detail?.name ?? 'Playlist'}</span>
+            {detail ? (
+              <span className="playlist-detail__count">({recipeCount} {recipeCount === 1 ? 'receita' : 'receitas'})</span>
+            ) : null}
+          </h1>
           {detail ? (
             <p className="playlist-detail__meta">
-              {detail.recipeCount === 1
-                ? '1 receita salva'
-                : `${detail.recipeCount} receitas salvas`}
+              {recipeCount === 1 ? '1 receita salva' : `${recipeCount} receitas salvas`}
             </p>
           ) : null}
           {detail?.description ? <p className="playlist-detail__description">{detail.description}</p> : null}
+          <button type="button" className="playlist-detail__add" onClick={handleAddRecipe}>
+            + Adicionar nova receita
+          </button>
         </div>
       </header>
 
