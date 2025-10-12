@@ -1,10 +1,19 @@
 .chat-page {
+  --chat-page-viewport-offset: clamp(4.75rem, 12vw, 6.25rem);
   display: flex;
   flex-direction: column;
   gap: clamp(0.6rem, 2vw, 2.4rem);
-  min-height: calc(100vh - clamp(4.75rem, 12vw, 6.25rem));
-  height: calc(100vh - clamp(4.75rem, 12vw, 6.25rem));
-  max-height: calc(100vh - clamp(4.75rem, 12vw, 6.25rem));
+  min-height: calc(100vh - var(--chat-page-viewport-offset));
+  height: calc(100vh - var(--chat-page-viewport-offset));
+  max-height: calc(100vh - var(--chat-page-viewport-offset));
+}
+
+@supports (height: 100dvh) {
+  .chat-page {
+    min-height: calc(100dvh - var(--chat-page-viewport-offset));
+    height: calc(100dvh - var(--chat-page-viewport-offset));
+    max-height: calc(100dvh - var(--chat-page-viewport-offset));
+  }
 }
 
 .chat-page__header {
@@ -60,8 +69,6 @@
 
 @media (min-width: 961px) {
   .chat-page {
-    min-height: calc(100vh - var(--shell-padding-y, 0px) * 2 - var(--shell-bottom-gap, 0px));
-    height: calc(100vh - var(--shell-padding-y, 0px) * 2 - var(--shell-bottom-gap, 0px));
-    max-height: calc(100vh - var(--shell-padding-y, 0px) * 2 - var(--shell-bottom-gap, 0px));
+    --chat-page-viewport-offset: calc(var(--shell-padding-y, 0px) * 2 + var(--shell-bottom-gap, 0px));
   }
 }
