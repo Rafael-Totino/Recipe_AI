@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ChefHat, MessageCircle, Moon, Search, Sun } from 'lucide-react';
 
@@ -7,12 +7,12 @@ import { useRecipes } from '../../context/RecipeContext';
 import type { Recipe } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { ChatModal } from '../chat/ChatModal';
 
 import './layout.css';
 
 type TopBarProps = {
   forceCondensed?: boolean;
+  onOpenChatModal?: () => void;
 };
 
 const getInitials = (value?: string | null) => {
@@ -30,7 +30,7 @@ const getInitials = (value?: string | null) => {
   return combined.toUpperCase() || '?';
 };
 
-const TopBar = ({ forceCondensed }: TopBarProps) => {
+const TopBar = ({ forceCondensed, onOpenChatModal }: TopBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -46,12 +46,15 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
   const [query, setQuery] = useState(() => {
     const params = new URLSearchParams(location.search);
     return params.get('q') ?? '';
   });
   const searchAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleOpenChatModal = useCallback(() => {
+    onOpenChatModal?.();
+  }, [onOpenChatModal]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -192,7 +195,7 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
               <button
                 type="button"
                 className="topbar__action topbar__action--highlight"
-                onClick={() => setShowChatModal(true)}
+                onClick={handleOpenChatModal}
                 aria-label="Abrir o assistente Chef IA"
               >
                 <MessageCircle size={18} />
@@ -291,7 +294,6 @@ const TopBar = ({ forceCondensed }: TopBarProps) => {
         </div>
 
       </div>
-      <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
     </header>
   );
 };
