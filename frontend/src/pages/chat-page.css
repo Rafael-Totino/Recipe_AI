@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: clamp(0.6rem, 2vw, 2.4rem);
   min-height: calc(100vh - clamp(4.75rem, 12vw, 6.25rem));
+  height: calc(100vh - clamp(4.75rem, 12vw, 6.25rem));
+  max-height: calc(100vh - clamp(4.75rem, 12vw, 6.25rem));
 }
 
 .chat-page__header {
@@ -37,10 +39,13 @@
   min-height: 0;
   display: flex;
   width: 100%;
+  overflow: hidden;
 }
 
 .chat-page__body .chat-dock {
   flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 
 @media (min-width: 769px) {
@@ -56,5 +61,7 @@
 @media (min-width: 961px) {
   .chat-page {
     min-height: calc(100vh - var(--shell-padding-y, 0px) * 2 - var(--shell-bottom-gap, 0px));
+    height: calc(100vh - var(--shell-padding-y, 0px) * 2 - var(--shell-bottom-gap, 0px));
+    max-height: calc(100vh - var(--shell-padding-y, 0px) * 2 - var(--shell-bottom-gap, 0px));
   }
 }
