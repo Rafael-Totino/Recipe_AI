@@ -41,16 +41,14 @@ export const ImportOptionsModal = ({ isOpen, onClose, onSelect }: ImportOptionsM
     <div className="import-modal import-modal--sheet" role="dialog" aria-modal="true" aria-label="Importar receita">
       <div className="import-modal__backdrop" onClick={handleBackdropClick} />
       <div className="import-modal__sheet" role="document">
-        <header className="import-modal__header">
-          <div>
-            <span className="eyebrow">Importar receita</span>
-            <h2>Como deseja começar?</h2>
-            <p className="text-muted">Selecione uma das opções abaixo para trazer sua receita ao atelier.</p>
-          </div>
+        <header className="import-modal__sheet-header">
+          <h2>Importar receita</h2>
           <button type="button" className="import-modal__close" onClick={onClose} aria-label="Fechar opções de importação">
             <X size={18} aria-hidden="true" />
           </button>
         </header>
+
+        <p className="import-modal__sheet-subtitle">Como deseja começar?</p>
 
         <div className="import-modal__options" role="list">
           <button
@@ -63,7 +61,6 @@ export const ImportOptionsModal = ({ isOpen, onClose, onSelect }: ImportOptionsM
               <Link2 size={24} />
             </span>
             <span className="import-modal__option-title">Link</span>
-            <span className="import-modal__option-description">Cole a URL de um vídeo ou artigo culinário.</span>
           </button>
 
           <button
@@ -76,7 +73,6 @@ export const ImportOptionsModal = ({ isOpen, onClose, onSelect }: ImportOptionsM
               <Camera size={24} />
             </span>
             <span className="import-modal__option-title">Câmera</span>
-            <span className="import-modal__option-description">Digitalize uma receita escrita com a câmera do celular.</span>
           </button>
 
           <button
@@ -89,7 +85,6 @@ export const ImportOptionsModal = ({ isOpen, onClose, onSelect }: ImportOptionsM
               <PencilLine size={24} />
             </span>
             <span className="import-modal__option-title">Manualmente</span>
-            <span className="import-modal__option-description">Escreva os ingredientes e passos do seu próprio jeito.</span>
           </button>
         </div>
       </div>

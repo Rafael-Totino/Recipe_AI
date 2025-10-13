@@ -42,12 +42,34 @@
 }
 
 .import-modal__sheet {
-  width: min(540px, 100%);
-  padding: clamp(1.5rem, 4vw, 2.5rem);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.78));
-  border-radius: clamp(1.65rem, 5vw, 2.5rem);
-  transform: translateY(32px);
+  width: min(420px, calc(100% - clamp(2rem, 10vw, 4rem)));
+  padding: clamp(1.2rem, 4vw, 1.75rem);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8));
+  border-radius: clamp(1.5rem, 6vw, 2.25rem);
+  transform: translateY(24px);
   animation: import-modal-slide-up 0.28s ease forwards;
+  box-shadow: 0 24px 64px -32px rgba(15, 23, 42, 0.5);
+}
+
+.import-modal__sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.import-modal__sheet-header h2 {
+  margin: 0;
+  font-size: clamp(1.1rem, 4vw, 1.25rem);
+}
+
+.import-modal__sheet-subtitle {
+  margin: 0 0 clamp(1rem, 3vw, 1.35rem);
+  font-size: 0.95rem;
+  color: var(--color-muted);
 }
 
 .import-modal__header {
@@ -110,19 +132,20 @@
 }
 
 .import-modal__options {
-  margin-top: clamp(1rem, 3vw, 1.75rem);
   display: grid;
-  gap: clamp(0.9rem, 2.5vw, 1.4rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.75rem, 3vw, 1rem);
 }
 
 .import-modal__option {
   display: grid;
-  gap: 0.5rem;
-  padding: clamp(1rem, 3vw, 1.35rem);
-  text-align: left;
-  border-radius: clamp(1.2rem, 4vw, 1.6rem);
-  background: linear-gradient(145deg, rgba(61, 90, 241, 0.12), rgba(255, 255, 255, 0.9));
-  border: 1px solid rgba(61, 90, 241, 0.22);
+  justify-items: center;
+  gap: 0.6rem;
+  padding: clamp(0.85rem, 3vw, 1.1rem);
+  text-align: center;
+  border-radius: clamp(1rem, 4vw, 1.35rem);
+  background: linear-gradient(150deg, rgba(61, 90, 241, 0.16), rgba(255, 255, 255, 0.92));
+  border: 1px solid rgba(61, 90, 241, 0.24);
   color: inherit;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
@@ -135,23 +158,18 @@
 }
 
 .import-modal__option-icon {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(61, 90, 241, 0.18);
+  background: rgba(61, 90, 241, 0.2);
   color: rgba(46, 65, 192, 0.95);
 }
 
 .import-modal__option-title {
   font-weight: 600;
-}
-
-.import-modal__option-description {
-  font-size: 0.92rem;
-  color: var(--color-muted);
 }
 
 .import-modal__scroll {
