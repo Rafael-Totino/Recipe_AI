@@ -17,7 +17,6 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(145deg, rgba(14, 18, 26, 0.55), rgba(28, 35, 50, 0.75));
-  backdrop-filter: blur(18px);
   opacity: 0;
   animation: import-modal-fade 0.24s ease forwards;
 }
@@ -32,6 +31,8 @@
   box-shadow: 0 32px 90px -36px rgba(15, 23, 42, 0.55);
   color: var(--color-heading);
   overflow: hidden;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .import-modal__content {
@@ -133,16 +134,17 @@
 
 .import-modal__options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: clamp(0.75rem, 3vw, 1rem);
 }
 
 .import-modal__option {
   display: grid;
-  justify-items: center;
-  gap: 0.6rem;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: clamp(0.75rem, 3vw, 1rem);
   padding: clamp(0.85rem, 3vw, 1.1rem);
-  text-align: center;
+  text-align: left;
   border-radius: clamp(1rem, 4vw, 1.35rem);
   background: linear-gradient(150deg, rgba(61, 90, 241, 0.16), rgba(255, 255, 255, 0.92));
   border: 1px solid rgba(61, 90, 241, 0.24);
