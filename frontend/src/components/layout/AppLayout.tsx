@@ -6,6 +6,10 @@ import TopBar from './TopBar';
 import BottomNav from './BottomNav';
 import { useRecipes } from '../../context/RecipeContext';
 import { ChatModal } from '../chat/ChatModal';
+import { ImportOptionsModal } from '../import/ImportOptionsModal';
+import { ImportLinkModal } from '../import/ImportLinkModal';
+import { ImportManualModal } from '../import/ImportManualModal';
+import { ImportCameraModal } from '../import/ImportCameraModal';
 
 const AppLayout = () => {
   const { loadRecipes, recipes, isLoading } = useRecipes();
@@ -13,6 +17,7 @@ const AppLayout = () => {
   const isCookingMode =
     location.pathname.startsWith('/app/recipes/') && location.pathname.endsWith('/cook');
   const [isChatModalOpen, setChatModalOpen] = useState(false);
+  const [importFlow, setImportFlow] = useState<'options' | 'link' | 'manual' | 'camera' | null>(null);
 
   const handleOpenChatModal = useCallback(() => {
     setChatModalOpen(true);
@@ -20,6 +25,18 @@ const AppLayout = () => {
 
   const handleCloseChatModal = useCallback(() => {
     setChatModalOpen(false);
+  }, []);
+
+  const handleOpenImportOptions = useCallback(() => {
+    setImportFlow('options');
+  }, []);
+
+  const handleCloseImportFlow = useCallback(() => {
+    setImportFlow(null);
+  }, []);
+
+  const handleSelectImportOption = useCallback((option: 'link' | 'manual' | 'camera') => {
+    setImportFlow(option);
   }, []);
 
   useEffect(() => {
@@ -30,7 +47,8 @@ const AppLayout = () => {
 
   useEffect(() => {
     handleCloseChatModal();
-  }, [handleCloseChatModal, location.pathname, location.search]);
+    handleCloseImportFlow();
+  }, [handleCloseChatModal, handleCloseImportFlow, location.pathname, location.search]);
 
   useEffect(() => {
     if (!isChatModalOpen) {
@@ -66,8 +84,33 @@ const AppLayout = () => {
         </main>
         {/* A área lateral do chat foi removida daqui */}
       </div>
-      {!isCookingMode ? <BottomNav /> : null}
+      {!isCookingMode ? (
+        <BottomNav
+          onOpenImportOptions={handleOpenImportOptions}
+          isImportFlowOpen={importFlow !== null}
+        />
+      ) : null}
       <ChatModal isOpen={isChatModalOpen} onClose={handleCloseChatModal} />
+      <ImportOptionsModal
+        isOpen={importFlow === 'options'}
+        onClose={handleCloseImportFlow}
+        onSelect={handleSelectImportOption}
+      />
+      <ImportLinkModal
+        isOpen={importFlow === 'link'}
+        onClose={handleCloseImportFlow}
+        onBack={handleOpenImportOptions}
+      />
+      <ImportManualModal
+        isOpen={importFlow === 'manual'}
+        onClose={handleCloseImportFlow}
+        onBack={handleOpenImportOptions}
+      />
+      <ImportCameraModal
+        isOpen={importFlow === 'camera'}
+        onClose={handleCloseImportFlow}
+        onBack={handleOpenImportOptions}
+      />
     </>
   );
 };
