@@ -4,7 +4,6 @@ import AuthLayout from './components/auth/AuthLayout';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 import HomePage from './pages/HomePage';
-import ImportRecipePage from './pages/ImportRecipePage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import CookingModePage from './pages/CookingModePage';
@@ -31,7 +30,6 @@ const App = () => {
         }
       >
         <Route index element={<HomePage />} />
-        <Route path="import" element={<ImportRecipePage />} />
         <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
         <Route path="recipes/:recipeId/cook" element={<CookingModePage />} />
         <Route path="profile" element={<ProfilePage />} />

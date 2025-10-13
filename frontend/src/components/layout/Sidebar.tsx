@@ -49,40 +49,6 @@ const Sidebar = () => {
         )
       },
       {
-        path: '/app/import',
-        label: 'Importar',
-        icon: (
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path
-              d="M12 3v12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M16 8.5 12 4.5 8 8.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <rect
-              x="4.5"
-              y="13.75"
-              width="15"
-              height="6.75"
-              rx="2"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-            />
-          </svg>
-        )
-      },
-      {
         path: '/app/profile',
         label: 'Perfil',
         icon: (

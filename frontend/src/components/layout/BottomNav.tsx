@@ -12,7 +12,12 @@ type BottomNavItem = {
   isActive: boolean;
 };
 
-const BottomNav = () => {
+type BottomNavProps = {
+  onOpenImportOptions: () => void;
+  isImportFlowOpen?: boolean;
+};
+
+const BottomNav = ({ onOpenImportOptions, isImportFlowOpen = false }: BottomNavProps) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const view = searchParams.get('view') ?? '';
@@ -124,8 +129,8 @@ const BottomNav = () => {
           />
         </svg>
       ),
-      to: '/app/import',
-      isActive: location.pathname === '/app/import'
+      onClick: onOpenImportOptions,
+      isActive: isImportFlowOpen
     },
     {
       key: 'favorites',
