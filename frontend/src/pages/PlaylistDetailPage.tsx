@@ -231,18 +231,13 @@ const PlaylistDetailPage = () => {
           </div>
         </div>
         <div className="playlist-detail__hero-content">
-          <p className="playlist-detail__eyebrow">Playlist</p>
           <h1 className="playlist-detail__title">
             <span>{detail?.name ?? 'Playlist'}</span>
             {detail ? (
               <span className="playlist-detail__count">({recipeCount} {recipeCount === 1 ? 'receita' : 'receitas'})</span>
             ) : null}
           </h1>
-          {detail ? (
-            <p className="playlist-detail__meta">
-              {recipeCount === 1 ? '1 receita salva' : `${recipeCount} receitas salvas`}
-            </p>
-          ) : null}
+          
           {detail?.description ? <p className="playlist-detail__description">{detail.description}</p> : null}
           <button type="button" className="playlist-detail__add" onClick={handleAddRecipe}>
             + Adicionar nova receita

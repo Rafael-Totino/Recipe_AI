@@ -15,7 +15,7 @@ def run_chat_agent(
     user_message: str,
     context: Optional[str] = None,
 ) -> str:
-    client = GeminiClient(api_key=settings.GEMINI_API_KEY, model_name=_MODEL_NAME)
+    client = GeminiClient(api_key=settings.GEMINI_API_KEY.get_secret_value(), model_name=_MODEL_NAME)
 
     prompt_sections: list[str] = []
 

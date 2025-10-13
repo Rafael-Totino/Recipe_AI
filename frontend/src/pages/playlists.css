@@ -446,7 +446,7 @@
   background-position: center;
   border-radius: 0 0 2rem 2rem;
   min-height: 10.5rem;
-  padding: 0.9rem 1.1rem 1.4rem;
+  padding: 0.5rem 1rem 0.8rem 1rem;
   margin-top: calc(clamp(0.1rem, 1vw, 2rem) * -1);
   display: flex;
   flex-direction: column;
@@ -471,17 +471,17 @@
   max-width: 32rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.4rem;
 }
 
 .playlist-detail__hero-top {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
   width: 100%;
 }
@@ -518,13 +518,18 @@
   right: 0;
   min-width: 15rem;
   padding: 0.75rem;
-  border-radius: 1rem;
-  background: rgba(8, 12, 24, 0.92);
+  border-radius: 1rem;background: linear-gradient(125deg,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.08) 65%,
+    transparent 85%
+  );
+  backdrop-filter: blur(24px);
   border: 1px solid rgba(236, 240, 247, 0.16);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.38);
   display: grid;
   gap: 0.35rem;
-  z-index: 10;
+  z-index: 1;
 }
 
 .playlist-detail__menu button {
@@ -598,7 +603,7 @@
 }
 
 .playlist-detail__meta {
-  margin-bottom: 0.3rem;
+  margin: 0rem;
   padding-left: 0.1rem;
   font-size: 0.95rem;
   color: rgba(236, 240, 247, 0.78);
@@ -608,10 +613,12 @@
   color: var(--color-muted, rgba(255, 255, 255, 0.75));
   line-height: 1.4;
   font-size: 0.9rem;
+  margin: 0;
+  margin-bottom: 0.5rem;
 }
 
 .playlist-detail__add {
-  margin-top: 0.2rem;
+  margin-top: 0rem;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
