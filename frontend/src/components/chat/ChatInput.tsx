@@ -18,14 +18,6 @@ const ChatInput = ({ value, onChange, onSend, isSending }: ChatInputProps) => {
     await onSend(value.trim());
   };
 
-  // Adiciona evento para expandir chat-area e minimizar sidebar
-  const handleFocus = () => {
-    document.body.classList.add('chat-focus');
-  };
-  const handleBlur = () => {
-    document.body.classList.remove('chat-focus');
-  };
-
   return (
     <form className="chat-input-form" onSubmit={handleSubmit}>
       <textarea
@@ -33,8 +25,6 @@ const ChatInput = ({ value, onChange, onSend, isSending }: ChatInputProps) => {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={2}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
       />
       <button type="submit" disabled={!value.trim() || isSending}>
         {isSending ? 'Enviando...' : 'Enviar'}
