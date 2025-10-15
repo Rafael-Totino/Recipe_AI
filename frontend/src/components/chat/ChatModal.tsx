@@ -36,10 +36,11 @@ export function ChatModal({ isOpen, onClose, initialPrompt }: ChatModalProps) {
   return (
     <div className="chat-modal" role="dialog" aria-modal="true" aria-label="Assistente de receitas">
       <div className="chat-modal__backdrop" onClick={handleBackdropClick} />
-      <div className="chat-modal__content">
         <button type="button" className="chat-modal__close" onClick={onClose} aria-label="Fechar assistente">
           <span aria-hidden="true">×</span>
         </button>
+      <div className="chat-modal__content">
+        
         <ChatDock initialPrompt={initialPrompt} />
       </div>
     </div>

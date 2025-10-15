@@ -787,6 +787,8 @@
 }
 
 .bottom-nav__item--import {
+  background: 0;
+  border: 0;
   margin-top: -2.85rem;
   gap: 0.1rem;
   font-weight: 700;
@@ -799,7 +801,7 @@
   background: var(--gradient-brand);
   color: #fff;
   box-shadow: var(--shadow-elevated);
-  border: 3px solid var(--surface-elev);
+  border: 2px solid var(--surface-elev);
   transform: translateY(-0.35rem);
 }
 
