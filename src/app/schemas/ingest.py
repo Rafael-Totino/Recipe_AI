@@ -48,6 +48,8 @@ class RecipeResponse(BaseModel):
     media: list[RecipeMedia] = Field(default_factory=list)
     createdAt: Optional[str] = None
     updatedAt: Optional[str] = None
+    embeddingStatus: Optional[str] = None
+    embeddingError: Optional[str] = None
 
 
 class RecipeListResponse(BaseModel):
@@ -64,3 +66,8 @@ class IngestResponse(BaseModel):
 
 class IngestRequest(BaseModel):
     url: str
+
+
+class EmbeddingStatusResponse(BaseModel):
+    status: Optional[str] = None
+    error: Optional[str] = None
