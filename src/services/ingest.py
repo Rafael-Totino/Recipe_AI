@@ -84,7 +84,39 @@ def _compose_metadata(content: RawContent, ai_recipe: Dict[str, Any]) -> Dict[st
     }
 
 
-def ingest(url: str) -> Dict[str, Any]:
+DEFAULT_TRANSCRIPT_MIN_CHARS = 32
+
+
+def should_transcribe_content(
+    transcript: str | None,
+    subtitles: str | None,
+    min_chars: int = DEFAULT_TRANSCRIPT_MIN_CHARS,
+) -> bool:
+    """Return True when audio transcription should be attempted.
+
+    The decision is based on the length (after stripping) of the transcript
+    and subtitles that were fetched from the platform. Both must be empty or
+    shorter than ``min_chars`` to require an additional audio transcription.
+    """
+
+    if min_chars <= 0:
+        min_chars = 0
+
+    transcript_text = (transcript or "").strip()
+    subtitles_text = (subtitles or "").strip()
+
+    if min_chars == 0:
+        return not (transcript_text or subtitles_text)
+
+    return len(transcript_text) < min_chars and len(subtitles_text) < min_chars
+
+
+def ingest(
+    url: str,
+    *,
+    force_transcription: bool = False,
+    transcript_min_chars: int = DEFAULT_TRANSCRIPT_MIN_CHARS,
+) -> Dict[str, Any]:
     platform = detect_platform(url)
     if platform == "youtube":
         content = fetch_youtube(url)
@@ -93,7 +125,14 @@ def ingest(url: str) -> Dict[str, Any]:
     else:
         raise UnsupportedPlatformError("Plataforma nao suportada")
 
-    if content.audio_path:
+    if content.audio_path and (
+        force_transcription
+        or should_transcribe_content(
+            content.transcript,
+            content.subtitles,
+            transcript_min_chars,
+        )
+    ):
         try:
             audio_transcript = transcribe_audio(content.audio_path, language="pt")
         except Exception as exc:
