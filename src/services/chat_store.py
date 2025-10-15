@@ -178,6 +178,10 @@ def get_context(
 
     # Cenário 1: O usuário está vendo uma receita específica
     if recipe_id:
+        status_info = persist_supabase.get_recipe_embedding_status(supa, recipe_id, user_id)
+        if status_info.get("status") != "completed":
+            return None, [str(recipe_id)]
+
         chunks = persist_supabase.get_recipe_chunks(supa, recipe_id)
         if not chunks:
             return None, [str(recipe_id)]
@@ -192,6 +196,9 @@ def get_context(
         return (context_text or None, [str(recipe_id)])
 
     # Cenário 2: O usuário faz uma pergunta genérica
+    if not persist_supabase.has_completed_embeddings(supa, user_id):
+        return None, []
+
     try:
         message_embeded = embedding_query(message)
     except Exception as exc:

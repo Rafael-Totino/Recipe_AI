@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence
 from uuid import uuid4
@@ -497,14 +498,23 @@ def upsert_recipe_minimal(
     return recipe_id
 
 
-def save_chunks(supa: Client, recipe_id: str, payload: Dict[str, Any]):
-    
-    chunk_text = stringify_payload(payload)
+def save_chunks(supa: Client, recipe_id: str, payload: Dict[str, Any] | str):
+
+    if isinstance(payload, str):
+        chunk_text = payload
+    else:
+        chunk_text = stringify_payload(payload)
+
+    try:
+        supa.table("recipe_chunks").delete().eq("recipe_id", recipe_id).execute()
+    except Exception as exc:
+        print(f"Erro ao limpar chunks anteriores da receita {recipe_id}: {exc}")
+
     chunk = ChunkRecord(
-        recipe_id=recipe_id,  
-        chunk_index=0,  
+        recipe_id=recipe_id,
+        chunk_index=0,
         chunk_text=chunk_text,
-        embedding=embedding_document(chunk_text),  
+        embedding=embedding_document(chunk_text),
     )
     supa.table("recipe_chunks").insert(chunk.model_dump()).execute()
     
@@ -523,6 +533,186 @@ def get_recipe_by_id(recipe_id: str, supa):
         .execute()
     )
     return "recipe"
+
+
+def update_recipe_embedding_status(
+    supa: Client,
+    recipe_id: str,
+    owner_id: str,
+    status: str,
+    error: Optional[str],
+) -> None:
+    payload: Dict[str, Any] = {"embedding_status": status}
+    if error is not None:
+        payload["embedding_error"] = error[:500]
+    else:
+        payload["embedding_error"] = None
+
+    try:
+        (
+            supa.table("recipes")
+            .update(payload)
+            .eq("recipe_id", recipe_id)
+            .eq("owner_id", owner_id)
+            .execute()
+        )
+    except Exception as exc:
+        print(f"Erro ao atualizar embedding_status da receita {recipe_id}: {exc}")
+
+
+def get_recipe_embedding_status(
+    supa: Client,
+    recipe_id: str,
+    owner_id: str,
+) -> Dict[str, Optional[str]]:
+    try:
+        response = (
+            supa.table("recipes")
+            .select("embedding_status, embedding_error")
+            .eq("recipe_id", recipe_id)
+            .eq("owner_id", owner_id)
+            .limit(1)
+            .execute()
+        )
+        data = response.data or []
+        if data:
+            record = data[0]
+            status = record.get("embedding_status")
+            error = record.get("embedding_error")
+            return {
+                "status": str(status) if status is not None else None,
+                "error": str(error) if error is not None else None,
+            }
+    except Exception as exc:
+        print(f"Erro ao consultar embedding_status da receita {recipe_id}: {exc}")
+    return {"status": None, "error": None}
+
+
+def save_embedding_payload(
+    supa: Client,
+    recipe_id: str,
+    owner_id: str,
+    payload: str,
+) -> None:
+    try:
+        response = (
+            supa.table("recipes")
+            .select("metadata, embedding_payload")
+            .eq("recipe_id", recipe_id)
+            .eq("owner_id", owner_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:
+        print(f"Erro ao consultar metadata da receita {recipe_id}: {exc}")
+        return
+
+    metadata: Dict[str, Any] = {}
+    try:
+        rows = response.data or []
+        if rows:
+            record = rows[0]
+            existing_payload = record.get("embedding_payload")
+            if isinstance(existing_payload, str) and existing_payload:
+                if existing_payload == payload:
+                    return
+            existing_metadata = record.get("metadata")
+            if isinstance(existing_metadata, dict):
+                metadata = existing_metadata.copy()
+            elif isinstance(existing_metadata, str):
+                try:
+                    metadata = json.loads(existing_metadata)
+                except Exception:
+                    metadata = {}
+    except Exception as exc:
+        print(f"Erro ao preparar metadata para receita {recipe_id}: {exc}")
+
+    metadata["embedding_payload"] = payload
+
+    update_payload: Dict[str, Any] = {"metadata": metadata, "embedding_payload": payload}
+
+    try:
+        (
+            supa.table("recipes")
+            .update(update_payload)
+            .eq("recipe_id", recipe_id)
+            .eq("owner_id", owner_id)
+            .execute()
+        )
+        return
+    except Exception as exc:
+        print(f"Erro ao salvar payload de embedding da receita {recipe_id}: {exc}")
+
+    # Tenta salvar apenas no metadata caso a coluna embedding_payload nao exista.
+    try:
+        (
+            supa.table("recipes")
+            .update({"metadata": metadata})
+            .eq("recipe_id", recipe_id)
+            .eq("owner_id", owner_id)
+            .execute()
+        )
+    except Exception as exc:
+        print(f"Erro ao salvar payload de embedding no metadata da receita {recipe_id}: {exc}")
+
+
+def get_recipe_embedding_payload(
+    supa: Client,
+    recipe_id: str,
+    owner_id: str,
+) -> Optional[str]:
+    try:
+        response = (
+            supa.table("recipes")
+            .select("embedding_payload, metadata")
+            .eq("recipe_id", recipe_id)
+            .eq("owner_id", owner_id)
+            .limit(1)
+            .execute()
+        )
+        rows = response.data or []
+        if not rows:
+            return None
+        record = rows[0]
+        payload = record.get("embedding_payload")
+        if isinstance(payload, str) and payload:
+            return payload
+        metadata = record.get("metadata")
+        if isinstance(metadata, dict):
+            stored = metadata.get("embedding_payload")
+            if isinstance(stored, str) and stored:
+                return stored
+        if isinstance(metadata, str):
+            try:
+                metadata_dict = json.loads(metadata)
+                stored = metadata_dict.get("embedding_payload")
+                if isinstance(stored, str) and stored:
+                    return stored
+            except Exception:
+                return None
+    except Exception as exc:
+        print(f"Erro ao recuperar payload de embedding da receita {recipe_id}: {exc}")
+    return None
+
+
+def has_completed_embeddings(supa: Client, owner_id: str) -> bool:
+    try:
+        response = (
+            supa.table("recipes")
+            .select("recipe_id", count="exact")
+            .eq("owner_id", owner_id)
+            .eq("embedding_status", "completed")
+            .limit(1)
+            .execute()
+        )
+        count = getattr(response, "count", None)
+        if isinstance(count, int):
+            return count > 0
+        data = response.data or []
+        return bool(data)
+    except Exception as exc:
+        print(f"Erro ao consultar embeddings prontos para usuario {owner_id}: {exc}")
+        return False
 
 def mark_recipe_as_favorite(
     supa: Client,

@@ -10,6 +10,7 @@ from src.app.routers.ingest import router as ingest_router
 from src.app.routers.auth import router as auth_router
 from src.app.routers.chat import router as chat_router
 from src.app.routers.playlists import router as playlists_router
+from src.services import embedding_queue
 
 # Logging simples no stdout (bom para dev e containers)
 logging.basicConfig(
@@ -32,6 +33,16 @@ app.include_router(ingest_router)
 app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(playlists_router)
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    await embedding_queue.start_worker()
+
+
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    await embedding_queue.stop_worker()
 
 
 @app.get("/health")

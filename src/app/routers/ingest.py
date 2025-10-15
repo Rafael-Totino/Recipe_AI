@@ -11,6 +11,7 @@ from supabase import Client
 
 from src.app.deps import CurrentUser, get_current_user, get_supabase
 from src.app.schemas.ingest import (
+    EmbeddingStatusResponse,
     IngestRequest,
     IngestResponse,
     RecipeListResponse,
@@ -22,6 +23,8 @@ from src.services.ingest import ingest as run_ingest
 from src.services.persist_supabase import *
 from src.services.types import RawContent
 from src.services.errors import RateLimitedError
+from src.services import embedding_queue
+from src.services.embedding_queue import STATUS_FAILED, STATUS_PENDING
 
 log = logging.getLogger("ingest")
 router = APIRouter(prefix="/recipes", tags=["ingest"])
@@ -143,6 +146,14 @@ def _recipe_from_record(record: Dict[str, Any]) -> RecipeResponse:
     ai_data = metadata.get("ai_recipe") if isinstance(metadata.get("ai_recipe"), dict) else {}
     media_meta = metadata.get("media") if isinstance(metadata.get("media"), dict) else {}
     provenance = metadata.get("provenance") if isinstance(metadata.get("provenance"), dict) else {}
+    embedding_status_value = record.get("embedding_status")
+    embedding_error_value = record.get("embedding_error")
+    embedding_status = (
+        str(embedding_status_value) if embedding_status_value not in (None, "") else None
+    )
+    embedding_error = (
+        str(embedding_error_value) if embedding_error_value not in (None, "") else None
+    )
 
     title = _clean_str(ai_data.get("title")) or _clean_str(record.get("title")) or "Receita sem titulo"
     description = _clean_str(ai_data.get("description"))
@@ -230,6 +241,8 @@ def _recipe_from_record(record: Dict[str, Any]) -> RecipeResponse:
         media=media_items,
         createdAt=_clean_str(record.get("created_at")),
         updatedAt=_clean_str(record.get("updated_at")),
+        embeddingStatus=embedding_status,
+        embeddingError=embedding_error,
     )
 
 
@@ -274,6 +287,9 @@ def _build_recipe_response(
     recipe_id: str,
     content: RawContent,
     recipe_data: Any,
+    *,
+    embedding_status: str | None = None,
+    embedding_error: str | None = None,
 ) -> Tuple[RecipeResponse, List[str]]:
     warnings: List[str] = []
     data = recipe_data if isinstance(recipe_data, dict) else {}
@@ -331,6 +347,8 @@ def _build_recipe_response(
         "media": media,
         "createdAt": None,
         "updatedAt": None,
+        "embeddingStatus": embedding_status,
+        "embeddingError": embedding_error,
     }
 
     recipe_response = RecipeResponse(**recipe_payload)
@@ -352,7 +370,10 @@ async def list_recipes(
 ) -> RecipeListResponse:
     query = (
         supa.table("recipes")
-        .select("recipe_id,title,metadata,created_at,updated_at,is_favorite", count="exact")
+        .select(
+            "recipe_id,title,metadata,created_at,updated_at,is_favorite,embedding_status,embedding_error",
+            count="exact",
+        )
         .eq("owner_id", str(user.id))
         .order("created_at", desc=True)
     )
@@ -397,7 +418,7 @@ async def get_recipe(
 ) -> RecipeResponse:
     response = (
         supa.table("recipes")
-        .select("recipe_id,title,metadata,created_at,updated_at,is_favorite")
+        .select("recipe_id,title,metadata,created_at,updated_at,is_favorite,embedding_status,embedding_error")
         .eq("owner_id", str(user.id))
         .eq("recipe_id", recipe_id)
         .limit(1)
@@ -434,27 +455,25 @@ async def import_recipe(
         )
         
         try:
+            await embedding_queue.enqueue(str(recipe_id), str(user.id), ingest_result)
+        except Exception as exc:
+            log.exception("ingest.embedding_enqueue_fail recipe=%s error=%s", recipe_id, str(exc))
             await run_in_threadpool(
-                save_chunks,
+                update_recipe_embedding_status,
                 supa,
                 str(recipe_id),
-                ingest_result,
+                str(user.id),
+                STATUS_FAILED,
+                str(exc),
             )
-        
-        except Exception as exc:
-            log.error("ingest.chunk_fail recipe=%s error=%s", recipe_id, str(exc))
-            try:
-                await run_in_threadpool(
-                    delete_recipe_by_id,
-                    supa,
-                    str(recipe_id),
-                )
-                log.info("ingest.recipe_deleted recipe=%s", recipe_id)
-            except Exception as del_exc:
-                log.error("ingest.recipe_delete_fail recipe=%s error=%s", recipe_id, str(del_exc))
-            raise RuntimeError(f"Falha ao salvar chunk da receita: {exc}") from exc
-        
-        recipe_response, warnings = _build_recipe_response(recipe_id, raw_content, recipe_data)
+            raise RuntimeError("Falha ao agendar processamento de embedding") from exc
+
+        recipe_response, warnings = _build_recipe_response(
+            recipe_id,
+            raw_content,
+            recipe_data,
+            embedding_status=STATUS_PENDING,
+        )
         dt = time.time() - t0
         log.info("ingest.ok url=%s recipe=%s dt=%.2fs", body.url, recipe_id, dt)
         
@@ -515,5 +534,42 @@ async def unfavorite_recipe(
     supa: Client = Depends(get_supabase),
 ) -> RecipeResponse:
     return await _update_favorite_status(supa, user, recipe_id, False)
-    
-    
+
+
+@router.get("/{recipe_id}/embedding/status", response_model=EmbeddingStatusResponse)
+async def get_embedding_status_endpoint(
+    recipe_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> EmbeddingStatusResponse:
+    status = await run_in_threadpool(
+        get_recipe_embedding_status,
+        supa,
+        recipe_id,
+        str(user.id),
+    )
+    return EmbeddingStatusResponse(status=status.get("status"), error=status.get("error"))
+
+
+@router.post("/{recipe_id}/embedding/retry", response_model=EmbeddingStatusResponse)
+async def retry_embedding_endpoint(
+    recipe_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    supa: Client = Depends(get_supabase),
+) -> EmbeddingStatusResponse:
+    has_payload = await embedding_queue.retry(recipe_id, str(user.id))
+    if not has_payload:
+        raise HTTPException(
+            status_code=404,
+            detail="Payload de embedding indisponivel para retry. Reimporte a receita.",
+        )
+
+    status = await run_in_threadpool(
+        get_recipe_embedding_status,
+        supa,
+        recipe_id,
+        str(user.id),
+    )
+    return EmbeddingStatusResponse(status=status.get("status"), error=status.get("error"))
+
+
