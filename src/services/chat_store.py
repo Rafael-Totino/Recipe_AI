@@ -77,7 +77,13 @@ def send_message(
             history_payload = history_payload[:-1]
 
     # 4. Chama o agente com o histórico correto e o contexto
-    assistant_text = run_chat_agent(history_payload, message, context_text)
+    try:
+        assistant_text = run_chat_agent(history_payload, message, context_text)
+    except Exception as exc:
+        print(f"Erro ao executar agente de chat: {exc}")
+        assistant_text = (
+            "Não foi possível gerar uma resposta agora. Tente novamente em instantes."
+        )
 
     # 5. Salva a resposta do assistente no banco de dados
     assistant_record = persist_supabase.save_chat_message(
@@ -129,7 +135,7 @@ def list_sessions(
 
     sorted_sessions = sorted(
         session_records,
-        key=lambda item: item.get("updated_at"),
+        key=lambda item: _coerce_datetime(item.get("updated_at")),
         reverse=True,
     )
 
@@ -289,9 +295,13 @@ def _build_history_payload(records: Sequence[Dict[str, Any]]) -> List[Dict[str, 
     for item in records:
         role = item.get("role")
         content = item.get("content")
-        if not role or not content:
+        if role is None or content is None:
             continue
-        history.append({"role": role, "content": content})
+        role_text = str(role).strip()
+        content_text = str(content).strip()
+        if not role_text or not content_text:
+            continue
+        history.append({"role": role_text, "content": content_text})
     return history
 
 

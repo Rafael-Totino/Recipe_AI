@@ -100,14 +100,50 @@ const RecipeDetailPage = () => {
   };
 
   const metadata = [
-    activeRecipe.durationMinutes ? { label: 'Tempo', value: `${activeRecipe.durationMinutes} min`, icon: '⏱️' } : null,
-    activeRecipe.servings ? { label: 'Porções', value: `${activeRecipe.servings}`, icon: '🍽️' } : null,
+    activeRecipe.durationMinutes ? { label: 'Tempo', value: `${activeRecipe.durationMinutes} min`, icon: '⏱' } : null,
+    activeRecipe.servings ? { label: 'Porções', value: `${activeRecipe.servings}`, icon: '🍽' } : null,
     activeRecipe.difficulty ? { label: 'Dificuldade', value: activeRecipe.difficulty, icon: '🔥' } : null,
-    activeRecipe.tags?.length ? { label: 'Tags', value: activeRecipe.tags.join(', '), icon: '🏷️' } : null,
+    activeRecipe.tags?.length ? { label: 'Tags', value: activeRecipe.tags.join(', '), icon: '🏷' } : null,
   ].filter(Boolean) as Array<{ label: string; value: string; icon: string }>;
 
   const heroImage = activeRecipe.coverImage ?? fallbackCover;
 
+  const heroActions: Array<{
+    key: string;
+    label: string;
+    icon: string;
+    variant?: 'primary' | 'outline' | 'accent' | 'danger';
+    onClick: () => void | Promise<void>;
+  }> = [
+    {
+      key: 'cook',
+      label: 'Modo cozinha',
+      icon: '🍳',
+      variant: 'primary',
+      onClick: () => navigate(`/app/recipes/${activeRecipe.id}/cook`)
+    },
+    {
+      key: 'favorite',
+      label: activeRecipe.isFavorite ? 'Favorito' : 'Favoritar',
+      icon: activeRecipe.isFavorite ? '⭐' : '☆',
+      variant: activeRecipe.isFavorite ? 'accent' : 'outline',
+      onClick: () => toggleFavorite(activeRecipe.id)
+    },
+    {
+      key: 'share',
+      label: 'Compartilhar',
+      icon: '🔗',
+      variant: 'outline',
+      onClick: handleShare
+    },
+    {
+      key: 'remove',
+      label: 'Remover',
+      icon: '🗑️',
+      variant: 'danger',
+      onClick: handleDelete
+    }
+  ];
   return (
     <div className="recipe-detail">
       <section className="recipe-hero" aria-labelledby="recipe-title">
@@ -119,26 +155,25 @@ const RecipeDetailPage = () => {
           <h1 id="recipe-title" className="font-playfair">{activeRecipe.title}</h1>
           <p className="recipe-hero__description">{activeRecipe.description}</p>
           <div className="recipe-hero__actions">
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={() => navigate(`/app/recipes/${activeRecipe.id}/cook`)}
-            >
-              Modo Cozinha 🍳
-            </button>
-            <button
-              type="button"
-              className="button button--ghost"
-              onClick={() => toggleFavorite(activeRecipe.id)}
-            >
-              {activeRecipe.isFavorite ? 'Remover dos favoritos' : 'Guardar como favorita'}
-            </button>
-            <button type="button" className="button button--ghost" onClick={handleShare}>
-              Compartilhar
-            </button>
-            <button type="button" className="button button--ghost" onClick={handleDelete}>
-              Remover
-            </button>
+            {heroActions.map((action) => {
+              const classNames = ['recipe-action'];
+              if (action.variant) {
+                classNames.push(`recipe-action--${action.variant}`);
+              }
+              return (
+                <button
+                  key={action.key}
+                  type="button"
+                  className={classNames.join(' ')}
+                  onClick={action.onClick}
+                >
+                  <span className="recipe-action__icon" aria-hidden="true">
+                    {action.icon}
+                  </span>
+                  <span className="recipe-action__label">{action.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -179,7 +214,7 @@ const RecipeDetailPage = () => {
                   <span>
                     <strong>{ingredient.quantity ? `${ingredient.quantity} ` : ''}</strong>
                     {ingredient.name}
-                    {ingredient.notes ? <em> – {ingredient.notes}</em> : null}
+                    {ingredient.notes ? <em> â€“ {ingredient.notes}</em> : null}
                   </span>
                 </label>
               </li>
@@ -199,7 +234,7 @@ const RecipeDetailPage = () => {
               <div className="recipe-step__number">{step.order}</div>
               <div className="recipe-step__content">
                 <p>{step.description}</p>
-                {step.tips ? <span className="recipe-step__tip">💡 {step.tips}</span> : null}
+                {step.tips ? <span className="recipe-step__tip">ðŸ’¡ {step.tips}</span> : null}
               </div>
             </li>
           ))}
@@ -236,3 +271,5 @@ const RecipeDetailPage = () => {
 };
 
 export default RecipeDetailPage;
+
+

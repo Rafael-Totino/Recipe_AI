@@ -176,3 +176,107 @@
     right: 0.85rem;
   }
 }
+
+.recipe-player {
+  display: grid;
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 3vw, 2rem);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.recipe-player__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.recipe-player__header h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+}
+
+.recipe-player__header p {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+}
+
+.recipe-player__external-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-muted);
+  font-weight: 600;
+  color: var(--color-primary-strong);
+  text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.recipe-player__external-link:hover,
+.recipe-player__external-link:focus-visible {
+  border-color: var(--color-primary-strong);
+  color: #fff;
+  background: var(--color-primary);
+}
+
+.recipe-player__media {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+}
+
+.recipe-player__media iframe,
+.recipe-player__media img,
+.recipe-player__media video {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+
+.recipe-player__media audio {
+  width: 100%;
+}
+
+.recipe-player__fallback-link {
+  padding: 0.7rem 1.2rem;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recipe-player__fallback-link:hover,
+.recipe-player__fallback-link:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 32px -26px rgba(232, 93, 4, 0.45);
+}
+
+@media (max-width: 720px) {
+  .recipe-player {
+    gap: 1.1rem;
+    padding: 1.25rem;
+  }
+
+  .recipe-player__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .recipe-player__external-link {
+    width: 100%;
+    justify-content: center;
+  }
+}
