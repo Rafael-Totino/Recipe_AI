@@ -58,6 +58,17 @@
   gap: 1.35rem;
 }
 
+.import-manual__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.import-manual__meta input,
+.import-manual__meta select {
+  width: 100%;
+}
+
 .import-card__layout {
   display: grid;
   gap: 1.1rem;

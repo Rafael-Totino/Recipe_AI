@@ -16,6 +16,7 @@ import {
   fetchRecipe,
   fetchRecipes,
   importRecipeFromUrl,
+  importRecipeFromImage,
   toggleFavorite,
   updateRecipeNotes
 } from '../services/recipes';
@@ -36,6 +37,7 @@ interface RecipeContextValue {
   resetSearch: () => void;
   selectRecipe: (recipeId: string) => Promise<void>;
   importRecipe: (url: string) => Promise<ImportResult | null>;
+  importRecipeFromImage: (file: File) => Promise<ImportResult | null>;
   createManualRecipe: (payload: Partial<Recipe> & { title: string }) => Promise<Recipe | null>;
   updateNotes: (recipeId: string, notes: string) => Promise<Recipe | null>;
   toggleFavorite: (recipeId: string) => Promise<void>;
@@ -289,6 +291,23 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
     [session?.access_token]
   );
 
+  const importRecipeFromImageHandler = useCallback(
+    async (file: File) => {
+      if (!session?.access_token) {
+        return null;
+      }
+      try {
+        const result = await importRecipeFromImage(session.access_token, file);
+        setRecipes((prev) => [result.recipe, ...prev]);
+        return result;
+      } catch (error) {
+        console.error('Unable to import recipe from image', error);
+        return null;
+      }
+    },
+    [session?.access_token]
+  );
+
   const value = useMemo(
     () => ({
       recipes,
@@ -305,6 +324,7 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
       resetSearch: resetSearchState,
       selectRecipe,
       importRecipe: importRecipeHandler,
+      importRecipeFromImage: importRecipeFromImageHandler,
       createManualRecipe: createManualRecipeHandler,
       updateNotes: updateNotesHandler,
       toggleFavorite: toggleFavoriteHandler,
@@ -320,6 +340,7 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
       loadMoreSearchResults,
       loadRecipes,
       resetSearchState,
+      importRecipeFromImageHandler,
       searchRecipesHandler,
       searchResults,
       searchTerm,

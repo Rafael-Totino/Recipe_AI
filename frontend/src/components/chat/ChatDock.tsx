@@ -69,8 +69,8 @@ const ChatDock = ({ initialPrompt }: ChatDockProps) => {
           return formatted;
         }
         return `${formatted} · ${messageCount} mensagens`;
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
         return messageCount > 0 ? `${messageCount} mensagens` : '';
       }
     },

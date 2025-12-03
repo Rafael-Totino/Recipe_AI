@@ -12,6 +12,7 @@ import {
 import type { ChatMessage, ChatSession } from '../types';
 import { fetchChatHistory, fetchChatSessions, sendChatMessage } from '../services/chat';
 import { useAuth } from './AuthContext';
+import { ApiError } from '../services/api';
 
 interface ChatContextValue {
   messages: ChatMessage[];
@@ -28,7 +29,7 @@ interface ChatContextValue {
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 
-const buildSessionTitle = (content?: string) => {
+export const buildSessionTitle = (content?: string) => {
   if (!content) {
     return 'Nova conversa';
   }
@@ -90,10 +91,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           setMessages(history);
           setError(undefined);
         }
-      } catch (err) {
+      } catch (error) {
         if (fetchSequenceRef.current === requestId) {
-          console.error(err);
-          setError('Não foi possível carregar o histórico do chat.');
+          const message =
+            error instanceof ApiError && error.status >= 400 && error.status < 500
+              ? error.message
+              : 'Não foi possível carregar o histórico do chat.';
+          setError(message);
         }
       } finally {
         if (fetchSequenceRef.current === requestId && showLoader) {
@@ -132,10 +136,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setError(undefined);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      const message =
+        error instanceof ApiError && error.status >= 400 && error.status < 500
+          ? error.message
+          : 'Não foi possível carregar o histórico do chat.';
+      console.error(error);
       resetState();
-      setError('Não foi possível carregar o histórico do chat.');
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -225,9 +233,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         await loadMessagesForChat(resolvedChatId, { showLoader: false });
 
         setError(undefined);
-      } catch (err) {
-        console.error(err);
-        setError('Falha ao enviar mensagem. Tente novamente.');
+      } catch (error) {
+        const message =
+          error instanceof ApiError && error.status >= 400 && error.status < 500
+            ? error.message
+            : 'Falha ao enviar mensagem. Tente novamente.';
+        console.error(error);
+        setError(message);
         setMessages((prev) => prev.filter((msg) => msg.id !== clientMessageId));
       } finally {
         setIsSending(false);
@@ -265,19 +277,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     },
     [loadMessagesForChat]
   );
-
-  const startNewChat = useCallback(() => {
-    const newChatId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `chat-${Date.now()}`;
-    setActiveChatId(newChatId);
-    setMessages([]);
-    setError(undefined);
-  }, []);
-
-  const selectChat = useCallback((chatId?: string) => {
-    setActiveChatId(chatId);
-  }, []);
 
   const value = useMemo(
     () => ({

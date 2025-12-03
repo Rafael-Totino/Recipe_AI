@@ -9,7 +9,7 @@ import '../../pages/import.css';
 
 type StatusState = { type: 'success' | 'error'; message: string } | null;
 
-const loadingStages = ['Organizando ingredientes', 'Escrevendo instruções', 'Polindo sua receita'];
+const loadingStages = ['Organizando ingredientes', 'Escrevendo instrucoes', 'Polindo sua receita'];
 
 type ImportManualModalProps = {
   isOpen: boolean;
@@ -23,6 +23,10 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
   const [manualDescription, setManualDescription] = useState('');
   const [manualIngredients, setManualIngredients] = useState('');
   const [manualSteps, setManualSteps] = useState('');
+  const [manualServings, setManualServings] = useState('');
+  const [manualDuration, setManualDuration] = useState('');
+  const [manualDifficulty, setManualDifficulty] = useState<'easy' | 'medium' | 'hard' | ''>('');
+  const [manualTags, setManualTags] = useState('');
   const [status, setStatus] = useState<StatusState>(null);
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
@@ -62,6 +66,10 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
       setManualDescription('');
       setManualIngredients('');
       setManualSteps('');
+      setManualServings('');
+      setManualDuration('');
+      setManualDifficulty('');
+      setManualTags('');
       setStatus(null);
       setIsSavingManual(false);
     }
@@ -72,16 +80,12 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
   }
 
   const placeholderIngredients = useMemo(
-    () => ['3 cenouras médias', '2 xícaras de farinha', '1 xícara de açúcar'].join('\n'),
+    () => ['3 cenouras medias', '2 xicaras de farinha', '1 xicara de acucar'].join('\n'),
     []
   );
 
   const placeholderSteps = useMemo(
-    () => [
-      'Bata as cenouras com óleo e ovos',
-      'Misture os secos',
-      'Asse por 40 minutos',
-    ].join('\n'),
+    () => ['Bata as cenouras com oleo e ovos', 'Misture os secos', 'Asse por 40 minutos'].join('\n'),
     []
   );
 
@@ -102,13 +106,22 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
       .filter(Boolean)
       .map((description, index) => ({ order: index + 1, description }));
 
+    const tags = manualTags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+
     try {
       const recipe = await createManualRecipe({
         title: manualTitle,
         description: manualDescription,
         ingredients,
         steps,
-        source: { importedFrom: 'manual' },
+        servings: manualServings ? Number(manualServings) : undefined,
+        durationMinutes: manualDuration ? Number(manualDuration) : undefined,
+        difficulty: manualDifficulty || undefined,
+        tags: tags.length ? tags : undefined,
+        source: { importedFrom: 'manual' }
       });
 
       if (recipe) {
@@ -116,13 +129,13 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
         navigate(`/app/recipes/${recipe.id}`);
         onClose();
       } else {
-        setStatus({ type: 'error', message: 'Não foi possível salvar a receita.' });
+        setStatus({ type: 'error', message: 'Nao foi possivel salvar a receita.' });
       }
     } catch (error) {
       console.error('Manual recipe creation failed', error);
       setStatus({
         type: 'error',
-        message: 'Falha inesperada ao salvar receita manual.',
+        message: 'Falha inesperada ao salvar receita manual.'
       });
     } finally {
       setIsSavingManual(false);
@@ -141,22 +154,61 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
           <div className="import-modal__title">
             <span className="eyebrow">Livro do Chef</span>
             <h2 className="font-playfair">Registrar receita manualmente</h2>
-            <p>Descreva sua criação autoral e deixe a cozinha inteligente guardar seus segredos.</p>
+            <p>Descreva sua criacao autoral e deixe a cozinha inteligente guardar seus segredos.</p>
           </div>
-          <button
-            type="button"
-            className="import-modal__close"
-            onClick={onClose}
-            aria-label="Fechar cadastro manual"
-          >
+          <button type="button" className="import-modal__close" onClick={onClose} aria-label="Fechar cadastro manual">
             <X size={18} aria-hidden="true" />
           </button>
         </header>
 
         <div className="import-modal__scroll">
           <form className="import-card__layout" onSubmit={handleManualSubmit} aria-busy={isBusy}>
+            <div className="import-manual__meta">
+              <label className="import-field">
+                <span>Porcoes</span>
+                <input
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  value={manualServings}
+                  onChange={(event) => setManualServings(event.target.value)}
+                  placeholder="4"
+                  disabled={isBusy}
+                />
+              </label>
+
+              <label className="import-field">
+                <span>Tempo (min)</span>
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  value={manualDuration}
+                  onChange={(event) => setManualDuration(event.target.value)}
+                  placeholder="40"
+                  disabled={isBusy}
+                />
+              </label>
+
+              <label className="import-field">
+                <span>Dificuldade</span>
+                <select
+                  value={manualDifficulty}
+                  onChange={(event) =>
+                    setManualDifficulty(event.target.value as 'easy' | 'medium' | 'hard' | '')
+                  }
+                  disabled={isBusy}
+                >
+                  <option value="">Selecione</option>
+                  <option value="easy">Facil</option>
+                  <option value="medium">Intermediaria</option>
+                  <option value="hard">Dificil</option>
+                </select>
+              </label>
+            </div>
+
             <label className="import-field">
-              <span>Título</span>
+              <span>Titulo</span>
               <input
                 value={manualTitle}
                 onChange={(event) => setManualTitle(event.target.value)}
@@ -167,12 +219,12 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
             </label>
 
             <label className="import-field">
-              <span>Descrição</span>
+              <span>Descricao</span>
               <textarea
                 value={manualDescription}
                 onChange={(event) => setManualDescription(event.target.value)}
                 rows={3}
-                placeholder="Uma sobremesa rápida com cobertura de chocolate"
+                placeholder="Uma sobremesa rapida com cobertura de chocolate"
                 disabled={isBusy}
               />
             </label>
@@ -195,6 +247,16 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
                 onChange={(event) => setManualSteps(event.target.value)}
                 rows={4}
                 placeholder={placeholderSteps}
+                disabled={isBusy}
+              />
+            </label>
+
+            <label className="import-field">
+              <span>Tags (separe com virgula)</span>
+              <input
+                value={manualTags}
+                onChange={(event) => setManualTags(event.target.value)}
+                placeholder="bolo, sobremesa, chocolate"
                 disabled={isBusy}
               />
             </label>

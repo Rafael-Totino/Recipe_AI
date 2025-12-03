@@ -40,11 +40,13 @@ const handleResponse = async (response: Response) => {
 export const apiRequest = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
   const { authToken, headers, ...rest } = options;
   const baseUrl = getBaseUrl();
+  const isFormData = typeof FormData !== 'undefined' && rest.body instanceof FormData;
+  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
 
   const response = await fetch(`${baseUrl}${path}`, {
     ...rest,
     headers: {
-      'Content-Type': 'application/json',
+      ...defaultHeaders,
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...headers
     }

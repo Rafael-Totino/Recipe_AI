@@ -53,6 +53,17 @@ export const importRecipeFromUrl = (token: string, url: string) =>
     body: JSON.stringify({ url })
   });
 
+export const importRecipeFromImage = (token: string, file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  return apiRequest<ImportResult>('/recipes/import/image', {
+    method: 'POST',
+    authToken: token,
+    body: formData
+  });
+};
+
 export const updateRecipeNotes = (token: string, recipeId: string, notes: string) =>
   apiRequest<Recipe>(`/recipes/${recipeId}/notes`, {
     method: 'PUT',
