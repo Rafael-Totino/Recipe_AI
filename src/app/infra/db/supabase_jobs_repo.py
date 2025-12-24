@@ -67,6 +67,10 @@ def _row_to_job(row: dict[str, str | int | float | None]) -> TranscriptionJob:
         started_at=_parse_datetime(row.get("started_at")),
         finished_at=_parse_datetime(row.get("finished_at")),
         duration_sec=_safe_int(row.get("duration_sec")) if row.get("duration_sec") else None,
+        estimated_duration_sec=_safe_int(row.get("estimated_duration_sec")) if row.get("estimated_duration_sec") else None,
+        stage=_safe_str(row.get("stage")),
+        progress=float(row.get("progress")) if row.get("progress") is not None else None,
+        last_heartbeat_at=_parse_datetime(row.get("last_heartbeat_at")),
         language=_safe_str(row.get("language")),
         transcript_text=_safe_str(row.get("transcript_text")),
         segments_json=row.get("segments_json"),
@@ -185,6 +189,9 @@ class SupabaseJobQueueRepository(JobQueueRepository):
         job_id: UUID,
         worker_id: str,
         started_at: datetime | None = None,
+        stage: str | None = None,
+        progress: float | None = None,
+        last_heartbeat_at: datetime | None = None,
     ) -> bool:
         now = started_at or _now_utc()
 
@@ -198,6 +205,16 @@ class SupabaseJobQueueRepository(JobQueueRepository):
                 "started_at": now.isoformat(),
                 "attempt_count": current_attempt + 1,
             }
+
+            if stage is not None:
+                update_data["stage"] = stage
+
+            if progress is not None:
+                update_data["progress"] = progress
+
+            heartbeat_time = last_heartbeat_at or now
+            if last_heartbeat_at is not None:
+                update_data["last_heartbeat_at"] = heartbeat_time.isoformat()
 
             result = self._client.table(self.TABLE_NAME).update(update_data).eq("id", str(job_id)).execute()
 
@@ -229,9 +246,13 @@ class SupabaseJobQueueRepository(JobQueueRepository):
         duration_sec: int,
         model_version: str,
     ) -> bool:
+        now = _now_utc()
         update_data = {
             "status": JobStatus.DONE.value,
-            "finished_at": _now_utc().isoformat(),
+            "stage": "DONE",
+            "progress": 100,
+            "finished_at": now.isoformat(),
+            "last_heartbeat_at": now.isoformat(),
             "transcript_text": transcript_text,
             "segments_json": segments_json,
             "language": language,
@@ -306,15 +327,19 @@ class SupabaseJobQueueRepository(JobQueueRepository):
             "error_message": error_message,
             "locked_at": None,
             "locked_by": None,
+            "last_heartbeat_at": _now_utc().isoformat(),
         }
 
         if should_retry:
             calculated_retry = retry_at or (_now_utc() + timedelta(minutes=_calculate_backoff_minutes(job_info["attempt_count"])))
             base_data["status"] = JobStatus.QUEUED.value
             base_data["next_attempt_at"] = calculated_retry.isoformat()
+            base_data["stage"] = "QUEUED"
+            base_data["progress"] = 0
         else:
             base_data["status"] = JobStatus.FAILED.value
             base_data["finished_at"] = _now_utc().isoformat()
+            base_data["stage"] = "FAILED"
 
         return base_data
 
@@ -455,6 +480,34 @@ class SupabaseJobQueueRepository(JobQueueRepository):
 
         except (ConnectionError, TimeoutError) as error:
             logger.error("Network error cancelling job: %s", error)
+            return False
+
+    def update_job_progress(
+        self,
+        job_id: UUID,
+        stage: str | None = None,
+        progress: float | None = None,
+        last_heartbeat_at: datetime | None = None,
+    ) -> bool:
+        update_data: dict[str, str | float] = {}
+
+        if stage is not None:
+            update_data["stage"] = stage
+
+        if progress is not None:
+            update_data["progress"] = progress
+
+        if last_heartbeat_at is not None:
+            update_data["last_heartbeat_at"] = last_heartbeat_at.isoformat()
+
+        if not update_data:
+            return True
+
+        try:
+            result = self._client.table(self.TABLE_NAME).update(update_data).eq("id", str(job_id)).execute()
+            return bool(result.data)
+        except (ConnectionError, TimeoutError) as error:
+            logger.error("Network error updating job progress: %s", error)
             return False
 
 

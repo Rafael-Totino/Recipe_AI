@@ -17,6 +17,8 @@ class WorkerConfig:
     temp_dir: str = os.getenv("WORKER_TEMP_DIR", "/tmp/transcription-worker")
     default_language: str = os.getenv("TRANSCRIPTION_LANGUAGE", "pt")
     graceful_shutdown_timeout_seconds: int = int(os.getenv("WORKER_SHUTDOWN_TIMEOUT", "300"))
+    progress_update_interval_seconds: int = int(os.getenv("WORKER_PROGRESS_UPDATE_INTERVAL_SECONDS", "5"))
+    heartbeat_interval_seconds: int = int(os.getenv("WORKER_HEARTBEAT_INTERVAL_SECONDS", "20"))
     supabase_url: str = os.getenv("SUPABASE_URL", "")
     supabase_key: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     r2_account_id: str = os.getenv("R2_ACCOUNT_ID", "")

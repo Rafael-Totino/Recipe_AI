@@ -43,6 +43,9 @@ class TranscriptionSegment(BaseModel):
 class JobResponse(BaseModel):
     id: str = Field(...)
     status: str = Field(...)
+    stage: str | None = Field(None)
+    progress: float | None = Field(None)
+    last_heartbeat_at: datetime | None = Field(None)
     object_key: str = Field(...)
     recipe_id: str | None = Field(None)
     created_at: datetime | None = Field(None)
@@ -101,6 +104,9 @@ def _job_to_response(job) -> JobResponse:
     return JobResponse(
         id=str(job.id),
         status=job.status.value,
+        stage=job.stage,
+        progress=job.progress,
+        last_heartbeat_at=job.last_heartbeat_at,
         object_key=job.object_key,
         recipe_id=str(job.recipe_id) if job.recipe_id else None,
         created_at=job.created_at,

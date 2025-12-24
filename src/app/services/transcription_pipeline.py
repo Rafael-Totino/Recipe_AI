@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from src.app.domain.errors import TranscriptionProcessingError, InvalidMediaError
@@ -135,7 +136,11 @@ class TranscriptionPipeline:
         self.language = language
         self.model_version = WHISPER_MODEL
 
-    def transcribe(self, media_path: Path) -> TranscriptionResult:
+    def transcribe(
+        self,
+        media_path: Path,
+        progress_callback: Callable[[float], None] | None = None,
+    ) -> TranscriptionResult:
         if not media_path.exists():
             raise InvalidMediaError(f"Media file not found: {media_path}")
 
@@ -174,6 +179,8 @@ class TranscriptionPipeline:
                         text=text,
                     ))
                     text_parts.append(text)
+                if progress_callback:
+                    progress_callback(float(seg.end))
 
             full_text = " ".join(text_parts).strip()
             duration_sec = info.duration if hasattr(info, 'duration') else 0
