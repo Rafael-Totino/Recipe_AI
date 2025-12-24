@@ -1,5 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Optional, Tuple
@@ -18,6 +19,8 @@ from .errors import (
     PrivateOrUnavailableError,
 )
 from .types import RawContent
+
+logger = logging.getLogger(__name__)
 
 
 def _extract_thumbnail(info: dict | None) -> Optional[str]:
@@ -251,14 +254,14 @@ def _get_yt_transcript(url: str) -> Optional[str]:
         except (TranscriptsDisabled, NoTranscriptFound):
             return None
         except Exception as exc:
-            print(f"Erro inesperado ao buscar transcript: {exc}")
+            logger.exception("Erro inesperado ao buscar transcript")
             return None
         else:
             data = transcript_list.to_raw_data()
     except (TranscriptsDisabled, NoTranscriptFound):
         return None
     except Exception as exc:
-        print(f"Erro inesperado ao buscar transcript: {exc}")
+        logger.exception("Erro inesperado ao buscar transcript")
         return None
 
     if hasattr(data, "to_raw_data"):

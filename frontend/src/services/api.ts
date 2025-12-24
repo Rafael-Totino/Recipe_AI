@@ -41,15 +41,23 @@ export const apiRequest = async <T>(path: string, options: RequestOptions = {}):
   const { authToken, headers, ...rest } = options;
   const baseUrl = getBaseUrl();
   const isFormData = typeof FormData !== 'undefined' && rest.body instanceof FormData;
-  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
+  const resolvedHeaders = new Headers();
+  if (!isFormData) {
+    resolvedHeaders.set('Content-Type', 'application/json');
+  }
+  if (authToken) {
+    resolvedHeaders.set('Authorization', `Bearer ${authToken}`);
+  }
+  if (headers) {
+    const extraHeaders = new Headers(headers);
+    extraHeaders.forEach((value, key) => {
+      resolvedHeaders.set(key, value);
+    });
+  }
 
   const response = await fetch(`${baseUrl}${path}`, {
     ...rest,
-    headers: {
-      ...defaultHeaders,
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      ...headers
-    }
+    headers: resolvedHeaders
   });
 
   return handleResponse(response) as Promise<T>;

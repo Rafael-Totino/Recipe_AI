@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from typing import Any, Dict, List, Optional, Sequence
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -12,6 +13,7 @@ from src.services import persist_supabase
 
 MAX_CONTEXT_CHARS = 4000
 MAX_HISTORY_MESSAGES = 50
+logger = logging.getLogger(__name__)
 
 
 def send_message(
@@ -80,7 +82,7 @@ def send_message(
     try:
         assistant_text = run_chat_agent(history_payload, message, context_text)
     except Exception as exc:
-        print(f"Erro ao executar agente de chat: {exc}")
+        logger.exception("Erro ao executar agente de chat")
         assistant_text = (
             "Não foi possível gerar uma resposta agora. Tente novamente em instantes."
         )
@@ -208,7 +210,7 @@ def get_context(
     try:
         message_embeded = embedding_query(message)
     except Exception as exc:
-        print(f"Erro ao gerar embedding da mensagem: {exc}")
+        logger.exception("Erro ao gerar embedding da mensagem")
         return None, []
     similar_chunks = persist_supabase.find_similar_chunks(
         supa,

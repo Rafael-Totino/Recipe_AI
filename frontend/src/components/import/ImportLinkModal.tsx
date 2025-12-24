@@ -25,6 +25,15 @@ export const ImportLinkModal = ({ isOpen, onClose, onBack }: ImportLinkModalProp
   const [isImporting, setIsImporting] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const navigate = useNavigate();
+  const favicon = useMemo(() => {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url);
+      return `https://www.google.com/s2/favicons?domain=${parsed.hostname}`;
+    } catch {
+      return null;
+    }
+  }, [url]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -63,16 +72,6 @@ export const ImportLinkModal = ({ isOpen, onClose, onBack }: ImportLinkModalProp
   if (!isOpen) {
     return null;
   }
-
-  const favicon = useMemo(() => {
-    if (!url) return null;
-    try {
-      const parsed = new URL(url);
-      return `https://www.google.com/s2/favicons?domain=${parsed.hostname}`;
-    } catch {
-      return null;
-    }
-  }, [url]);
 
   const handleImport = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

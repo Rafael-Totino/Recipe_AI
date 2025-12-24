@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence
 from uuid import uuid4
@@ -9,14 +10,15 @@ from supabase import Client
 from uuid import UUID
 
 from src.services.ids import detect_platform_and_id
-from src.services.persist_models import *
+from src.services.persist_models import ChunkRecord, RecipeRecord, RecipeSourceRecord
 from src.services.slugify import slugify, unique_slug
 from src.services.types import RawContent
-from src.services.embedding import *
+from src.services.embedding import embedding_document, stringify_payload
 
 
 
 DEFAULT_CHAT_ID = "default"
+logger = logging.getLogger(__name__)
 
 
 def get_chunk_by_id(recipe_id: str, user_id: str, supa: Client):
@@ -56,7 +58,7 @@ def find_similar_chunks(
     except Exception as err:
         error_message = str(err)
         if "PGRST202" not in error_message:
-            print(f"Erro ao buscar chunks similares: {err}")  # Idealmente, use um logger
+            logger.exception("Erro ao buscar chunks similares")
             return []
 
     # Fallback para implementações antigas da função SQL que não aceitam owner_id_filter.
@@ -86,7 +88,7 @@ def find_similar_chunks(
             filtered.append(item)
         return filtered or data
     except Exception as err:
-        print(f"Erro ao buscar chunks similares (fallback): {err}")
+        logger.exception("Erro ao buscar chunks similares (fallback)")
         return []
 
 
@@ -110,7 +112,7 @@ def get_chat_history(
         records.reverse()
         return records
     except Exception as e:
-        print(f"Erro ao buscar histórico do chat: {e}")
+        logger.exception("Erro ao buscar histórico do chat")
         return []
 
 
@@ -174,7 +176,7 @@ def list_chat_sessions(
 
         return list(sessions.values())
     except Exception as e:
-        print(f"Erro ao listar sessões de chat: {e}")
+        logger.exception("Erro ao listar sessões de chat")
         return []
 
 
@@ -293,7 +295,7 @@ def save_chat_message(
 
         return {}
     except Exception as e:
-        print(f"Erro ao salvar mensagem do chat: {e}")
+        logger.exception("Erro ao salvar mensagem do chat")
         fallback_related: Optional[List[str]] = None
         if related_recipe_ids:
             fallback_related = [str(value) for value in related_recipe_ids if value]
@@ -324,14 +326,14 @@ def _retry_chat_insert(
         updated_payload["chat_id"] = new_chat_id
         chat_id_override = new_chat_id
     else:
-        print(f"Erro ao salvar mensagem do chat: {error}")
+        logger.error("Erro ao salvar mensagem do chat: %s", error)
         return None, None
 
     try:
         result = supa.table("chat_messages").insert(updated_payload).execute()
         return result, chat_id_override
     except Exception as retry_error:
-        print(f"Erro ao salvar mensagem do chat após tentativa de correção: {retry_error}")
+        logger.exception("Erro ao salvar mensagem do chat após tentativa de correção")
         return None, None
 
 
@@ -375,7 +377,7 @@ def get_recipe_chunks(
         )
         return response.data or []
     except Exception as e:
-        print(f"Erro ao buscar chunks da receita {recipe_id}: {e}")
+        logger.exception("Erro ao buscar chunks da receita %s", recipe_id)
         return []
 
 
@@ -508,7 +510,7 @@ def save_chunks(supa: Client, recipe_id: str, payload: Dict[str, Any] | str):
     try:
         supa.table("recipe_chunks").delete().eq("recipe_id", recipe_id).execute()
     except Exception as exc:
-        print(f"Erro ao limpar chunks anteriores da receita {recipe_id}: {exc}")
+        logger.exception("Erro ao limpar chunks anteriores da receita %s", recipe_id)
 
     chunk = ChunkRecord(
         recipe_id=recipe_id,
@@ -532,7 +534,10 @@ def get_recipe_by_id(recipe_id: str, supa):
         .limit(1)
         .execute()
     )
-    return "recipe"
+    rows = recipe.data or []
+    if not rows:
+        return None
+    return rows[0]
 
 
 def update_recipe_embedding_status(
@@ -557,7 +562,7 @@ def update_recipe_embedding_status(
             .execute()
         )
     except Exception as exc:
-        print(f"Erro ao atualizar embedding_status da receita {recipe_id}: {exc}")
+        logger.exception("Erro ao atualizar embedding_status da receita %s", recipe_id)
 
 
 def get_recipe_embedding_status(
@@ -584,7 +589,7 @@ def get_recipe_embedding_status(
                 "error": str(error) if error is not None else None,
             }
     except Exception as exc:
-        print(f"Erro ao consultar embedding_status da receita {recipe_id}: {exc}")
+        logger.exception("Erro ao consultar embedding_status da receita %s", recipe_id)
     return {"status": None, "error": None}
 
 
@@ -604,7 +609,7 @@ def save_embedding_payload(
             .execute()
         )
     except Exception as exc:
-        print(f"Erro ao consultar metadata da receita {recipe_id}: {exc}")
+        logger.exception("Erro ao consultar metadata da receita %s", recipe_id)
         return
 
     metadata: Dict[str, Any] = {}
@@ -625,7 +630,7 @@ def save_embedding_payload(
                 except Exception:
                     metadata = {}
     except Exception as exc:
-        print(f"Erro ao preparar metadata para receita {recipe_id}: {exc}")
+        logger.exception("Erro ao preparar metadata para receita %s", recipe_id)
 
     metadata["embedding_payload"] = payload
 
@@ -641,7 +646,7 @@ def save_embedding_payload(
         )
         return
     except Exception as exc:
-        print(f"Erro ao salvar payload de embedding da receita {recipe_id}: {exc}")
+        logger.exception("Erro ao salvar payload de embedding da receita %s", recipe_id)
 
     # Tenta salvar apenas no metadata caso a coluna embedding_payload nao exista.
     try:
@@ -653,7 +658,7 @@ def save_embedding_payload(
             .execute()
         )
     except Exception as exc:
-        print(f"Erro ao salvar payload de embedding no metadata da receita {recipe_id}: {exc}")
+        logger.exception("Erro ao salvar payload de embedding no metadata da receita %s", recipe_id)
 
 
 def get_recipe_embedding_payload(
@@ -691,7 +696,7 @@ def get_recipe_embedding_payload(
             except Exception:
                 return None
     except Exception as exc:
-        print(f"Erro ao recuperar payload de embedding da receita {recipe_id}: {exc}")
+        logger.exception("Erro ao recuperar payload de embedding da receita %s", recipe_id)
     return None
 
 
@@ -711,7 +716,7 @@ def has_completed_embeddings(supa: Client, owner_id: str) -> bool:
         data = response.data or []
         return bool(data)
     except Exception as exc:
-        print(f"Erro ao consultar embeddings prontos para usuario {owner_id}: {exc}")
+        logger.exception("Erro ao consultar embeddings prontos para usuario %s", owner_id)
         return False
 
 def mark_recipe_as_favorite(

@@ -33,6 +33,14 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
   const navigate = useNavigate();
 
   const isBusy = isSavingManual;
+  const placeholderIngredients = useMemo(
+    () => ['3 cenouras medias', '2 xicaras de farinha', '1 xicara de acucar'].join('\n'),
+    []
+  );
+  const placeholderSteps = useMemo(
+    () => ['Bata as cenouras com oleo e ovos', 'Misture os secos', 'Asse por 40 minutos'].join('\n'),
+    []
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -78,16 +86,6 @@ export const ImportManualModal = ({ isOpen, onClose, onBack }: ImportManualModal
   if (!isOpen) {
     return null;
   }
-
-  const placeholderIngredients = useMemo(
-    () => ['3 cenouras medias', '2 xicaras de farinha', '1 xicara de acucar'].join('\n'),
-    []
-  );
-
-  const placeholderSteps = useMemo(
-    () => ['Bata as cenouras com oleo e ovos', 'Misture os secos', 'Asse por 40 minutos'].join('\n'),
-    []
-  );
 
   const handleManualSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

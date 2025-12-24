@@ -10,6 +10,9 @@ from src.app.routers.ingest import router as ingest_router
 from src.app.routers.auth import router as auth_router
 from src.app.routers.chat import router as chat_router
 from src.app.routers.playlists import router as playlists_router
+# V2 routes for async transcription workflow
+from src.app.routers.v2.media import router as media_v2_router
+from src.app.routers.v2.transcriptions import router as transcriptions_v2_router
 from src.services import embedding_queue
 
 # Logging simples no stdout (bom para dev e containers)
@@ -19,7 +22,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-app = FastAPI(title="Recipes AI API", version="0.1.0")
+app = FastAPI(title="Recipes AI API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,10 +32,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# V1 routes (existing)
 app.include_router(ingest_router)
 app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(playlists_router)
+
+# V2 routes (async transcription workflow)
+app.include_router(media_v2_router)
+app.include_router(transcriptions_v2_router)
 
 
 @app.on_event("startup")

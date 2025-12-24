@@ -1,9 +1,18 @@
-import os, json
+import json
+
 import google.generativeai as genai
-from dotenv import load_dotenv, find_dotenv
-from google.genai.errors import ClientError
 from src.services.errors import RateLimitedError
-from src.services.Prompt import *
+from src.services.Prompt import get_api_key
+
+
+def _is_rate_limited_error(exc: Exception) -> bool:
+    status_code = getattr(exc, "status_code", None)
+    message = str(exc)
+    if status_code == 429:
+        return True
+    if "RESOURCE_EXHAUSTED" in message:
+        return True
+    return False
 
 def embedding_document(metadata: str) -> list[float]:
 
@@ -17,10 +26,8 @@ def embedding_document(metadata: str) -> list[float]:
         
         return result['embedding']
     
-    except ClientError as err:
-        status_code = getattr(err, "status_code", None)
-        message = str(err)
-        if status_code == 429 or "RESOURCE_EXHAUSTED" in message:
+    except Exception as err:
+        if _is_rate_limited_error(err):
             raise RateLimitedError(
                 "Limite da API do Gemini atingido. Tente novamente em alguns instantes."
             ) from err
@@ -38,10 +45,8 @@ def embedding_query(metadata: str) -> list[float]:
         
         return result['embedding']
     
-    except ClientError as err:
-        status_code = getattr(err, "status_code", None)
-        message = str(err)
-        if status_code == 429 or "RESOURCE_EXHAUSTED" in message:
+    except Exception as err:
+        if _is_rate_limited_error(err):
             raise RateLimitedError(
                 "Limite da API do Gemini atingido. Tente novamente em alguns instantes."
             ) from err

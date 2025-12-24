@@ -5,7 +5,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ChatProvider, useChat, buildSessionTitle } from './ChatContext';
 import { ApiError } from '../services/api';
 
-const useAuthMock = vi.fn(() => ({ session: { access_token: 'token-123' } }));
+type AuthMockReturn = { session: { access_token: string } | null };
+
+const useAuthMock = vi.fn<[], AuthMockReturn>(() => ({ session: { access_token: 'token-123' } }));
 
 vi.mock('./AuthContext', () => ({
   useAuth: () => useAuthMock()

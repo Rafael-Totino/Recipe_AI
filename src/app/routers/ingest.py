@@ -1,4 +1,4 @@
-﻿# src/app/api/routers/ingest.py
+# src/app/api/routers/ingest.py
 from __future__ import annotations
 
 import logging
@@ -20,7 +20,11 @@ from src.app.schemas.ingest import (
     RecipeSource,
 )
 from src.services.ingest import ingest as run_ingest
-from src.services.persist_supabase import *
+from src.services.persist_supabase import (
+    get_recipe_embedding_status,
+    update_recipe_embedding_status,
+    upsert_recipe_minimal,
+)
 from src.services.types import RawContent
 from src.services.errors import RateLimitedError
 from src.services import embedding_queue

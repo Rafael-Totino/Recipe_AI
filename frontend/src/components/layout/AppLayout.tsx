@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 
 import './layout.css';
@@ -7,17 +7,16 @@ import BottomNav from './BottomNav';
 import { useRecipes } from '../../context/RecipeContext';
 import { ChatModal } from '../chat/ChatModal';
 import { ImportOptionsModal } from '../import/ImportOptionsModal';
-import { ImportLinkModal } from '../import/ImportLinkModal';
-import { ImportManualModal } from '../import/ImportManualModal';
 import { ImportCameraModal } from '../import/ImportCameraModal';
 
 const AppLayout = () => {
   const { loadRecipes, recipes, isLoading } = useRecipes();
   const location = useLocation();
+  const navigate = useNavigate();
   const isCookingMode =
     location.pathname.startsWith('/app/recipes/') && location.pathname.endsWith('/cook');
   const [isChatModalOpen, setChatModalOpen] = useState(false);
-  const [importFlow, setImportFlow] = useState<'options' | 'link' | 'manual' | 'camera' | null>(null);
+  const [importFlow, setImportFlow] = useState<'options' | 'camera' | null>(null);
 
   const handleOpenChatModal = useCallback(() => {
     setChatModalOpen(true);
@@ -35,9 +34,18 @@ const AppLayout = () => {
     setImportFlow(null);
   }, []);
 
-  const handleSelectImportOption = useCallback((option: 'link' | 'manual' | 'camera') => {
-    setImportFlow(option);
-  }, []);
+  const handleSelectImportOption = useCallback(
+    (option: 'link' | 'manual' | 'camera') => {
+      if (option === 'camera') {
+        setImportFlow('camera');
+        return;
+      }
+
+      setImportFlow(null);
+      navigate(`/app/import/${option}`);
+    },
+    [navigate]
+  );
 
   useEffect(() => {
     if (!recipes.length && !isLoading) {
@@ -95,16 +103,6 @@ const AppLayout = () => {
         isOpen={importFlow === 'options'}
         onClose={handleCloseImportFlow}
         onSelect={handleSelectImportOption}
-      />
-      <ImportLinkModal
-        isOpen={importFlow === 'link'}
-        onClose={handleCloseImportFlow}
-        onBack={handleOpenImportOptions}
-      />
-      <ImportManualModal
-        isOpen={importFlow === 'manual'}
-        onClose={handleCloseImportFlow}
-        onBack={handleOpenImportOptions}
       />
       <ImportCameraModal
         isOpen={importFlow === 'camera'}
