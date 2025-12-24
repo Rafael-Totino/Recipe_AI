@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    env_file: .env
+    environment:
+      EMBEDDING_QUEUE_MODE: ${EMBEDDING_QUEUE_MODE:-postgres}
+    restart: unless-stopped
+
+  worker-transcriber:
+    profiles: ["workers", "transcriber"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    env_file: .env
+    command: ["python", "-m", "workers.transcriber.main"]
+    restart: unless-stopped
+
+  worker-embedder:
+    profiles: ["workers", "embedder"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    env_file: .env
+    command: ["python", "-m", "workers.embedder.main"]
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN:-example.com}
+      CADDY_EMAIL: ${CADDY_EMAIL:-admin@example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
