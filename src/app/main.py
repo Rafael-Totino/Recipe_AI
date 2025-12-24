@@ -45,12 +45,14 @@ app.include_router(transcriptions_v2_router)
 
 @app.on_event("startup")
 async def startup() -> None:
-    await embedding_queue.start_worker()
+    if embedding_queue.get_queue_mode() == embedding_queue.MODE_IN_MEMORY:
+        await embedding_queue.start_worker()
 
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
-    await embedding_queue.stop_worker()
+    if embedding_queue.get_queue_mode() == embedding_queue.MODE_IN_MEMORY:
+        await embedding_queue.stop_worker()
 
 
 @app.get("/health")

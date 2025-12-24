@@ -2,28 +2,37 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+from uuid import uuid4
 
 from starlette.concurrency import run_in_threadpool
 
 from src.app.deps import get_supabase
-from src.services.errors import RateLimitedError
 from src.services.embedding import stringify_payload
+from src.services.errors import RateLimitedError
 from src.services.persist_supabase import (
     get_recipe_embedding_payload,
-    update_recipe_embedding_status,
     save_embedding_payload,
     save_chunks,
+    update_recipe_embedding_status,
 )
 
 log = logging.getLogger("embedding_queue")
-
 
 STATUS_PENDING = "pending"
 STATUS_PROCESSING = "processing"
 STATUS_COMPLETED = "completed"
 STATUS_FAILED = "failed"
+
+MODE_IN_MEMORY = "in_memory"
+MODE_POSTGRES = "postgres"
+EMBEDDING_QUEUE_MODE_ENV = "EMBEDDING_QUEUE_MODE"
+
+
+def get_queue_mode() -> str:
+    return os.getenv(EMBEDDING_QUEUE_MODE_ENV, MODE_IN_MEMORY).lower()
 
 
 @dataclass(slots=True)
@@ -42,7 +51,21 @@ class EmbeddingJob:
         )
 
 
-class EmbeddingQueue:
+class EmbeddingQueueAdapter:
+    async def start(self) -> None:
+        raise NotImplementedError
+
+    async def stop(self) -> None:
+        raise NotImplementedError
+
+    async def enqueue(self, recipe_id: str, owner_id: str, payload: Dict[str, Any]) -> None:
+        raise NotImplementedError
+
+    async def retry(self, recipe_id: str, owner_id: str) -> bool:
+        raise NotImplementedError
+
+
+class InMemoryEmbeddingQueue(EmbeddingQueueAdapter):
     def __init__(self) -> None:
         self._queue: "asyncio.Queue[Optional[EmbeddingJob]]" = asyncio.Queue()
         self._worker: Optional[asyncio.Task[None]] = None
@@ -196,12 +219,91 @@ class EmbeddingQueue:
         await asyncio.sleep(delay)
         await self._queue.put(job)
 
-def get_queue() -> EmbeddingQueue:
+
+class PostgresEmbeddingQueue(EmbeddingQueueAdapter):
+    def __init__(self) -> None:
+        self._max_attempts = int(os.getenv("EMBEDDING_MAX_ATTEMPTS", "5"))
+
+    async def start(self) -> None:
+        return None
+
+    async def stop(self) -> None:
+        return None
+
+    async def enqueue(self, recipe_id: str, owner_id: str, payload: Dict[str, Any]) -> None:
+        serialized = stringify_payload(payload)
+        supa = get_supabase()
+        await run_in_threadpool(save_embedding_payload, supa, recipe_id, owner_id, serialized)
+        await run_in_threadpool(
+            update_recipe_embedding_status,
+            supa,
+            recipe_id,
+            owner_id,
+            STATUS_PENDING,
+            None,
+        )
+        await run_in_threadpool(
+            self._insert_job,
+            supa,
+            recipe_id,
+            owner_id,
+            serialized,
+        )
+
+    async def retry(self, recipe_id: str, owner_id: str) -> bool:
+        supa = get_supabase()
+        payload = await run_in_threadpool(
+            get_recipe_embedding_payload,
+            supa,
+            recipe_id,
+            owner_id,
+        )
+        if not payload:
+            return False
+        await run_in_threadpool(save_embedding_payload, supa, recipe_id, owner_id, payload)
+        await run_in_threadpool(
+            update_recipe_embedding_status,
+            supa,
+            recipe_id,
+            owner_id,
+            STATUS_PENDING,
+            None,
+        )
+        await run_in_threadpool(
+            self._insert_job,
+            supa,
+            recipe_id,
+            owner_id,
+            payload,
+        )
+        return True
+
+    def _insert_job(self, supa, recipe_id: str, owner_id: str, payload: str) -> None:
+        job_data = {
+            "id": str(uuid4()),
+            "user_id": owner_id,
+            "recipe_id": recipe_id,
+            "status": "QUEUED",
+            "payload": payload,
+            "attempt_count": 0,
+            "max_attempts": self._max_attempts,
+        }
+        supa.table("embedding_jobs").insert(job_data).execute()
+
+
+def _build_queue() -> EmbeddingQueueAdapter:
+    mode = get_queue_mode()
+    if mode == MODE_POSTGRES:
+        return PostgresEmbeddingQueue()
+    return InMemoryEmbeddingQueue()
+
+
+def get_queue() -> EmbeddingQueueAdapter:
     global _EMBEDDING_QUEUE
     try:
         queue = _EMBEDDING_QUEUE
     except NameError:
-        queue = _EMBEDDING_QUEUE = EmbeddingQueue()
+        queue = _EMBEDDING_QUEUE = _build_queue()
     return queue
 
 
