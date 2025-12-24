@@ -1,0 +1,505 @@
+Este repositório define padrões de arquitetura, estilo de código e práticas de teste para APIs Python usando FastAPI, aplicando SOLID e Clean Code, com SQLAlchemy + Alembic para persistência e Pytest com cobertura mínima ≥ 80%.
+
+📐 Filosofia
+Arquitetura em Camadas (DDD enxuto):
+
+domain/: entidades e value-objects puros (sem FastAPI/SQLAlchemy).
+
+application/: casos de uso (serviços de aplicação), DTOs, ports (interfaces) — sem I/O.
+
+infra/: implementações concretas (ORM, criptografia, adapters HTTP, cache, filas).
+
+interfaces/: camadas de entrega (HTTP — roteadores FastAPI, validadores/pydantic, middlewares).
+
+config/: ENV, logging e injeção de dependência.
+
+SOLID: casos de uso dependem de interfaces; implementações ficam na infra e são injetadas na composição.
+
+Clean Code: nomes claros, funções curtas, early return; side-effects apenas na borda.
+
+📂 Estrutura de Pastas
+
+
+/app
+  /domain
+    /entities
+      user.py
+    /value_objects
+      email.py
+    /errors.py
+  /application
+    /ports           # interfaces (abstrações)
+      user_repository.py
+      hash_service.py
+    /dtos
+      create_user_dto.py
+    /use_cases
+      create_user.py
+      get_user.py
+  /infra
+    /db
+      base.py        # Base ORM (SQLAlchemy)
+      models.py      # tabelas (infra) → mapeiam entidades
+      session.py     # engine/session
+      repositories
+        user_repository_sqlalchemy.py
+    /security
+      bcrypt_hash_service.py
+  /interfaces
+    /http
+      /routers
+        users.py
+      /schemas       # pydantic models para requests/responses
+        users.py
+      middlewares.py
+      errors.py       # exception handlers → HTTP
+      app_factory.py  # create_app()
+  /config
+    env.py           # leitura/validação de ENV (pydantic-settings)
+    container.py     # composição/DI
+    logging.py
+  /shared
+    result.py
+    utils.py
+  /tests
+    /factories
+      user_factory.py
+    /unit
+      test_create_user.py
+    /integration
+      test_users_router.py
+    conftest.py
+main.py
+.alembic/            # diretório gerado pelo Alembic
+pyproject.toml
+README.md
+Diretrizes de pastas
+
+domain/: apenas regras puras (sem imports de FastAPI/SQLAlchemy/pydantic).
+
+application/: orquestra domínio; conhece apenas interfaces de repositórios/serviços.
+
+infra/: classes concretas (SQLAlchemy, Bcrypt, Redis, etc.).
+
+interfaces/: HTTP (FastAPI): roteadores, DTOs pydantic, middlewares, handlers.
+
+config/: inicialização de env/log/DI; nada de regra de negócio.
+
+🛠️ Dependências
+
+
+# Runtime
+pip install fastapi uvicorn[standard]
+pip install sqlalchemy alembic psycopg2-binary  # Postgres (ou pg8000/asyncpg)
+pip install pydantic pydantic-settings
+pip install bcrypt passlib[bcrypt]
+# Testes & Qualidade
+pip install pytest pytest-cov httpx
+pip install black isort flake8 mypy
+pip install faker factory_boy
+Dica: se preferir, use Poetry ou uv para gerenciar o ambiente.
+
+⚙️ pyproject.toml (exemplo)
+
+
+[tool.black]
+line-length = 100
+[tool.isort]
+profile = "black"
+line_length = 100
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+[tool.pytest.ini_options]
+addopts = "-q --cov=app --cov-report=term-missing --cov-fail-under=80"
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+strict_optional = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_configs = true
+ignore_missing_imports = true
+🗄️ ORM (SQLAlchemy) + Alembic
+app/infra/db/base.py
+
+
+from sqlalchemy.orm import DeclarativeBase
+class Base(DeclarativeBase):
+    pass
+app/infra/db/models.py
+
+
+from sqlalchemy import String, Boolean, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from .base import Base
+class UserModel(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    email: Mapped[str] = mapped_column(String(160), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+app/infra/db/session.py
+
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.config.env import settings
+engine = create_engine(settings.database_url, pool_pre_ping=True, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+Alembic (migrations)
+Inicializar: alembic init .alembic
+
+alembic.ini: configure sqlalchemy.url = <DATABASE_URL> (ou use env via script).
+
+env.py (Alembic) deve importar Base.metadata para autogenerate.
+
+Criar migração: alembic revision --autogenerate -m "create users"
+
+Aplicar: alembic upgrade head
+
+🧩 Domínio (puro)
+app/domain/value_objects/email.py
+
+
+import re
+_EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+class Email:
+    def __init__(self, value: str):
+        if not _EMAIL_RE.match(value):
+            raise ValueError("Invalid email")
+        self.value = value
+app/domain/entities/user.py
+
+
+import uuid
+from . import errors
+from app.domain.value_objects.email import Email
+class User:
+    def __init__(self, name: str, email: str | Email, password_hash: str, *, id: str | None = None, active: bool = True):
+        name = name.strip()
+        if len(name) < 3:
+            raise ValueError("Name too short")
+        self.id = id or str(uuid.uuid4())
+        self.name = name
+        self.email = email if isinstance(email, Email) else Email(email)
+        self.password_hash = password_hash
+        self.active = active
+📦 Application (ports, DTOs, use-cases)
+app/application/ports/user_repository.py
+
+
+from abc import ABC, abstractmethod
+from app.domain.entities.user import User
+class UserRepository(ABC):
+    @abstractmethod
+    def create(self, user: User) -> User: ...
+    @abstractmethod
+    def find_by_email(self, email: str) -> User | None: ...
+    @abstractmethod
+    def find_by_id(self, id: str) -> User | None: ...
+app/application/ports/hash_service.py
+
+
+from abc import ABC, abstractmethod
+class HashService(ABC):
+    @abstractmethod
+    def hash(self, raw: str) -> str: ...
+    @abstractmethod
+    def compare(self, raw: str, hashed: str) -> bool: ...
+app/application/dtos/create_user_dto.py
+
+
+from pydantic import BaseModel, EmailStr, Field
+class CreateUserInput(BaseModel):
+    name: str = Field(min_length=3)
+    email: EmailStr
+    password: str = Field(min_length=6)
+class CreateUserOutput(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+app/application/use_cases/create_user.py
+
+
+from app.application.dtos.create_user_dto import CreateUserInput, CreateUserOutput
+from app.application.ports.user_repository import UserRepository
+from app.application.ports.hash_service import HashService
+from app.domain.entities.user import User
+class CreateUser:
+    def __init__(self, repo: UserRepository, hasher: HashService) -> None:
+        self.repo = repo
+        self.hasher = hasher
+    def exec(self, input: CreateUserInput) -> CreateUserOutput:
+        if self.repo.find_by_email(str(input.email)):
+            raise ValueError("Email already registered")
+        password_hash = self.hasher.hash(input.password)
+        entity = User(name=input.name, email=str(input.email), password_hash=password_hash)
+        saved = self.repo.create(entity)
+        return CreateUserOutput(id=saved.id, name=saved.name, email=saved.email.value)
+🔌 Infra (implementações)
+app/infra/repositories/user_repository_sqlalchemy.py
+
+
+from sqlalchemy.orm import Session
+from app.application.ports.user_repository import UserRepository
+from app.domain.entities.user import User
+from app.infra.db.models import UserModel
+class UserRepositorySQLAlchemy(UserRepository):
+    def __init__(self, session: Session) -> None:
+        self.session = session
+    def create(self, user: User) -> User:
+        row = UserModel(
+            id=user.id,
+            name=user.name,
+            email=user.email.value,
+            password_hash=user.password_hash,
+            active=user.active,
+        )
+        self.session.add(row)
+        self.session.commit()
+        return user
+    def find_by_email(self, email: str) -> User | None:
+        row = self.session.query(UserModel).filter(UserModel.email == email).first()
+        if not row:
+            return None
+        return User(id=row.id, name=row.name, email=row.email, password_hash=row.password_hash, active=row.active)
+    def find_by_id(self, id: str) -> User | None:
+        row = self.session.query(UserModel).filter(UserModel.id == id).first()
+        if not row:
+            return None
+        return User(id=row.id, name=row.name, email=row.email, password_hash=row.password_hash, active=row.active)
+app/infra/security/bcrypt_hash_service.py
+
+
+from passlib.hash import bcrypt
+from app.application.ports.hash_service import HashService
+class BcryptHashService(HashService):
+    def hash(self, raw: str) -> str:
+        return bcrypt.hash(raw)
+    def compare(self, raw: str, hashed: str) -> bool:
+        return bcrypt.verify(raw, hashed)
+🌐 Interfaces HTTP (FastAPI)
+app/interfaces/http/schemas/users.py
+
+
+from pydantic import BaseModel, EmailStr, Field
+class CreateUserBody(BaseModel):
+    name: str = Field(min_length=3)
+    email: EmailStr
+    password: str = Field(min_length=6)
+class UserResponse(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+app/interfaces/http/routers/users.py
+
+
+from fastapi import APIRouter, Depends
+from app.interfaces.http.schemas.users import CreateUserBody, UserResponse
+from app.application.use_cases.create_user import CreateUser
+from app.config.container import get_create_user
+router = APIRouter(prefix="/users", tags=["users"])
+@router.post("", response_model=UserResponse, status_code=201)
+def create_user(body: CreateUserBody, uc: CreateUser = Depends(get_create_user)):
+    out = uc.exec(body)
+    return out
+app/interfaces/http/app_factory.py
+
+
+from fastapi import FastAPI
+from .routers.users import router as users_router
+def create_app() -> FastAPI:
+    app = FastAPI(title="API", version="1.0.0")
+    app.include_router(users_router)
+    return app
+⚙️ Configuração / DI / ENV
+app/config/env.py
+
+
+from pydantic_settings import BaseSettings
+class Settings(BaseSettings):
+    env: str = "development"
+    port: int = 8000
+    database_url: str
+    class Config:
+        env_file = ".env"
+settings = Settings()
+app/config/container.py
+
+
+from contextlib import contextmanager
+from sqlalchemy.orm import Session
+from app.infra.db.session import SessionLocal
+from app.infra.repositories.user_repository_sqlalchemy import UserRepositorySQLAlchemy
+from app.infra.security.bcrypt_hash_service import BcryptHashService
+from app.application.use_cases.create_user import CreateUser
+@contextmanager
+def session_scope():
+    session: Session = SessionLocal()
+    try:
+        yield session
+        session.close()
+    except Exception:
+        session.close()
+        raise
+# Providers simples (padrão FastAPI Depends)
+def get_session():
+    with session_scope() as s:
+        yield s
+def get_user_repository(session: Session = None):
+    # sessão é injetada via Depends(get_session) quando usado em HTTP
+    return UserRepositorySQLAlchemy(session=session)
+def get_hash_service():
+    return BcryptHashService()
+def get_create_user(session: Session = None):
+    repo = UserRepositorySQLAlchemy(session=session)
+    hasher = BcryptHashService()
+    return CreateUser(repo, hasher)
+🚀 Bootstrap
+main.py
+
+
+import uvicorn
+from app.interfaces.http.app_factory import create_app
+from app.config.env import settings
+app = create_app()
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=settings.port)
+✅ Testes (Pytest)
+app/tests/conftest.py
+
+
+import os
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.interfaces.http.app_factory import create_app
+from app.infra.db.base import Base
+from app.infra.db.session import SessionLocal
+TEST_DB_URL = os.getenv("TEST_DATABASE_URL", "sqlite+pysqlite:///:memory:")
+engine_test = create_engine(TEST_DB_URL, future=True)
+TestingSessionLocal = sessionmaker(bind=engine_test, autoflush=False, autocommit=False, future=True)
+@pytest.fixture(autouse=True, scope="session")
+def create_schema():
+    Base.metadata.create_all(bind=engine_test)
+    yield
+    Base.metadata.drop_all(bind=engine_test)
+@pytest.fixture()
+def db_session():
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+@pytest.fixture()
+def client(db_session, monkeypatch):
+    # monkeypatch SessionLocal para usar a sessão de teste
+    from app import infra
+    monkeypatch.setattr("app.infra.db.session.SessionLocal", lambda: db_session)
+    app = create_app()
+    with TestClient(app) as c:
+        yield c
+Unit: app/tests/unit/test_create_user.py
+
+
+from app.application.use_cases.create_user import CreateUser
+from app.application.ports.user_repository import UserRepository
+from app.application.ports.hash_service import HashService
+from app.application.dtos.create_user_dto import CreateUserInput
+from app.domain.entities.user import User
+class RepoStub(UserRepository):
+    def __init__(self):
+        self._by_email = None
+    def create(self, user: User) -> User: return user
+    def find_by_email(self, email: str): return self._by_email
+    def find_by_id(self, id: str): return None
+class HashStub(HashService):
+    def hash(self, raw: str) -> str: return "hashed"
+    def compare(self, raw: str, hashed: str) -> bool: return True
+def test_create_user_success():
+    uc = CreateUser(RepoStub(), HashStub())
+    out = uc.exec(CreateUserInput(name="Rafael", email="rafa@ex.com", password="123456"))
+    assert out.email == "rafa@ex.com"
+def test_create_user_duplicated_email():
+    repo = RepoStub(); repo._by_email = User(name="x", email="x@x.com", password_hash="h")
+    uc = CreateUser(repo, HashStub())
+    try:
+        uc.exec(CreateUserInput(name="A", email="x@x.com", password="123456"))
+    except Exception as e:
+        assert str(e) == "Email already registered"
+Integração/E2E: app/tests/integration/test_users_router.py
+
+
+from fastapi.testclient import TestClient
+def test_post_users(client: TestClient):
+    res = client.post("/users", json={"name": "Rafael", "email": "rafa@ex.com", "password": "123456"})
+    assert res.status_code == 201
+    assert res.json()["email"] == "rafa@ex.com"
+🔍 Qualidade de Código
+Black + isort para formatação/ordenação de imports.
+
+Flake8 para lint; mypy para tipagem estática.
+
+Pre-commit (opcional): configure hooks para black, isort, flake8, mypy, pytest -q.
+
+Exemplo .pre-commit-config.yaml
+
+
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+🧭 Padrões de Código (Checklist)
+Domain: puro, validando invariantes; sem pydantic/FastAPI/ORM.
+
+Use-cases: sem I/O; dependem de ports.
+
+Infra: adapta persistência/segurança; nunca expose ORM no domínio.
+
+HTTP: pydantic para request/response; exceções mapeadas para HTTP 4xx/5xx.
+
+Erros & Logs: mensagens claras; sem dados sensíveis nos logs.
+
+Testes: unit (mocks/stubs), integração/E2E (DB + HTTP), cobertura ≥ 80%.
+
+▶️ Como iniciar
+
+
+cp .env.example .env
+# DATABASE_URL=postgresql+psycopg2://user:pass@localhost:5432/app
+# Instalar deps (ex.: uv ou pip)
+pip install -r requirements.txt  # se usar requirements
+# ou Poetry/uv conforme preferir
+alembic upgrade head
+uvicorn main:app --reload
+pytest --cov
+🔑 Definition of Done (por PR)
+Black + isort + flake8 + mypy limpos.
+
+Testes (unit + integração) passando.
+
+Cobertura global ≥ 80% (pytest-cov).
+
+Casos de uso sem dependências de infra.
+
+Migrations Alembic aplicadas.
+
+Endpoints documentados (OpenAPI padrão do FastAPI).
