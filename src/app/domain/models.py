@@ -48,6 +48,10 @@ class TranscriptionJob:
     started_at: datetime | None = None
     finished_at: datetime | None = None
     duration_sec: int | None = None
+    estimated_duration_sec: int | None = None
+    stage: str | None = None
+    progress: float | None = None
+    last_heartbeat_at: datetime | None = None
     language: str | None = None
     transcript_text: str | None = None
     segments_json: list[dict[str, float | str]] | None = None

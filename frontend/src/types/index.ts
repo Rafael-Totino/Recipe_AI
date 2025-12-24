@@ -111,3 +111,22 @@ export interface ImportResult {
   warnings?: string[];
 }
 
+export interface TranscriptionJob {
+  id: string;
+  status: string;
+  stage?: string | null;
+  progress?: number | null;
+  last_heartbeat_at?: string | null;
+  object_key: string;
+  recipe_id?: string | null;
+  created_at?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  attempt_count?: number;
+  error_message?: string | null;
+  transcript_text?: string | null;
+  segments?: Array<{ start: number; end: number; text: string }> | null;
+  language?: string | null;
+  duration_sec?: number | null;
+  model_version?: string | null;
+}

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import signal
+import subprocess
 import sys
+import threading
 import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path, PurePosixPath
@@ -37,6 +39,69 @@ DOWNLOAD_TIMEOUT_SECONDS = 300
 METADATA_TIMEOUT_SECONDS = 30
 DEFAULT_ESTIMATED_MINUTES = 5
 BYTES_PER_MB = 1024 * 1024
+FFPROBE_TIMEOUT_SECONDS = 10
+
+
+class ProgressReporter:
+    def __init__(
+        self,
+        job_id: UUID,
+        job_repo: JobQueueRepository,
+        total_duration_sec: float | None,
+        progress_interval_seconds: int,
+        heartbeat_interval_seconds: int,
+    ) -> None:
+        self.job_id = job_id
+        self.job_repo = job_repo
+        self.total_duration_sec = max(total_duration_sec, 1.0) if total_duration_sec else None
+        self.progress_interval_seconds = progress_interval_seconds
+        self.heartbeat_interval_seconds = heartbeat_interval_seconds
+        self.last_progress_update: datetime | None = None
+        self.last_heartbeat_update: datetime | None = None
+        self.processed_seconds = 0.0
+
+    def on_segment_processed(self, segment_end: float) -> None:
+        if segment_end > self.processed_seconds:
+            self.processed_seconds = segment_end
+
+        now = datetime.now(timezone.utc)
+        progress_due = self._is_due(self.last_progress_update, self.progress_interval_seconds, now)
+        heartbeat_due = self._is_due(self.last_heartbeat_update, self.heartbeat_interval_seconds, now)
+
+        if not progress_due and not heartbeat_due:
+            return
+
+        progress_value = None
+        if progress_due and self.total_duration_sec:
+            progress_value = min(99.0, (self.processed_seconds / self.total_duration_sec) * 100)
+
+        self.job_repo.update_job_progress(
+            job_id=self.job_id,
+            progress=progress_value if progress_due else None,
+            last_heartbeat_at=now if heartbeat_due else None,
+        )
+
+        if progress_due:
+            self.last_progress_update = now
+        if heartbeat_due:
+            self.last_heartbeat_update = now
+
+    def heartbeat(self) -> None:
+        now = datetime.now(timezone.utc)
+        if not self._is_due(self.last_heartbeat_update, self.heartbeat_interval_seconds, now):
+            return
+
+        self.job_repo.update_job_progress(
+            job_id=self.job_id,
+            last_heartbeat_at=now,
+        )
+        self.last_heartbeat_update = now
+
+    @staticmethod
+    def _is_due(last_update: datetime | None, interval_seconds: int, now: datetime) -> bool:
+        if last_update is None:
+            return True
+        return (now - last_update).total_seconds() >= interval_seconds
 
 
 class TranscriberWorker:
@@ -169,7 +234,21 @@ class TranscriberWorker:
             validated_object_key = self._validate_object_key(job.object_key)
             temp_file_path = self._download_media_file(job.id, validated_object_key)
             estimated_minutes = self._estimate_duration_minutes(validated_object_key)
-            transcription_result = self._execute_transcription(temp_file_path)
+            self._update_job_stage(job.id, "TRANSCRIBING")
+            total_duration_sec = self._determine_total_duration_seconds(
+                job,
+                temp_file_path,
+                estimated_minutes,
+            )
+            progress_reporter = ProgressReporter(
+                job_id=job.id,
+                job_repo=self.job_repo,
+                total_duration_sec=total_duration_sec,
+                progress_interval_seconds=self.config.progress_update_interval_seconds,
+                heartbeat_interval_seconds=self.config.heartbeat_interval_seconds,
+            )
+            transcription_result = self._execute_transcription(temp_file_path, progress_reporter)
+            self._update_job_stage(job.id, "FINALIZING")
             self._save_transcription_results(job, transcription_result)
             self._reconcile_quota(job.user_id, estimated_minutes, transcription_result.duration_sec)
 
@@ -192,6 +271,14 @@ class TranscriberWorker:
     def _mark_job_started(self, job: TranscriptionJob) -> None:
         self.current_job_id = job.id
         self.last_job_time = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc)
+
+        self.job_repo.update_job_progress(
+            job_id=job.id,
+            stage="DOWNLOADING",
+            progress=0,
+            last_heartbeat_at=now,
+        )
 
         logger.info(
             "Processing job: id=%s, user=%s, object_key=%s, attempt=%d/%d",
@@ -241,9 +328,24 @@ class TranscriberWorker:
         except (StorageDownloadError, StorageTimeoutError, KeyError, TypeError):
             return DEFAULT_ESTIMATED_MINUTES
 
-    def _execute_transcription(self, media_path: Path) -> TranscriptionResult:
+    def _execute_transcription(
+        self,
+        media_path: Path,
+        progress_reporter: ProgressReporter,
+    ) -> TranscriptionResult:
         logger.info("Starting transcription...")
-        return self.pipeline.transcribe(media_path)
+        stop_event = threading.Event()
+        heartbeat_thread = threading.Thread(
+            target=self._heartbeat_loop,
+            args=(progress_reporter, stop_event),
+            daemon=True,
+        )
+        heartbeat_thread.start()
+        try:
+            return self.pipeline.transcribe(media_path, progress_callback=progress_reporter.on_segment_processed)
+        finally:
+            stop_event.set()
+            heartbeat_thread.join(timeout=self.config.heartbeat_interval_seconds)
 
     def _save_transcription_results(
         self,
@@ -367,6 +469,64 @@ class TranscriberWorker:
             logger.info("Waiting for current job to complete: %s", self.current_job_id)
 
         logger.info("Worker shutdown complete")
+
+    def _update_job_stage(self, job_id: UUID, stage: str) -> None:
+        self.job_repo.update_job_progress(
+            job_id=job_id,
+            stage=stage,
+            last_heartbeat_at=datetime.now(timezone.utc),
+        )
+
+    def _heartbeat_loop(
+        self,
+        progress_reporter: ProgressReporter,
+        stop_event: threading.Event,
+    ) -> None:
+        while not stop_event.is_set():
+            progress_reporter.heartbeat()
+            stop_event.wait(self.config.heartbeat_interval_seconds)
+
+    def _determine_total_duration_seconds(
+        self,
+        job: TranscriptionJob,
+        media_path: Path,
+        estimated_minutes: int,
+    ) -> float:
+        if job.estimated_duration_sec and job.estimated_duration_sec > 0:
+            return float(job.estimated_duration_sec)
+
+        duration = self._probe_audio_duration(media_path)
+        if duration:
+            return duration
+
+        return float(max(estimated_minutes, 1) * 60)
+
+    def _probe_audio_duration(self, media_path: Path) -> float | None:
+        try:
+            result = subprocess.run(
+                [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-show_entries",
+                    "format=duration",
+                    "-of",
+                    "default=noprint_wrappers=1:nokey=1",
+                    str(media_path),
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=FFPROBE_TIMEOUT_SECONDS,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            logger.warning("ffprobe not available for duration check: %s", error)
+            return None
+
+        try:
+            return float(result.stdout.strip())
+        except ValueError:
+            return None
 
 
 def create_default_dependencies(config: WorkerConfig) -> tuple[

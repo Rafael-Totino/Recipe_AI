@@ -14,6 +14,7 @@ import ImportLinkPage from './pages/ImportLinkPage';
 import ImportManualPage from './pages/ImportManualPage';
 import PlaylistsPage from './pages/PlaylistsPage';
 import PlaylistDetailPage from './pages/PlaylistDetailPage';
+import TranscriptionJobPage from './pages/TranscriptionJobPage';
 
 const App = () => {
   return (
@@ -40,6 +41,7 @@ const App = () => {
         <Route path="import/manual" element={<ImportManualPage />} />
         <Route path="playlists" element={<PlaylistsPage />} />
         <Route path="playlists/:playlistId" element={<PlaylistDetailPage />} />
+        <Route path="transcriptions/:jobId" element={<TranscriptionJobPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

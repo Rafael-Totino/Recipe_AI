@@ -33,6 +33,9 @@ class JobQueueRepository(ABC):
         job_id: UUID,
         worker_id: str,
         started_at: datetime | None = None,
+        stage: str | None = None,
+        progress: float | None = None,
+        last_heartbeat_at: datetime | None = None,
     ) -> bool:
         pass
 
@@ -55,6 +58,16 @@ class JobQueueRepository(ABC):
         error_message: str,
         retry_at: datetime | None = None,
         permanent: bool = False,
+    ) -> bool:
+        pass
+
+    @abstractmethod
+    def update_job_progress(
+        self,
+        job_id: UUID,
+        stage: str | None = None,
+        progress: float | None = None,
+        last_heartbeat_at: datetime | None = None,
     ) -> bool:
         pass
 
