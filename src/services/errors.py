@@ -1,20 +1,37 @@
 class ServiceError(Exception):
-    """Erro base para serviços do domínio (fetch/transcribe/extract)."""
+    pass
+
 
 class InvalidURLError(ServiceError):
-    """URL malformada ou fora do escopo suportado."""
+    pass
+
 
 class UnsupportedPlatformError(ServiceError):
-    """Plataforma não suportada por este fetcher."""
+    pass
+
 
 class PrivateOrUnavailableError(ServiceError):
-    """Conteúdo privado, removido ou indisponível."""
+    pass
+
 
 class RateLimitedError(ServiceError):
-    """Sinaliza limitação de taxa (bloqueio temporário da plataforma)."""
+    pass
+
 
 class AudioUnavailableError(ServiceError):
-    """Áudio necessário para transcrição, mas não pôde ser obtido."""
+    pass
+
 
 class FetchFailedError(ServiceError):
-    """Falha genérica ao coletar metadados/legendas/áudio."""
+    pass
+
+
+class TranscriptionServiceError(ServiceError):
+    pass
+
+
+class NetworkTimeoutError(ServiceError):
+    def __init__(self, url: str, timeout_seconds: float):
+        super().__init__(f"Network timeout after {timeout_seconds}s: {url}")
+        self.url = url
+        self.timeout_seconds = timeout_seconds

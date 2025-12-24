@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Mapping, Optional
+from typing import Iterable, Mapping
 
 from src.app.config import settings
 from src.services.gemini_client import GeminiClient
@@ -13,7 +13,7 @@ _MODEL_NAME = "gemini-2.5-flash"
 def run_chat_agent(
     history: Iterable[Mapping[str, str]],
     user_message: str,
-    context: Optional[str] = None,
+    context: str | None = None,
 ) -> str:
     client = GeminiClient(api_key=settings.GEMINI_API_KEY.get_secret_value(), model_name=_MODEL_NAME)
 
@@ -54,4 +54,3 @@ def run_chat_agent(
     payload = "\n\n".join(section for section in prompt_sections if section)
     response = client.generate_content(payload, CHAT_SYSTEM_PROMPT)
     return response.strip()
-

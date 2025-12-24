@@ -3,20 +3,14 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# Configurações via variáveis de ambiente
-# =============================================================================
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "medium")
-WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "auto")  # auto, cuda, cpu
+WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "auto")
 WHISPER_BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "5"))
 
-# =============================================================================
-# Adiciona DLLs do CUDA no Windows (necessário para ctranslate2/faster-whisper)
-# =============================================================================
 if sys.platform == "win32":
     _cuda_paths = [
         r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin",
@@ -33,42 +27,32 @@ if sys.platform == "win32":
                 os.add_dll_directory(_cuda_path)
                 logger.debug("CUDA DLL path adicionado: %s", _cuda_path)
                 break
-            except Exception:
+            except OSError:
                 pass
 
-if TYPE_CHECKING:  # pragma: no cover - apenas para type-checkers
+if TYPE_CHECKING:
     from faster_whisper import WhisperModel
-else:  # pragma: no cover - em runtime importamos de forma preguiçosa
-    WhisperModel = "WhisperModel"  # type: ignore[assignment]
+else:
+    WhisperModel = "WhisperModel"
 
-
-_model: Optional["WhisperModel"] = None
-_model_error: Exception | None = None
+_model: WhisperModel | None = None
+_model_error: ImportError | RuntimeError | None = None
 _device_info: tuple[str, str] | None = None
 
 
 def _detect_device() -> tuple[str, str]:
-    """Detecta o melhor dispositivo e compute_type para o ambiente.
-    
-    Retorna:
-        Tupla (device, compute_type) onde:
-        - device: "cuda" ou "cpu"
-        - compute_type: "float16" para GPU, "int8" para CPU
-    """
     global _device_info
-    
+
     if _device_info is not None:
         return _device_info
-    
-    # Configuração explícita via ENV
+
     if WHISPER_DEVICE == "cuda":
         _device_info = ("cuda", "float16")
         return _device_info
     if WHISPER_DEVICE == "cpu":
         _device_info = ("cpu", "int8")
         return _device_info
-    
-    # Auto-detect CUDA
+
     try:
         import torch
         if torch.cuda.is_available():
@@ -78,40 +62,25 @@ def _detect_device() -> tuple[str, str]:
             return _device_info
     except ImportError:
         logger.debug("PyTorch não disponível para detecção de CUDA")
-    except Exception as exc:
-        logger.debug("Erro ao detectar CUDA via PyTorch: %s", exc)
-    
-    # Fallback: tentar detectar via ctranslate2 diretamente
+    except RuntimeError as cuda_error:
+        logger.debug("Erro ao detectar CUDA via PyTorch: %s", cuda_error)
+
     try:
         import ctranslate2
         cuda_types = ctranslate2.get_supported_compute_types("cuda")
-        # Se float16 está disponível para device "cuda", é porque CUDA está funcionando
         if "float16" in cuda_types:
             logger.info("CUDA detectado via ctranslate2, usando GPU com float16")
             _device_info = ("cuda", "float16")
             return _device_info
-    except Exception as exc:
-        logger.debug("Erro ao detectar CUDA via ctranslate2: %s", exc)
-    
+    except (ImportError, RuntimeError) as ct2_error:
+        logger.debug("Erro ao detectar CUDA via ctranslate2: %s", ct2_error)
+
     logger.info("GPU não disponível, usando CPU com int8 (quantizado)")
     _device_info = ("cpu", "int8")
     return _device_info
 
 
-def _get_model() -> Optional["WhisperModel"]:
-    """Carrega o modelo de forma preguiçosa com otimizações.
-
-    Otimizações aplicadas:
-    - Detecção automática de GPU (CUDA) ou CPU
-    - compute_type="float16" para GPU (2-4x mais rápido, menor VRAM)
-    - compute_type="int8" para CPU (menor uso de RAM)
-    - Modelo configurável via WHISPER_MODEL env var
-    
-    Caso o pacote `faster-whisper` não esteja disponível (por exemplo, em
-    ambientes sem dependências de FFmpeg instaladas), registramos um aviso e
-    retornamos ``None`` para que a chamada de transcrição seja ignorada.
-    """
-
+def _get_model() -> WhisperModel | None:
     global _model, _model_error
 
     if _model is not None:
@@ -122,9 +91,9 @@ def _get_model() -> Optional["WhisperModel"]:
         return None
 
     try:
-        from faster_whisper import WhisperModel as _WhisperModel  # type: ignore
-    except ImportError as exc:  # pragma: no cover - comportamento dependente do deploy
-        _model_error = exc
+        from faster_whisper import WhisperModel as _WhisperModel
+    except ImportError as import_error:
+        _model_error = import_error
         logger.info(
             "Biblioteca optional 'faster-whisper' nao encontrada. Pulei a transcricao de audio."
         )
@@ -132,63 +101,47 @@ def _get_model() -> Optional["WhisperModel"]:
 
     try:
         device, compute_type = _detect_device()
-        
+
         logger.info(
             "Inicializando faster-whisper: model=%s, device=%s, compute_type=%s",
             WHISPER_MODEL,
             device,
             compute_type,
         )
-        
+
         _model = _WhisperModel(
             WHISPER_MODEL,
             device=device,
             compute_type=compute_type,
-            num_workers=2,  # paralelismo no carregamento de dados
+            num_workers=2,
         )
-        
+
         logger.info("Modelo faster-whisper inicializado com sucesso")
-        
-    except Exception as exc:  # pragma: no cover - erros de inicialização raros
-        _model_error = exc
-        logger.warning("Falha ao inicializar faster-whisper: %s", exc)
+
+    except RuntimeError as runtime_error:
+        _model_error = runtime_error
+        logger.warning("Falha ao inicializar faster-whisper: %s", runtime_error)
         return None
 
     return _model
 
 
 def transcribe_audio(path: str, language: str | None = "pt") -> str:
-    """Transcreve um arquivo de áudio para texto com otimizações.
-
-    Otimizações aplicadas:
-    - vad_filter: detecta e pula silêncios (mais rápido)
-    - vad_parameters: configuração otimizada para detecção de fala
-    - condition_on_previous_text=False: evita propagação de erros
-    - word_timestamps=False: mais rápido (não precisa de timestamps por palavra)
-    - beam_size configurável via WHISPER_BEAM_SIZE (default: 5)
-    
-    Se o modelo não estiver disponível (por exemplo, porque a dependência é
-    opcional no ambiente de deploy), retornamos uma string vazia para que o
-    fluxo de ingestão continue utilizando legendas ou captions quando houver.
-    """
-
     model = _get_model()
     if model is None:
         return ""
 
-    segments, _info = model.transcribe(  # type: ignore[call-arg]
+    segments, _info = model.transcribe(
         path,
         language=language,
-        # VAD (Voice Activity Detection) - pula silêncios
         vad_filter=True,
         vad_parameters=dict(
-            min_silence_duration_ms=500,  # silêncio mínimo para dividir segmentos
-            speech_pad_ms=200,  # padding em torno da fala detectada
+            min_silence_duration_ms=500,
+            speech_pad_ms=200,
         ),
-        # Parâmetros de decodificação otimizados
         beam_size=WHISPER_BEAM_SIZE,
-        condition_on_previous_text=False,  # evita propagação de erros de transcrição
-        word_timestamps=False,  # não precisamos de timestamps por palavra
+        condition_on_previous_text=False,
+        word_timestamps=False,
     )
 
     parts: list[str] = []
