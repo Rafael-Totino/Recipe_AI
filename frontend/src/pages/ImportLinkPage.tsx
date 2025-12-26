@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader as LoaderIcon, Wand2 } from 'lucide-react';
 
 import Loader from '../components/shared/Loader';
 import { useRecipes } from '../context/RecipeContext';
@@ -9,7 +9,7 @@ import './import.css';
 
 type StatusState = { type: 'success' | 'error'; message: string } | null;
 
-const loadingStages = ['Lendo sabores', 'Decifrando histórias', 'Estruturando a obra-prima'];
+const loadingStages = ['Lendo sabores...', 'Identificando ingredientes...', 'Escrevendo a receita...'];
 
 const ImportLinkPage = () => {
   const { importRecipe } = useRecipes();
@@ -46,9 +46,7 @@ const ImportLinkPage = () => {
   const handleImport = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedUrl = url.trim();
-    if (!trimmedUrl || isImporting) {
-      return;
-    }
+    if (!trimmedUrl || isImporting) return;
 
     setStatus(null);
     setIsImporting(true);
@@ -57,18 +55,18 @@ const ImportLinkPage = () => {
       const result = await importRecipe(trimmedUrl);
 
       if (result?.recipe) {
-        setStatus({ type: 'success', message: 'Receita importada com sucesso! Abrindo detalhes...' });
+        setStatus({ type: 'success', message: 'Concluído! Redirecionando...' });
         navigate(`/app/recipes/${result.recipe.id}`);
       } else {
         setStatus({
           type: 'error',
-          message: 'Não conseguimos importar a receita. Tente novamente com outro link.'
+          message: 'Não foi possível importar. Verifique o link.'
         });
       }
     } catch {
       setStatus({
         type: 'error',
-        message: 'Falha inesperada ao importar. Verifique a conexão e tente novamente.'
+        message: 'Erro desconhecido. Tente novamente.'
       });
     } finally {
       setIsImporting(false);
@@ -79,37 +77,39 @@ const ImportLinkPage = () => {
     <div className={`import-page${isImporting ? ' import-page--busy' : ''}`}>
       <div className="import-card__actions">
         <button type="button" className="button button--ghost" onClick={() => navigate(-1)} disabled={isImporting}>
-          <ArrowLeft size={18} aria-hidden="true" />
+          <ArrowLeft size={20} />
           Voltar
         </button>
       </div>
 
       <section className="timeline__import">
         <header className="timeline__import-header">
-          <span className="eyebrow">O Laboratório</span>
-          <h1>Importar pelo link</h1>
-          <p>Cole a URL de um vídeo, post ou artigo culinário para que a IA organize tudo para você.</p>
+          <div className="timeline__import-header-title">
+            <Wand2 className="timeline__import-icon" size={24} />
+            <h1>Importar via Link</h1>
+          </div>
+          <p>Cole o link e deixe a IA fazer o resto.</p>
         </header>
 
         <form className="timeline__import-form import-page__import-form" onSubmit={handleImport} aria-busy={isImporting}>
           <div className={`timeline__import-field${favicon ? ' timeline__import-field--favicon' : ''}`}>
-            {favicon ? <img src={favicon} alt="Favicon do site" className="timeline__import-favicon" /> : null}
+            {favicon ? <img src={favicon} alt="" className="timeline__import-favicon" /> : null}
             <input
               type="url"
               value={url}
               onChange={(event) => setUrl(event.target.value)}
-              placeholder="https://exemplo.com/minha-receita"
-              aria-label="Link da receita para importar"
+              placeholder="Cole o link aqui..."
+              aria-label="Link da receita"
               minLength={8}
               required
               disabled={isImporting}
             />
             <button type="submit" disabled={isImporting} data-loading={isImporting}>
-              {isImporting ? 'Processando...' : 'Criar receita'}
+              {isImporting ? <LoaderIcon className="animate-spin" size={20} /> : 'Criar'}
             </button>
           </div>
 
-          <small className="import-page__hint">YouTube, Instagram, TikTok, blogs e muito mais.</small>
+          <p className="import-page__hint">Suporta YouTube, Instagram, TikTok e blogs.</p>
 
           {status ? (
             <p className={`timeline__import-status timeline__import-status--${status.type}`} role="status">
@@ -123,7 +123,7 @@ const ImportLinkPage = () => {
         <div className="import-page__overlay" role="alert" aria-live="assertive">
           <div className="import-page__overlay-content">
             <Loader />
-            <p>Importando receita...</p>
+            <p>Trabalhando...</p>
             <small>{loadingStages[stageIndex]}</small>
           </div>
         </div>
@@ -133,4 +133,5 @@ const ImportLinkPage = () => {
 };
 
 export default ImportLinkPage;
+
 

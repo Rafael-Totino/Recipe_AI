@@ -1,11 +1,11 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Heart, Loader as LoaderIcon, Plus, Sparkles } from 'lucide-react';
 
 import Loader from '../components/shared/Loader';
 import { useAuth } from '../context/AuthContext';
 import { useRecipes } from '../context/RecipeContext';
 import type { Recipe } from '../types';
-import favoriteHeartIcon from '../assets/favorite-heart.svg';
 import './home.css';
 
 const FALLBACK_COVER = 'linear-gradient(135deg, rgba(155, 89, 182, 0.32), rgba(232, 93, 4, 0.32)), url(https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=60)';
@@ -14,10 +14,7 @@ const buildMeta = (recipe: Recipe) => {
   if (recipe.durationMinutes) {
     return `${recipe.durationMinutes} min`;
   }
-  if (recipe.tags?.length) {
-    return recipe.tags.slice(0, 2).join(' • ');
-  }
-  return recipe.source?.importedFrom ? `Origem: ${recipe.source.importedFrom}` : 'Receita do atelier';
+  return recipe.source?.importedFrom ? recipe.source.importedFrom : 'Atelier';
 };
 
 const HomePage = () => {
@@ -69,50 +66,41 @@ const HomePage = () => {
     const trimmedUrl = importUrl.trim();
 
     if (!trimmedUrl) {
-      setImportStatus({ type: 'error', message: 'Informe um link válido para importar.' });
+      setImportStatus({ type: 'error', message: 'Link inválido' });
       return;
     }
 
     setIsImporting(true);
-    setImportStatus({ type: 'idle', message: 'Importando sua receita...' });
+    setImportStatus({ type: 'idle', message: 'Importando...' });
 
     const result = await importRecipe(trimmedUrl);
 
     if (result?.recipe) {
-      setImportStatus({ type: 'success', message: 'Receita importada! Abrindo detalhes...' });
+      setImportStatus({ type: 'success', message: 'Importado! Abrindo...' });
       setImportUrl('');
       window.setTimeout(() => {
         navigate(`/app/recipes/${result.recipe.id}`);
       }, 350);
     } else {
-      setImportStatus({ type: 'error', message: 'Não foi possível importar a receita. Tente outro link.' });
+      setImportStatus({ type: 'error', message: 'Erro ao importar.' });
     }
 
     setIsImporting(false);
   };
 
   const feedBadge = useMemo(() => {
-    if (query) {
-      return `Filtro: "${query}"`;
-    }
-    if (view === 'favorites') {
-      return 'Somente favoritas';
-    }
-    if (view === 'explore') {
-      return 'Sugestoes da IA';
-    }
+    if (query) return `Filtro: "${query}"`;
+    if (view === 'favorites') return 'Somente favoritas';
+    if (view === 'explore') return 'Sugestões';
     return '';
   }, [query, view]);
 
   const renderCarousel = (
     title: string,
-    subtitle: string,
     items: Recipe[],
     options: { ariaLabel?: string; showFavoriteToggle?: boolean } = {}
   ) => {
-    if (!items.length) {
-      return null;
-    }
+    if (!items.length) return null;
 
     const ariaLabel = options.ariaLabel ?? title;
 
@@ -120,7 +108,6 @@ const HomePage = () => {
       <section className="timeline__carousel" aria-label={ariaLabel}>
         <header className="timeline__carousel-header">
           <h2>{title}</h2>
-          {subtitle ? <p className="text-muted">{subtitle}</p> : null}
         </header>
         <ul className="timeline__carousel-track">
           {items.map((recipe) => {
@@ -147,12 +134,14 @@ const HomePage = () => {
                     onClick={() => toggleFavorite(recipe.id)}
                     aria-pressed={recipe.isFavorite}
                     aria-label={
-                      recipe.isFavorite ? 'Remover receita dos favoritos' : 'Adicionar receita aos favoritos'
+                      recipe.isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'
                     }
                   >
-                    <span aria-hidden="true" className="timeline__carousel-favorite-icon">
-                      <img src={favoriteHeartIcon} alt="" />
-                    </span>
+                    <Heart
+                      size={20}
+                      className={recipe.isFavorite ? 'fill-current' : ''}
+                      strokeWidth={recipe.isFavorite ? 0 : 2.5}
+                    />
                   </button>
                 ) : null}
               </li>
@@ -168,7 +157,7 @@ const HomePage = () => {
       <div className="timeline" role="status">
         <section className="surface-card timeline__loader">
           <Loader />
-          <p>Organizando seu atelier...</p>
+          <p>Preparando a cozinha...</p>
         </section>
       </div>
     );
@@ -182,8 +171,11 @@ const HomePage = () => {
     <div className="timeline">
       <section className="timeline__import" aria-labelledby="timeline-import-title">
         <div className="timeline__import-header">
-          <h1 id="timeline-import-title">Importe por link em segundos</h1>
-          <p>Cole a URL da receita e nós organizamos o resto para você, {firstName}.</p>
+          <div className="timeline__import-header-title">
+            <Sparkles className="timeline__import-icon" size={20} />
+            <h1 id="timeline-import-title">Nova Receita</h1>
+          </div>
+          <p>Cole o link a mágica acontece, {firstName}.</p>
           {feedBadge ? <span className="timeline__badge">{feedBadge}</span> : null}
         </div>
         <form className="timeline__import-form" onSubmit={handleQuickImport} aria-busy={isImporting}>
@@ -192,13 +184,13 @@ const HomePage = () => {
               type="url"
               value={importUrl}
               onChange={(event) => setImportUrl(event.target.value)}
-              placeholder="https://exemplo.com/minha-receita"
-              aria-label="Link da receita para importar"
+              placeholder="Cole o link aqui..."
+              aria-label="Link da receita"
               required
               disabled={isImporting}
             />
-            <button type="submit" disabled={isImporting}>
-              {isImporting ? 'Importando...' : '+'}
+            <button type="submit" disabled={isImporting} aria-label="Importar">
+              {isImporting ? <LoaderIcon className="animate-spin" size={20} /> : <Plus size={24} />}
             </button>
           </div>
           {importStatus ? (
@@ -209,28 +201,20 @@ const HomePage = () => {
         </form>
       </section>
 
-      {renderCarousel(
-        'Receitas salvas recentemente',
-        'Suas criacoes mais novas em destaque.',
-        savedCarousel,
-        { ariaLabel: 'Receitas salvas recentemente', showFavoriteToggle: true }
-      )}
+      {renderCarousel('Recentes', savedCarousel, {
+        ariaLabel: 'Receitas recentes',
+        showFavoriteToggle: true,
+      })}
 
-      {renderCarousel(
-        'Receitas favoritas',
-        'Pratos que voce marcou com carinho.',
-        favoritesCarousel,
-        { ariaLabel: 'Receitas favoritas', showFavoriteToggle: true }
-      )}
+      {renderCarousel('Favoritos', favoritesCarousel, {
+        ariaLabel: 'Receitas favoritas',
+        showFavoriteToggle: true,
+      })}
 
-      {renderCarousel(
-        'Receitas em alta',
-        'Sugestoes do Chef IA em evidência.',
-        trendingCarousel,
-        { ariaLabel: 'Receitas em alta' }
-      )}
+      {renderCarousel('Em alta', trendingCarousel, { ariaLabel: 'Receitas em alta' })}
     </div>
   );
 };
 
 export default HomePage;
+

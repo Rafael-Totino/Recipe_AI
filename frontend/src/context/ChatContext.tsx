@@ -114,28 +114,42 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
       return;
     }
+    const hydrateStartActiveChatId = activeChatIdRef.current;
     setIsLoading(true);
     try {
       const sessionList = await fetchChatSessions(token);
-      setSessions(sessionList);
-
       const currentActive = activeChatIdRef.current;
+      const activeChangedDuringHydrate = hydrateStartActiveChatId !== currentActive && Boolean(currentActive);
+
+      setSessions((prev) => {
+        if (activeChangedDuringHydrate && prev.length > 0) {
+          const merged = [...prev];
+          for (const sessionItem of sessionList) {
+            if (!merged.some((existing) => existing.id === sessionItem.id)) {
+              merged.push(sessionItem);
+            }
+          }
+          return merged;
+        }
+        return sessionList;
+      });
+
       const resolvedChatId = currentActive && sessionList.some((session) => session.id === currentActive)
         ? currentActive
         : sessionList[0]?.id;
 
       if (!resolvedChatId) {
-        fetchSequenceRef.current += 1;
-        setMessages([]);
-        setActiveChatId(undefined);
-        activeChatIdRef.current = undefined;
+        if (!currentActive) {
+          fetchSequenceRef.current += 1;
+          setMessages([]);
+          setActiveChatId(undefined);
+          activeChatIdRef.current = undefined;
+        }
       } else {
         activeChatIdRef.current = resolvedChatId;
         setActiveChatId(resolvedChatId);
         await loadMessagesForChat(resolvedChatId, { showLoader: false });
       }
-
-      setError(undefined);
     } catch (error) {
       const message =
         error instanceof ApiError && error.status >= 400 && error.status < 500
@@ -229,8 +243,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
           );
         });
-
-        await loadMessagesForChat(resolvedChatId, { showLoader: false });
 
         setError(undefined);
       } catch (error) {

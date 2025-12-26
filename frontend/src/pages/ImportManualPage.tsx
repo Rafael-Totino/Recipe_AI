@@ -115,9 +115,10 @@ const ImportManualPage = () => {
 
       <section className="import-manual">
         <header className="timeline__import-header">
-          <span className="eyebrow">Livro do Chef</span>
-          <h1>Registrar receita manualmente</h1>
-          <p>Preencha os campos abaixo para guardar sua criação no seu livro de receitas.</p>
+          <div className="timeline__import-header-title">
+            <h1>Receita Manual</h1>
+          </div>
+          <p>Registre sua própria criação.</p>
         </header>
 
         <form className="import-card__layout" onSubmit={handleSubmit} aria-busy={isSaving}>

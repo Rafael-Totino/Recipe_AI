@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
 
 from src.app.deps import get_current_user, CurrentUser
@@ -239,11 +239,15 @@ async def list_transcription_jobs(
     )
 
 
-@router.delete("/jobs/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/jobs/{job_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
 async def cancel_transcription_job(
     job_id: str,
     current_user: CurrentUser = Depends(get_current_user),
-) -> None:
+) -> Response:
     user_id = current_user.id
     job_repo = _get_job_repo()
 
@@ -265,6 +269,7 @@ async def cancel_transcription_job(
         )
 
     logger.info("Job cancelled: id=%s, user=%s", job_id, user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/quota", response_model=QuotaResponse)

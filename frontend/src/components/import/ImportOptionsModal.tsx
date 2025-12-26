@@ -42,13 +42,11 @@ export const ImportOptionsModal = ({ isOpen, onClose, onSelect }: ImportOptionsM
       <div className="import-modal__backdrop" onClick={handleBackdropClick} />
       <div className="import-modal__sheet" role="document">
         <header className="import-modal__sheet-header">
-          <h2>Importar receita</h2>
-          <button type="button" className="import-modal__close" onClick={onClose} aria-label="Fechar opções de importação">
-            <X size={18} aria-hidden="true" />
+          <h2>Nova Receita</h2>
+          <button type="button" className="import-modal__close" onClick={onClose} aria-label="Fechar">
+            <X size={20} aria-hidden="true" />
           </button>
         </header>
-
-        <p className="import-modal__sheet-subtitle">Como deseja começar?</p>
 
         <div className="import-modal__options" role="list">
           <button
@@ -84,7 +82,7 @@ export const ImportOptionsModal = ({ isOpen, onClose, onSelect }: ImportOptionsM
             <span className="import-modal__option-icon" aria-hidden="true">
               <PencilLine size={24} />
             </span>
-            <span className="import-modal__option-title">Manualmente</span>
+            <span className="import-modal__option-title">Manual</span>
           </button>
         </div>
       </div>

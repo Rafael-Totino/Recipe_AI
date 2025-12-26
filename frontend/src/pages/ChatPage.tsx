@@ -34,10 +34,8 @@ const ChatPage = () => {
   return (
     <div className="chat-page">
       <header className="chat-page__header">
-        <h1 className="chat-page__title">Converse com a Chef IA sempre que precisar</h1>
-        <p className="chat-page__subtitle">
-          Tire dúvidas rápidas, ajuste receitas em segundos e mantenha o fluxo da cozinha em um só lugar.
-        </p>
+        <h1 className="chat-page__title">Chef IA</h1>
+        <p className="chat-page__subtitle">Sua assistente de cozinha pessoal.</p>
       </header>
       <div className="chat-page__body">
         <ChatDock initialPrompt={initialPrompt} />
